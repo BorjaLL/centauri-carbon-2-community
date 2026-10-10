@@ -13,7 +13,7 @@ SOURCE = Path(__file__).resolve().parents[1] / 'components/cc2-control/source/so
 with zipfile.ZipFile(SOURCE) as snapshot:
     FIRMWARE_VERSION = snapshot.read('FIRMWARE_VERSION').decode().strip()
 
-BUILDER_SHA256='16df21d924e82155d2e15fde09f020dc7255a636681163a4ca3899d63b5d8137'
+BUILDER_SHA256='a5d7f6ede45872f8168da4849fb3ef96c7527227c1b13b93e79260c17419028a'
 
 def sha256(path):
     h = hashlib.sha256()
