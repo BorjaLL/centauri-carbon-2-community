@@ -687,6 +687,13 @@ static void set_slot_a(const plate_mesh *m) {
     assert(fwrite(updated, 1, new_length, f) == new_length); fclose(f); free(file); free(updated);
     memory_a = *m;
 }
+/* Heater switch-offs the job sends. */
+static int beds_off;
+static int fake_bed_off(void) { beds_off++; return 0; }
+static void cancel_calibration(const mqtt_client *mqtt) {
+    int pair[2]; assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, pair));
+    plates_calibrate_cancel_response(pair[0], mqtt); close(pair[0]); close(pair[1]);
+}
 static void bed(double now, double target) {
     telemetry.values[U_BT] = now; telemetry.values[U_BG] = target;
     telemetry.present |= (UINT32_C(1) << U_BT) | (UINT32_C(1) << U_BG);
@@ -699,7 +706,7 @@ static void test_calibration_job(void) {
     write_autosave(&at60, &b); memory_a = at60; memory_b = b;
     unlink(plates_path); new_process(); fresh(&mqtt);
     pthread_mutex_init(&console.lock, NULL);
-    plates_console = fake_console;
+    plates_console = fake_console; plates_bed_off = fake_bed_off;
     assert(call(SAVE, &mqtt, "A\nCarbon\n0.05\n60") == 201);
     char plate[17], first[17], body[128];
     snprintf(plate, sizeof(plate), "%s", plates.plates[0].id); snprintf(first, sizeof(first), "%s", plates.plates[0].measure);
@@ -756,13 +763,33 @@ static void test_calibration_job(void) {
     plates_calibration_tick(&mqtt, &console); assert(!plates_cal.stage && !strcmp(plates_cal.result, "done"));
     assert(plate_measure_count(plate) == 2);
 
-    /* Cancelled while soaking; a heater changed meanwhile or a failed homing end the job. */
+    /* Cancelled while soaking on an idle printer whose bed holds the job's target: the heater goes off. */
     assert(calibrate(&mqtt, "A\n80\n5") == 202); bed(80, 80);
     plates_calibration_tick(&mqtt, &console); plates_calibration_tick(&mqtt, &console);
     assert(plates_cal.stage == CAL_SOAKING);
-    int pair[2]; assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, pair));
-    plates_calibrate_cancel_response(pair[0]); close(pair[0]); close(pair[1]);
-    assert(!plates_cal.stage && !strcmp(plates_cal.result, "cancelled"));
+    beds_off = 0; cancel_calibration(&mqtt);
+    assert(!plates_cal.stage && !strcmp(plates_cal.result, "cancelled") && beds_off == 1);
+    /* A print started by another client, a stale status, another target or no bed telemetry: the
+     * job ends without touching the heater. */
+    for (int c = 0; c < 5; ++c) {
+        fresh(&mqtt); bed(80, 80);
+        assert(calibrate(&mqtt, "A\n80\n5") == 202);
+        plates_calibration_tick(&mqtt, &console); plates_calibration_tick(&mqtt, &console);
+        assert(plates_cal.stage == CAL_SOAKING);
+        if (c == 0) mqtt.machine_status = 2;           /* printing */
+        if (c == 1) mqtt.machine_status = 3;           /* busy with something else (e.g. paused/loading) */
+        if (c == 2) mqtt.last_message -= 20;           /* stale MQTT */
+        if (c == 3) bed(80, 60);                       /* a target the job did not set */
+        if (c == 4) telemetry.present &= ~(UINT32_C(1) << U_BG);
+        beds_off = 0; cancel_calibration(&mqtt);
+        assert(!plates_cal.stage && !strcmp(plates_cal.result, "cancelled") && beds_off == 0);
+    }
+    fresh(&mqtt);
+    /* A heating failure on an idle printer still switches off what the job heated. */
+    assert(calibrate(&mqtt, "A\n80\n5") == 202); bed(30, 80);
+    plates_calibration_tick(&mqtt, &console); assert(plates_cal.stage == CAL_HEATING);
+    beds_off = 0; plates_cal.since -= 31 * 60000; plates_calibration_tick(&mqtt, &console);
+    assert(!strcmp(plates_cal.result, "failed") && !strcmp(plates_cal.error, "heating") && beds_off == 1);
     assert(calibrate(&mqtt, "A\n80\n5") == 202); bed(80, 80);
     plates_calibration_tick(&mqtt, &console); plates_calibration_tick(&mqtt, &console); bed(80, 0);
     plates_calibration_tick(&mqtt, &console);
@@ -773,8 +800,8 @@ static void test_calibration_job(void) {
     plates_cal.soak_until = monotonic_ms() - 1;
     telemetry.present &= ~((UINT32_C(1) << U_BT) | (UINT32_C(1) << U_BG));
     plates_calibration_tick(&mqtt, &console); assert(plates_cal.stage == CAL_SOAKING);
-    plates_cal.held -= 61000; plates_calibration_tick(&mqtt, &console);
-    assert(!plates_cal.stage && !strcmp(plates_cal.result, "failed") && !strcmp(plates_cal.error, "telemetry"));
+    beds_off = 0; plates_cal.held -= 61000; plates_calibration_tick(&mqtt, &console);
+    assert(!plates_cal.stage && !strcmp(plates_cal.result, "failed") && !strcmp(plates_cal.error, "telemetry") && !beds_off);
     snprintf(mqtt.homed_axes, sizeof(mqtt.homed_axes), "%s", ""); console_ok = 0;
     assert(calibrate(&mqtt, "A\n80\n5") == 202); plates_calibration_tick(&mqtt, &console);
     assert(!strcmp(plates_cal.result, "failed") && !strcmp(plates_cal.error, "homing"));
@@ -782,7 +809,7 @@ static void test_calibration_job(void) {
 
     /* What a measurement records can be corrected, e.g. the nozzle of one made before nozzles were listed. */
     snprintf(body, sizeof(body), "%s\n70\n%s", first, nozzle);
-    int edit = socketpair(AF_UNIX, SOCK_STREAM, 0, pair); assert(!edit);
+    int pair[2]; assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, pair));
     plates_measure_edit_response(pair[0], body, strlen(body)); close(pair[0]);
     ssize_t got = recv(pair[1], response, sizeof(response) - 1, 0); response[got > 0 ? got : 0] = 0; close(pair[1]);
     assert(status_of(response) == 409 && strstr(response, "already has a measurement"));

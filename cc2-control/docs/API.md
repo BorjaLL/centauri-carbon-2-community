@@ -296,10 +296,12 @@ Endpoints (all changes are `POST` with a text body, one field per line, and need
   `soaking`, `probing`, `saving` or `off`, the soak seconds `remaining`, the bed temperature `bed`, and
   `result` `done`, `saved`, `failed` or `cancelled` with `error` `homing`, `heating`, `busy`, `telemetry`,
   `probing` or `saving`). At the end of the soak the probing starts only when MQTT has reported Idle within
-  15 s and fresh telemetry reads the bed at its target; otherwise it waits up to a minute and then stops,
-  switching the bed heater off only when the printer is known to be idle. `/api/plates/calibrate/cancel`
-  stops it and switches the bed heater off until the probing starts. Print starts and plate changes are
-  refused while it runs; a print started meanwhile, or a changed bed target, ends it.
+  15 s and fresh telemetry reads the bed at its target; otherwise it waits up to a minute and then stops.
+  `/api/plates/calibrate/cancel` stops it until the probing starts. A run that is cancelled or fails switches
+  the bed heater off only while fresh MQTT reports Idle and fresh telemetry shows the target the run set;
+  otherwise, such as for a print another client started meanwhile, it leaves the heater as it is. Print
+  starts and plate changes are refused while it runs; a print started meanwhile, or a changed bed target,
+  ends it.
 - `/api/plates/mount` (id, optionally a measurement id) mounts a plate whose measurement is already in its
   slot and applies its Z offset with `SET_GCODE_OFFSET Z=` (no movement). Any other answers 409 with
   `"reboot_required": true`; adding a line `REBOOT` writes the slot (the previous file becomes `autosave_backup.cfg`, a copy

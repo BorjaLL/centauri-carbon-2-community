@@ -1767,9 +1767,23 @@ static int plates_cal_command(console_state *console, int stage, const char *com
     return 0;
 }
 
-/* The bed heater is switched off when the job ends early while the printer is idle. */
-static void plates_cal_end(const char *result, const char *error, const char *detail, int bed_off) {
-    if (bed_off) (void)send_local_gcode_script("M140 S0");
+/* Tests count the heater switch-offs instead. */
+static int plates_send_bed_off(void) { return send_local_gcode_script("M140 S0"); }
+static int (*plates_bed_off)(void) = plates_send_bed_off;
+
+/* The bed heater is the job's to switch off only while fresh MQTT reports Idle and fresh
+ * telemetry shows the target the job set. A print started meanwhile by another client, a
+ * target changed elsewhere or a printer that cannot be seen keeps its heater as it is. */
+static int plates_cal_owns_bed(const mqtt_client *mqtt) {
+    time_t now = time(NULL); double target;
+    return mqtt->connected && mqtt->registered && mqtt->have_machine_status && mqtt->machine_status == 1 &&
+           mqtt->last_message > 0 && now >= mqtt->last_message && now - mqtt->last_message <= 15 &&
+           uds_value(&telemetry, U_BG, &target) && fabs(target - plates_cal.temp) <= 0.5;
+}
+
+/* With `bed_off`, a job that ends early switches the bed heater off when it still owns it. */
+static void plates_cal_end(const mqtt_client *mqtt, const char *result, const char *error, const char *detail, int bed_off) {
+    if (bed_off && plates_cal_owns_bed(mqtt)) (void)plates_bed_off();
     if (plates_cal.stage) fprintf(stderr, "Bed mesh calibration at %d C: %s %s %s\n", plates_cal.temp, result, error, detail);
     plates_cal.stage = CAL_IDLE; plates_cal.result = result; plates_cal.error = error;
     snprintf(plates_cal.detail, sizeof(plates_cal.detail), "%s", detail);
@@ -1831,11 +1845,11 @@ static void plates_calibrate_response(int fd, const mqtt_client *mqtt, console_s
 }
 
 /* Until the probing starts. */
-static void plates_calibrate_cancel_response(int fd) {
+static void plates_calibrate_cancel_response(int fd, const mqtt_client *mqtt) {
     if (plates_cal.stage == CAL_PROBING || plates_cal.stage == CAL_SAVING) {
         plates_fail(fd, 409, "The probing has started; use the emergency stop to interrupt it"); return;
     }
-    if (plates_cal.stage) plates_cal_end("cancelled", "", "", 1);
+    if (plates_cal.stage) plates_cal_end(mqtt, "cancelled", "", "", 1);
     plates_reply(fd, 200, "{\"cancelled\":true}\n");
 }
 
@@ -1852,34 +1866,34 @@ static void plates_calibration_tick(const mqtt_client *mqtt, console_state *cons
     int have_bed = uds_value(&telemetry, U_BT, &bed) && uds_value(&telemetry, U_BG, &target);
     switch (plates_cal.stage) {
     case CAL_HOMING:
-        if (finished && !success) { plates_cal_end("failed", "homing", "", 0); return; }
+        if (finished && !success) { plates_cal_end(mqtt, "failed", "homing", "", 0); return; }
         if (finished && plates_homed(mqtt) && !busy) {
             char command[32]; snprintf(command, sizeof(command), "M140 S%d", plates_cal.temp);
             if (plates_cal_command(console, CAL_HEATING, command) != 0 && now - plates_cal.done_at > 30000)
-                plates_cal_end("failed", "busy", "", 0);
+                plates_cal_end(mqtt, "failed", "busy", "", 0);
             return;
         }
         if ((finished && now - plates_cal.done_at > 30000) || now - plates_cal.since > 5 * 60000)
-            plates_cal_end("failed", "homing", "", 0);
+            plates_cal_end(mqtt, "failed", "homing", "", 0);
         return;
     case CAL_HEATING:
-        if (finished && !success) { plates_cal_end("failed", "heating", "", 1); return; }
-        if (!finished) { if (now - plates_cal.since > 60000) plates_cal_end("failed", "heating", "", 1); return; }
-        if (!idle && mqtt->have_machine_status) { plates_cal_end("failed", "busy", "", 0); return; }
+        if (finished && !success) { plates_cal_end(mqtt, "failed", "heating", "", 1); return; }
+        if (!finished) { if (now - plates_cal.since > 60000) plates_cal_end(mqtt, "failed", "heating", "", 1); return; }
+        if (!idle && mqtt->have_machine_status) { plates_cal_end(mqtt, "failed", "busy", "", 0); return; }
         if (have_bed && fabs(target - plates_cal.temp) > 0.5 && now - plates_cal.done_at > 10000) {
-            plates_cal_end("failed", "heating", "The bed heater was changed", 0); return;
+            plates_cal_end(mqtt, "failed", "heating", "The bed heater was changed", 0); return;
         }
         if (have_bed && fabs(target - plates_cal.temp) <= 0.5 && bed >= plates_cal.temp - 1.0) {
             plates_cal.stage = CAL_SOAKING; plates_cal.since = now;
             plates_cal.soak_until = now + (long long)plates_cal.soak * 1000;
             return;
         }
-        if (now - plates_cal.since > 30 * 60000) plates_cal_end("failed", "heating", "The bed did not reach the temperature", 1);
+        if (now - plates_cal.since > 30 * 60000) plates_cal_end(mqtt, "failed", "heating", "The bed did not reach the temperature", 1);
         return;
     case CAL_SOAKING:
-        if (!idle && mqtt->have_machine_status) { plates_cal_end("failed", "busy", "", 0); return; }
+        if (!idle && mqtt->have_machine_status) { plates_cal_end(mqtt, "failed", "busy", "", 0); return; }
         if (have_bed && fabs(target - plates_cal.temp) > 0.5) {
-            plates_cal_end("failed", "heating", "The bed heater was changed", 0); return;
+            plates_cal_end(mqtt, "failed", "heating", "The bed heater was changed", 0); return;
         }
         if (now < plates_cal.soak_until || busy) return; /* a command typed meanwhile finishes first */
         {
@@ -1890,8 +1904,8 @@ static void plates_calibration_tick(const mqtt_client *mqtt, console_state *cons
                 if (!plates_cal.held) plates_cal.held = now;
                 if (now - plates_cal.held > 60000) {
                     int stale = !strcmp(hold, "Printer status is stale") || !strcmp(hold, "Bed telemetry is unavailable");
-                    plates_cal_end("failed", stale ? "telemetry" : !strcmp(hold, "The printer is not idle") ? "busy" : "heating",
-                                   hold, !stale && idle);
+                    plates_cal_end(mqtt, "failed", stale ? "telemetry" : !strcmp(hold, "The printer is not idle") ? "busy" : "heating",
+                                   hold, 1);
                 }
                 return;
             }
@@ -1900,13 +1914,13 @@ static void plates_calibration_tick(const mqtt_client *mqtt, console_state *cons
             snprintf(command, sizeof(command), "BED_MESH_CALIBRATE PROFILE=%s BED_TEMP=%d", plate_slot(plates_cal.side),
                      plates_cal.temp);
             if (plates_cal_command(console, CAL_PROBING, command) != 0 && now - plates_cal.soak_until > 60000)
-                plates_cal_end("failed", "busy", "", 1);
+                plates_cal_end(mqtt, "failed", "busy", "", 1);
         }
         return;
     case CAL_PROBING:
         if (!finished) return; /* the console gives up on a command after 15 minutes */
-        if (!success) { plates_cal_end("failed", "probing", "", 0); return; }
-        if (!plates_cal.plate[0]) { plates_cal_end("done", "", "", 0); return; }
+        if (!success) { plates_cal_end(mqtt, "failed", "probing", "", 0); return; }
+        if (!plates_cal.plate[0]) { plates_cal_end(mqtt, "done", "", "", 0); return; }
         plates_cal.stage = CAL_SAVING; plates_cal.since = now;
         return;
     case CAL_SAVING: {
@@ -1915,8 +1929,8 @@ static void plates_calibration_tick(const mqtt_client *mqtt, console_state *cons
                                                 &status, &m, &profile, &applied);
         if (!error) {
             memcpy(plates_cal.measure, m->id, sizeof(plates_cal.measure));
-            plates_cal_end("saved", "", profile ? "" : "The printer did not store the measurement profile", 0);
-        } else if (status != 409 || now - plates_cal.since > 60000) plates_cal_end("failed", "saving", error, 0);
+            plates_cal_end(mqtt, "saved", "", profile ? "" : "The printer did not store the measurement profile", 0);
+        } else if (status != 409 || now - plates_cal.since > 60000) plates_cal_end(mqtt, "failed", "saving", error, 0);
         return;
     }
     }
