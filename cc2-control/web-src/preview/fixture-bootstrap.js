@@ -53,6 +53,11 @@
       const action = String(options.body)
       state.commands.push(action)
       if (state.reject || !state.connected) return reply({ error: 'Comando rifiutato nella simulazione' }, 409)
+      if (action === 'canvas:reset-all') {
+        if (state.status !== 1) return reply({error:'Stampante occupata'},409)
+        state.trays.forEach(t=>Object.assign(t,{filament_color:'',filament_name:'',filament_type:'',min_nozzle_temp:0,max_nozzle_temp:0}))
+        return reply({accepted:true,simulated:true})
+      }
       const fan = action.match(/^fan:(part|aux|box):(\d+)$/)
       if (fan && Number(fan[2]) <= 100) {
         state.fans[fan[1]] = Number(fan[2])
