@@ -52,6 +52,24 @@ const labels = {
     'preview.reset': 'Сброс',
     'preview.state': 'Состояние',
   },
+  pl: {
+    'preview.simulation': 'SYMULACJA — bez drukarki',
+    'preview.idle': 'Bezczynna',
+    'preview.printing': 'Drukowanie',
+    'preview.paused': 'Wstrzymano',
+    'preview.disconnected': 'Rozłączona',
+    'preview.reset': 'Resetuj',
+    'preview.state': 'Stan',
+  },
+  cs: {
+    'preview.simulation': 'SIMULACE — bez tiskárny',
+    'preview.idle': 'Nečinná',
+    'preview.printing': 'Tisk',
+    'preview.paused': 'Pozastaveno',
+    'preview.disconnected': 'Odpojeno',
+    'preview.reset': 'Obnovit',
+    'preview.state': 'Stav',
+  },
 }
 const scenarios = ['idle', 'printing', 'paused', 'disconnected'] as const
 type Scenario = (typeof scenarios)[number]
