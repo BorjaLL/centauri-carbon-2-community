@@ -24,7 +24,8 @@
     "test:print-temperatures": "node preview/test-print-temperatures.mjs",
     "test:printer-reports": "node preview/test-printer-reports.mjs",
     "test:control-calibrations": "node preview/test-control-calibrations.mjs",
-    "test:fans": "node preview/test-fan-inputs.mjs"
+    "test:fans": "node preview/test-fan-inputs.mjs",
+    "test:canvas-reset": "node preview/test-canvas-reset.mjs && node preview/test-canvas-presence.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

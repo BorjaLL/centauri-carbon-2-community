@@ -13,8 +13,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 COMPONENT = ROOT / 'components/cc2-control'
 SOURCE = COMPONENT / 'source/source.zip'
-SOURCE_COMMIT='5740954d767f831f8e9c26bad8cf827b047ee45e+local-control-panel-camera-scroll'
-SOURCE_SHA256='993ef00f7cac9b772a65f49bc1c59befd5f10b49b03e98e87802cf6a6047df74'
+SOURCE_COMMIT='f8829345ef8e8077bad9a6ae62180bfec06904b8+local-canvas-reset-scan-synchronization'
+SOURCE_SHA256='fe2393ec3238deb1aafac364d071668d8f3a4c6a427f005cabf18d1c629fbc67'
 RUNTIME = COMPONENT / 'runtime'
 OUTPUT = COMPONENT / 'prepared'
 MANIFEST = COMPONENT / 'prepared-manifest.json'
