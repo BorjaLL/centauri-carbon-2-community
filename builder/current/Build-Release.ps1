@@ -4,8 +4,10 @@ param([string]$ExistingBuilder,[string]$Distro='Ubuntu',
 $ErrorActionPreference='Stop'
 if (-not $ExistingBuilder) {
     $desktop=[Environment]::GetFolderPath('Desktop')
-    foreach ($relative in @('CC2-Builder-V4.4-Control-Panel-Canvas-Reset-Test-R2\builder\current',
-                            'CC2-Builder-V4.4-Control-Panel-Canvas-Reset-Test-R2\CC2-Builder-V4.4-Control-Panel-Canvas-Reset-Test-R2\builder\current',
+    $firmwareVersion=(Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\..\cc2-control\FIRMWARE_VERSION') -Raw).Trim()
+    $previousPackage='CC2-Builder-V'+$firmwareVersion+'-Control-Panel-Canvas-Reset-Test-R2'
+    foreach ($relative in @("$previousPackage\builder\current",
+                            "$previousPackage\$previousPackage\builder\current",
                             'CC2-Builder-V4.3-Candidate\builder\current')) {
         $candidate=Join-Path $desktop $relative
         if (Test-Path -LiteralPath $candidate) {$ExistingBuilder=$candidate;break}

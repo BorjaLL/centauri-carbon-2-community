@@ -28,4 +28,5 @@ entry = (BASE / 'Build-Release.ps1').read_text(encoding='utf-8')
 assert 'UpdaterOnly' not in entry and 'PrinterIp' not in entry
 assert 'combined-test' not in entry
 assert "'/mnt/'" in entry and 'build_release.py' in entry
+assert 'cc2-control\\FIRMWARE_VERSION' in entry and "'CC2-Builder-V'+$firmwareVersion" in entry
 print('PASS: 4.4 OTA source pins, reproducible payload step and mandatory build tests')
