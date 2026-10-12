@@ -273,7 +273,7 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
     if(strcmp(action,"system:emergency_stop")==0){snprintf(script,cap,"M112");return 1;}
     if(sscanf(action,"light:%31s",a)==1){
         if(strcmp(a,"on")&&strcmp(a,"off"))return reject(reason,reason_cap,"Unknown light state");
-        snprintf(script,cap,"SET_PIN PIN=led_pin VALUE=%d",strcmp(a,"on")==0);return 1;
+        return reject(reason,reason_cap,"Light control requires the native printer API");
     }
     if(strncmp(action,"tune:",5)==0){
         const char *number=NULL;int is_speed=0;
