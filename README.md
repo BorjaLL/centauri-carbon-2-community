@@ -165,47 +165,35 @@ Historical versions are preserved through Git tags, GitHub Releases and Git hist
 
 ## Interface preview
 
+Real-printer screenshots of **CC2 Control 1.2.3**, supplied on 13 October 2026 for the V4.4 release candidate. [Open the complete screenshot gallery](docs/SCREENSHOTS.md) to see all eleven views at full size.
+
 ### Dashboard
 
-Live telemetry, on-demand camera viewing and configurable Quick Actions.
+Live camera, Quick Actions, print status and temperature history in the Light theme.
 
 <p align="center">
-  <img src="docs/images/dashboard.jpg" alt="CC2 Control dashboard with live camera controls, Quick Actions and thermal telemetry" width="1000">
+  <img src="docs/images/cc2-control/dashboard-light.png" alt="CC2 Control 1.2.3 dashboard with live camera, Quick Actions and temperature history" width="1200">
 </p>
 
-### Printer control and files
+### Control panel and Canvas
+
+The Control panel includes numeric fan fields applied with Enter and a preheat dropdown supporting names such as PLA MATTE. Canvas displays empty slots without a filament colour and provides Reset all filaments.
 
 <table>
-  <tr>
-    <td align="center"><strong>Printer control</strong></td>
-    <td align="center"><strong>G-code files</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/control.jpg" alt="Movement, temperatures, fans, lights and live Z-offset controls"></td>
-    <td><img src="docs/images/files.jpg" alt="G-code file browser with model preview and protected print actions"></td>
-  </tr>
+  <tr><td align="center"><strong>Control and preheat presets</strong></td><td align="center"><strong>Canvas and filament reset</strong></td></tr>
+  <tr><td><a href="docs/images/cc2-control/control-presets.png"><img src="docs/images/cc2-control/control-presets.png" alt="Control panel with PLA MATTE preset, fan inputs and live Z offset"></a></td><td><a href="docs/images/cc2-control/canvas.png"><img src="docs/images/cc2-control/canvas.png" alt="Four Canvas slots, dimmed empty slots and Reset all filaments"></a></td></tr>
 </table>
 
-### Canvas
+### Bed mesh and spool inventory
 
-Material slots, spool selection and automatic refill controls.
-
-<p align="center">
-  <img src="docs/images/canvas.jpg" alt="Canvas material slots and auto-refill controls" width="1000">
-</p>
-
-### Bed levelling
+Interactive mesh inspection and optional tracking of the filament inventory.
 
 <table>
-  <tr>
-    <td align="center"><strong>3D bed mesh</strong></td>
-    <td align="center"><strong>Four-screw levelling</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/bed-mesh.jpg" alt="Interactive 3D bed mesh with probe points and height range"></td>
-    <td><img src="docs/images/screw-levelling.jpg" alt="Four-screw levelling with measurement positions and adjustment results"></td>
-  </tr>
+  <tr><td align="center"><strong>3D bed mesh</strong></td><td align="center"><strong>Spool inventory</strong></td></tr>
+  <tr><td><a href="docs/images/cc2-control/bed-mesh.png"><img src="docs/images/cc2-control/bed-mesh.png" alt="Interactive 3D bed mesh, saved profiles and height statistics"></a></td><td><a href="docs/images/cc2-control/spools.png"><img src="docs/images/cc2-control/spools.png" alt="Spool inventory and optional tracking controls"></a></td></tr>
 </table>
+
+The [complete gallery](docs/SCREENSHOTS.md) also shows PID/Input Shaper and material profiles, the Job page, G-code files and model previews, the protected console, integration checks and the six themes.
 
 ## AI-assisted development
 
