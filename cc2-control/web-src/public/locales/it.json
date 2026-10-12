@@ -182,7 +182,6 @@
   "common.camera_stop": "Pausa",
   "common.camera_off": "Diretta sospesa; il servizio camera della stampante resta attivo",
   "common.camera_paused_hidden": "Diretta sospesa mentre questa scheda del browser era nascosta",
-  "common.camera_paused_out_of_view": "Diretta sospesa perché il riquadro camera non è visibile",
   "common.camera_gave_up": "Flusso della telecamera non disponibile. Premi Riprova per ritentare.",
   "common.camera_taken_over": "La diretta è aperta in un’altra finestra o su un altro dispositivo",
   "common.camera_watch_here": "Guarda qui",
@@ -809,5 +808,8 @@
   "control.shaper_completed": "Comando completato. Verifica i risultati della stampante: non sono stati salvati automaticamente.",
   "control.shaper_check_output": "Verifica i messaggi della stampante nella console.",
   "control.quick_pid_hotend": "PID hotend",
-  "control.quick_pid_bed": "PID piatto"
+  "control.quick_pid_bed": "PID piatto",
+  "control.fan_percent": "Imposta {name} (%)",
+  "control.invalid_fan_percent": "Inserisci un numero intero da 0 a 100.",
+  "control.fan_enter_hint": "Scrivi un valore da 0 a 100 e premi Invio."
 }

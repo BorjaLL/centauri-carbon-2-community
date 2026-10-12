@@ -702,16 +702,20 @@ export const Control = () => {
         </div>
         <div class="grid content-start gap-3.5 cc2-xl:contents">
           <Temperatures d={d} v={v} />
-          <Card class="cc2-fans cc2-xl:col-start-2 cc2-xl:row-start-2">
+          <Card class="cc2-fans flex flex-col cc2-xl:col-start-2 cc2-xl:row-start-2">
             <CardHead icon="fan" title="common.fans" />
-            {(['part', 'aux', 'box'] as const).map(k => (
-              <FanSlider
-                key={k}
-                label={k === 'part' ? 'common.part_fan' : k === 'aux' ? 'common.aux_fan' : 'control.chamber_fan'}
-                pct={v.fan(k)}
-                onCommit={n => control(`fan:${k}:${n}`)}
-              />
-            ))}
+            <div class="cc2-fan-controls flex flex-1 flex-col justify-center gap-5">
+              {(['part', 'aux', 'box'] as const).map(k => (
+                <FanSlider
+                  key={k}
+                  label={k === 'part' ? 'common.part_fan' : k === 'aux' ? 'common.aux_fan' : 'control.chamber_fan'}
+                  pct={v.fan(k)}
+                  disabled={!d?.connected}
+                  onCommit={n => control(`fan:${k}:${n}`)}
+                />
+              ))}
+            </div>
+            <p class="mt-4 border-t border-edge pt-3 text-xs text-muted">{t('control.fan_enter_hint')}</p>
           </Card>
         </div>
         <div class="grid content-start gap-3.5 cc2-lg:col-span-2 cc2-lg:grid-cols-2 cc2-xl:col-span-1 cc2-xl:grid-cols-1 cc2-xl:contents">

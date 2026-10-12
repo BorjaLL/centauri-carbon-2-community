@@ -182,7 +182,6 @@
   "common.camera_stop": "Pause",
   "common.camera_off": "Live view paused; the printer camera service stays active",
   "common.camera_paused_hidden": "Live view paused while this browser tab was hidden",
-  "common.camera_paused_out_of_view": "Live view paused because the camera panel is out of view",
   "common.camera_gave_up": "Camera stream unavailable. Press Retry to try again.",
   "common.camera_taken_over": "Live view is open in another window or on another device",
   "common.camera_watch_here": "Watch here",
@@ -809,5 +808,8 @@
   "control.shaper_completed": "Command completed. Review the printer output; results have not been saved automatically.",
   "control.shaper_check_output": "Review the printer output in the console.",
   "control.quick_pid_hotend": "Hotend PID",
-  "control.quick_pid_bed": "Bed PID"
+  "control.quick_pid_bed": "Bed PID",
+  "control.fan_percent": "Set {name} (%)",
+  "control.invalid_fan_percent": "Enter a whole number from 0 to 100.",
+  "control.fan_enter_hint": "Enter a value from 0 to 100 and press Enter."
 }
