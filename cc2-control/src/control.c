@@ -9,8 +9,8 @@
 
 static int reject(char *reason,size_t cap,const char *message){snprintf(reason,cap,"%s",message);return 0;}
 static int valid_material_name(const char *name){
-    size_t n=strlen(name);if(n<1||n>16)return 0;
-    for(size_t i=0;i<n;i++)if(!isalnum((unsigned char)name[i])&&name[i]!='-'&&name[i]!='+'&&name[i]!='_')return 0;
+    size_t n=strlen(name);if(n<1||n>16||name[0]==' '||name[n-1]==' ')return 0;
+    for(size_t i=0;i<n;i++)if(!isalnum((unsigned char)name[i])&&name[i]!=' '&&name[i]!='-'&&name[i]!='+'&&name[i]!='_')return 0;
     return 1;
 }
 /* A product line or maker for a Canvas tray: ASCII words, quoted in the script, so no quotes or colons. */
@@ -224,7 +224,7 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
         if(printing(m))return reject(reason,reason_cap,"Canvas material editing is blocked while printing");
         if(!m->have_machine_status||m->machine_status!=1)return reject(reason,reason_cap,"Canvas material editing requires the printer to be idle");
         if(slot<0||slot>3)return reject(reason,reason_cap,"Canvas slot must be 1..4");
-        if(!valid_material_name(a))return reject(reason,reason_cap,"Material name may contain only letters, numbers, +, - and _");
+        if(!valid_material_name(a))return reject(reason,reason_cap,"Material name may contain only letters, numbers, internal spaces, +, - and _");
         if(strlen(colour)!=6||strspn(colour,"0123456789abcdefABCDEF")!=6)return reject(reason,reason_cap,"Canvas colour must be six hexadecimal digits");
         if(min_temp<120||max_temp>320||min_temp>=max_temp)return reject(reason,reason_cap,"Invalid Canvas nozzle temperature range");
         if(fields==7&&(!valid_filament_label(line)||!valid_filament_label(maker)))
@@ -273,7 +273,7 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
     if(strcmp(action,"system:emergency_stop")==0){snprintf(script,cap,"M112");return 1;}
     if(sscanf(action,"light:%31s",a)==1){
         if(strcmp(a,"on")&&strcmp(a,"off"))return reject(reason,reason_cap,"Unknown light state");
-        snprintf(script,cap,"SET_PIN PIN=led_pin VALUE=%d",strcmp(a,"on")==0);return 1;
+        return reject(reason,reason_cap,"Light control requires the native printer API");
     }
     if(strncmp(action,"tune:",5)==0){
         const char *number=NULL;int is_speed=0;

@@ -11,7 +11,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-static const char subscription[] = "{\"id\":11,\"method\":\"objects/subscribe\",\"params\":{\"objects\":{\"extruder\":[\"temperature\",\"target\"],\"heater_bed\":[\"temperature\",\"target\"],\"gcode_move\":[\"speed_factor\",\"extrude_factor\",\"homing_origin\"],\"motion_report\":[\"live_velocity\"],\"print_stats\":[\"filename\",\"state\",\"info\",\"print_duration\",\"total_duration\",\"filament_used\"],\"canvas_dev\":[\"active_cid\"],\"virtual_sdcard\":[\"progress\"],\"exclude_object\":[\"excluded_objects\",\"current_object\"],\"fan\":[\"speed\",\"rpm\"],\"fan_generic fan1\":[\"speed\",\"rpm\"],\"controller_fan board_cooling_fan\":[\"speed\",\"rpm\"],\"heater_fan heatbreak_cooling_fan\":[\"speed\",\"rpm\"]},\"response_template\":{\"method\":\"cc2_status\"}}}\003"
+static const char subscription[] = "{\"id\":11,\"method\":\"objects/subscribe\",\"params\":{\"objects\":{\"extruder\":[\"temperature\",\"target\"],\"heater_bed\":[\"temperature\",\"target\"],\"gcode_move\":[\"speed_factor\",\"extrude_factor\",\"homing_origin\"],\"motion_report\":[\"live_velocity\"],\"toolhead\":[\"homed_axes\"],\"output_pin led_pin\":[\"value\"],\"print_stats\":[\"filename\",\"state\",\"info\",\"print_duration\",\"total_duration\",\"filament_used\"],\"canvas_dev\":[\"active_cid\"],\"virtual_sdcard\":[\"progress\"],\"exclude_object\":[\"excluded_objects\",\"current_object\"],\"fan\":[\"speed\",\"rpm\"],\"fan_generic fan1\":[\"speed\",\"rpm\"],\"controller_fan board_cooling_fan\":[\"speed\",\"rpm\"],\"heater_fan heatbreak_cooling_fan\":[\"speed\",\"rpm\"]},\"response_template\":{\"method\":\"cc2_status\"}}}\003"
  "{\"id\":13,\"method\":\"gcode/subscribe_report\",\"params\":{\"response_template\":{\"method\":\"cc2_report\"}}}\003";
 static const char heartbeat[]="{\"id\":12,\"method\":\"info\",\"params\":{}}\003";
 static double elapsed(struct timespec a,struct timespec b){return (double)(a.tv_sec-b.tv_sec)+(a.tv_nsec-b.tv_nsec)/1e9;}
@@ -197,7 +197,7 @@ int uds_message(uds_client *c,const char *json,size_t length){
  int older=c->messages&&event<c->eventtime;
  if(older&&!initial){c->parse_error="out_of_order_event";return 0;}
  /* Initial snapshots can follow an earlier notification with the same time. */
- const char *pe;const char *ps=json_member_object(status,se,"print_stats",'{',&pe);
+ const char *pe=NULL;const char *ps=json_member_object(status,se,"print_stats",'{',&pe);
  if(ps&&(!older||!c->have_filename)&&json_member(ps,pe,"filename")){
   char filename[sizeof(c->filename)];
   int valid=filename_read(ps,pe,filename,sizeof(filename));
@@ -208,6 +208,24 @@ int uds_message(uds_client *c,const char *json,size_t length){
   c->have_filename=valid;
   if(valid)strcpy(c->filename,filename);
  }
+ /* Read actual MCU-facing state; never infer homing from a successful G28. */
+ const char *he;const char *head=json_member_object(status,se,"toolhead",'{',&he);
+ if(head&&(!older||!c->have_homed_axes)){
+  const char *axes=json_member(head,he,"homed_axes");
+  const char *ae=axes&&*axes=='"'?json_string_end(axes,he):NULL;
+  size_t count=ae?(size_t)(ae-axes-2):4;
+  int valid=count<=3;
+  for(size_t i=0;valid&&i<count;i++){
+   char axis=axes[i+1];
+   if(!strchr("xyz",axis)||memchr(axes+1,axis,i))valid=0;
+  }
+  c->have_homed_axes=valid;
+  if(valid){memcpy(c->homed_axes,axes+1,count);c->homed_axes[count]=0;}
+ }
+ const char *le;const char *lamp=json_member_object(status,se,"output_pin led_pin",'{',&le);
+ double lamp_value;
+ if(lamp&&(!older||!c->have_light)&&numeric(lamp,le,"value",&lamp_value)&&
+    lamp_value>=0&&lamp_value<=1){c->light=lamp_value>0;c->have_light=1;}
  char state[sizeof(c->print_state)];
  if(ps&&(!older||!c->have_print_state)&&word_read(ps,pe,"state",state,sizeof(state))){
   strcpy(c->print_state,state);c->have_print_state=1;
@@ -261,6 +279,7 @@ void uds_close(uds_client *c){
  if(c->fd>=0)close(c->fd);
  c->fd=-1;c->ready=0;c->present=0;c->used=c->sent=0;c->have_filename=c->have_print_state=0;
  c->have_excluded_objects=c->have_current_object=0;
+ c->have_homed_axes=c->have_light=0;
 }
 static void uds_disconnect(uds_client *c,const char *reason,int error){
  c->disconnects++;c->last_disconnect=reason;c->last_errno=error;uds_close(c);
@@ -325,6 +344,12 @@ int uds_job_matches(const uds_client *c,const char *filename){
  const char *file=c->filename;
  if(!strncmp(file,"local/",6))file+=6;
  return c->have_filename&&*file&&filename&&!strcmp(file,filename);
+}
+void uds_motion_light(const uds_client *c,mqtt_client *v){
+ /* Stale or absent direct homing state must never authorize motion. */
+ v->homed_axes[0]=0;
+ if(uds_fresh(c)&&c->have_homed_axes)strcpy(v->homed_axes,c->homed_axes);
+ if(uds_fresh(c)&&c->have_light)v->led_status=c->light;
 }
 void uds_overlay(const uds_client *c,mqtt_client *v){
  double n;
