@@ -14,6 +14,7 @@ try {
   page.on('pageerror', e => errors.push(e.message))
   await page.goto(demo.url + '#control')
   await page.locator('.cc2-fans input').first().waitFor()
+  await page.evaluate(() => document.fonts.ready)
   const geometry = () => page.locator('.cc2-control-columns > div > section').evaluateAll(cards =>
     cards.map(card => { const { x, y, width, height } = card.getBoundingClientRect(); return { x, y, width, height } }))
   if (process.argv.includes('--baseline')) {
@@ -64,6 +65,8 @@ try {
       assert.equal(await select.evaluate(el => getComputedStyle(el).backgroundColor), await fields.nth(0).evaluate(el => getComputedStyle(el).backgroundColor), 'select follows field theme')
       for (const width of [1920, 1440, 768, 390]) {
         await page.setViewportSize({ width, height: 1200 })
+        // Responsive sidebar widths transition after a resize; measure the settled layout.
+        await page.waitForTimeout(350)
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `no overflow ${theme}/${width}`)
       }
     }
