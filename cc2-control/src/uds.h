@@ -14,6 +14,9 @@ typedef struct {
  char input[16384];
  double values[U_FIELDS], eventtime;
  uint32_t present;
+ char homed_axes[4];
+ int have_homed_axes;
+ int have_light, light;
  char filename[512];
  int have_filename;
  /* print_stats.state: printing, paused, complete, cancelled, error or standby. */
@@ -45,6 +48,7 @@ const char *uds_print_state(const uds_client *c);
 const char *uds_mesh_profile(const uds_client *c);
 int uds_message(uds_client *c,const char *json,size_t length);
 int uds_job_matches(const uds_client *c,const char *filename);
+void uds_motion_light(const uds_client *c,mqtt_client *view);
 void uds_overlay(const uds_client *c,mqtt_client *view);
 int uds_exclude_status(const uds_client *c,char *out,size_t cap);
 #endif

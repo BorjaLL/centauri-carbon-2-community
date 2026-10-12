@@ -1,3 +1,15 @@
+# Builder 4.4 — official OTA 02.01.01.07 required
+
+This builder works **only with the new official CC2 firmware base `02.01.01.07`**, identified by the exact input SHA-256 pins. Provide `cc2_eeb001_02.01.01.07_20260922210235.zip.sig` in `original_firmware/`; do not substitute the firmware input from older builders. The 4.4 patch addresses and ELF layouts are specific to this base. The checks refuse unknown inputs.
+
+CC2 Control 1.2.3 includes the aligned Control panel, Enter-to-apply fan percentages, confirmed four-slot Canvas material reset, persistent camera viewing while scrolling and seven UI languages (English, Italian, French, Chinese, Russian, Polish and Czech). Canvas retains the bounded MQTT path; the experimental full Canvas UDS cache is excluded.
+
+Existing validated callback O0, light/display acknowledgement, authenticated LAN/WAN fallback, application registration recovery, own-PONG freshness, UDS homing/light diagnostics, Z offset, PID/Input Shaper and Orca Canvas synchronization remain included. The source snapshot and launcher checksum are updated together.
+
+Run `Build-Release.cmd` or the qualified Linux build sequence. `build_release.py` runs builder/launcher tests, full CC2 host tests, ARM compilation and signing checks before `CANDIDATE BUILD PASS`. The generated Dual Trust ARM wrapper is reproduced from source and checked against the unchanged qualified payload hash; no generated vendor firmware, ARM runtime modules or private keys are included in Git.
+
+The combined R2 predecessor passed a signed WSL build and an initial clean-reset printer trial reported by the maintainer. New languages and source-only wrapper generation require this branch's CI/toolchain validation. Treat the output as a hardware-test candidate before publication.
+
 # Current firmware builder
 
 This directory contains the current firmware assembly logic and its host-side
@@ -10,7 +22,7 @@ The builder fails closed when an input is absent or does not match its pinned
 hash. Supply these locally before building:
 
 - a legally obtained Centauri Carbon 2 stock firmware package;
-- the pinned vendor printer reference binary;
+- the verified official OTA identified by the current baseline manifest;
 - the SSH executable required by the image;
 - SquashFS 4.6.1 tools built from the pinned upstream source;
 - the appropriate private signing key;
@@ -82,7 +94,16 @@ and coordinated live camera ownership. Hardware validation is pending before rel
 ## Release candidate pipeline
 
 See [candidate notes](../../docs/RELEASE_CANDIDATE.md).
-Build-Release.ps1 imports restricted inputs from the qualified previous builder,
-builds the O0 updater, prepares CC2 and matching reactor files, checks component
-equality and runs key check, preflight and firmware build. Use -UpdaterOnly to
-omit the signing/image stages. No private inputs are in the kit.
+Build-Release.ps1 imports keys, OpenSSH and SquashFS tools from the qualified
+previous builder, prepares CC2 Control and the new O0 reactor, then runs signing
+key check, preflight and firmware construction. The vendor executable is patched
+directly from the new official OTA; no old full-binary reference is installed.
+This candidate pipeline produces a firmware image only. A matching standalone
+updater is a separate deliverable.
+
+The community target is read from cc2-control/FIRMWARE_VERSION.
+The current base is official OTA 02.01.01.07 with develop commit 5740954.
+The callback remains experimental: the vendor retention defect remains in the
+examined new callback paths; host/ARM bridge tests do not establish a definitive
+fix for all OOM/803 failures. First-boot Canvas, LAN/WAN, webcam, upload, controls
+and long-print memory tests are required before release.

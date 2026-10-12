@@ -47,7 +47,12 @@ int main(void){
         !strcmp(script,"CANVAS_SET_FILAMENT_INFO CHANNEL=1 COLOR=0x2850DF detailed_type=\"PLA\" MANUFACTURER=\"Generic\" nozzle_max_temp=230 nozzle_min_temp=190 TYPE=\"PLA\" CODE=Generic"),"Canvas material without a maker is generic");
     expect(control_build_script("canvas:material:1:PLA:2850DF:190:230:PLA Matte:Elegoo",&mqtt,script,sizeof(script),reason,sizeof(reason))&&
         !strcmp(script,"CANVAS_SET_FILAMENT_INFO CHANNEL=1 COLOR=0x2850DF detailed_type=\"PLA Matte\" MANUFACTURER=\"Elegoo\" nozzle_max_temp=230 nozzle_min_temp=190 TYPE=\"PLA\" CODE=Generic"),"Canvas material names a spool's line and maker");
-    const char *bad_materials[]={"canvas:material:1:PLA:2850DF:190:230junk","canvas:material:1:PLA:2850DF:190:230:PLA Matte",
+    expect(control_build_script("canvas:material:1:PLA MATTE:2850DF:190:230",&mqtt,script,sizeof(script),reason,sizeof(reason))&&
+        strstr(script,"detailed_type=\"PLA MATTE\"")&&strstr(script,"TYPE=\"PLA MATTE\""),"Canvas profile accepts internal spaces and quotes the name");
+    const char *bad_materials[]={"canvas:material:1: PLA:2850DF:190:230","canvas:material:1:PLA :2850DF:190:230",
+        "canvas:material:1:PLA;M112:2850DF:190:230","canvas:material:1:PLA\nM112:2850DF:190:230",
+        "canvas:material:1:PLA\"MATTE:2850DF:190:230","canvas:material:1:12345678901234567:2850DF:190:230",
+        "canvas:material:1:PLA:2850DF:190:230junk","canvas:material:1:PLA:2850DF:190:230:PLA Matte",
         "canvas:material:1:PLA:2850DF:190:230:PLA \"x\":Elegoo","canvas:material:1:PLA:2850DF:190:230:PLA Matte:El;ego",
         "canvas:material:1:PLA:2850DF:190:230:PLA Matte:Elegoo:more","canvas:material:1:PLA:2850DF:190:230: PLA:Elegoo",
         "canvas:material:1:PLA:2850DF:190:230:PLA Matte:Elegoo\nM112"};

@@ -13,7 +13,7 @@
     extruder: { temperature: 27.4, target: 0 }, heater_bed: { temperature: 24.1, target: 0 },
     chamber: { temperature: 25 },
     fans: Object.fromEntries(Object.entries(state.fans).map(([key, value]) => [key, value * 2.55])),
-    machine: { status: state.status, status_name: 'Idle', sub_status: 0, reason: 0, progress: 0 },
+    machine: { status: state.status, status_name: state.status === 2 ? 'Printing' : 'Idle', sub_status: 0, reason: 0, progress: 0 },
     print: { enabled: false, filename: '', state: '', current_layer: 0, total_layers: 0, duration: 0, remaining: 0 },
     motion: { x: 52.5, y: 264, z: 4.97, speed: 1500, speed_mode: 1, homed_axes: '' },
     tuning: { speed_percent: 100, flow_percent: 100, live_velocity: 0 },
@@ -47,11 +47,18 @@
     if (path === '/api/setup') return reply({ required: false, configured: true, mqtt_connected: state.connected })
     if (path === '/api/console') return reply({ busy: false, command: '', output: '', completed: false, success: false })
     if (path === '/api/pid') return reply({ busy: false, ready: false, failed: false, heater: '', kp: null, ki: null, kd: null })
-    if (path === '/api/material-presets') return reply([
+    if (path === '/api/material-presets') {
+      if (options.method === 'PUT') {
+        state.presets = JSON.parse(options.body)
+        localStorage.setItem('cc2-fixture-presets', options.body)
+        return reply({saved:true})
+      }
+      return reply(state.presets || JSON.parse(localStorage.getItem('cc2-fixture-presets') || 'null') || [
       { name: 'PLA', nozzle: 200, bed: 60 }, { name: 'PETG', nozzle: 240, bed: 70 },
       { name: 'ABS', nozzle: 250, bed: 100 }, { name: 'ASA', nozzle: 255, bed: 100 },
       { name: 'TPU', nozzle: 220, bed: 50 }, { name: 'PA-CF', nozzle: 285, bed: 100 },
-    ])
+      ])
+    }
     if (path === '/api/control' && options.method === 'POST') {
       const action = String(options.body)
       state.commands.push(action)

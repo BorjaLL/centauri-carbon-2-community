@@ -26,7 +26,8 @@
     "test:control-calibrations": "node preview/test-control-calibrations.mjs",
     "test:fans": "node preview/test-fan-inputs.mjs",
     "test:canvas-reset": "node preview/test-canvas-reset.mjs && node preview/test-canvas-presence.mjs",
-    "test:languages": "node preview/test-polish-czech.mjs"
+    "test:languages": "node preview/test-polish-czech.mjs",
+    "test:materials": "node preview/test-material-presets.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

@@ -24,7 +24,18 @@ int main(void){
  message(&c,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":4,\"status\":{\"fan\":{\"speed\":9},\"virtual_sdcard\":{\"progress\":null}}}}");
  assert(uds_value(&c,U_PF,&v)&&v==0.6);assert(uds_value(&c,U_PROGRESS,&v)&&v==0.25);
  strcpy(view.filename,"different.gcode");view.current_layer=90;uds_overlay(&c,&view);assert(view.current_layer==90);
- c.last_rx.tv_sec-=10;assert(!uds_value(&c,U_ET,&v));view.extruder_temp=200;uds_overlay(&c,&view);assert(view.extruder_temp==200);
+ { uds_client h;uds_init(&h);h.fd=c.fd;h.ready=1;
+ /* Direct readback wins over a stale MQTT snapshot, including empty axes. */
+ message(&h,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":5,\"status\":{\"toolhead\":{\"homed_axes\":\"xyz\"},\"output_pin led_pin\":{\"value\":0}}}}");
+ strcpy(view.homed_axes,"x");view.led_status=1;uds_motion_light(&h,&view);
+ assert(!strcmp(view.homed_axes,"xyz")&&view.led_status==0);
+ message(&h,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":6,\"status\":{\"toolhead\":{\"homed_axes\":\"\"},\"output_pin led_pin\":{\"value\":1}}}}");
+ uds_motion_light(&h,&view);assert(!view.homed_axes[0]&&view.led_status==1);
+ message(&h,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":7,\"status\":{\"toolhead\":{\"homed_axes\":\"xx\"}}}}");
+ strcpy(view.homed_axes,"xyz");uds_motion_light(&h,&view);assert(!view.homed_axes[0]);
+ h.last_rx.tv_sec-=10;strcpy(view.homed_axes,"xyz");uds_motion_light(&h,&view);assert(!view.homed_axes[0]);
+ }
+ c.last_rx.tv_sec-=10;strcpy(view.homed_axes,"xyz");uds_motion_light(&c,&view);assert(!view.homed_axes[0]);assert(!uds_value(&c,U_ET,&v));view.extruder_temp=200;uds_overlay(&c,&view);assert(view.extruder_temp==200);
  message(&c,"{\"id\":12,\"result\":{\"state\":\"ready\"}}");assert(uds_fresh(&c));
  assert(!uds_message(&c,"{broken",7));
  struct timespec saved_rx=c.last_rx;unsigned long saved_messages=c.messages;

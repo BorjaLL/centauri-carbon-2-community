@@ -2461,6 +2461,12 @@ static void uds_response(int fd){
     const char *state=uds_print_state(&telemetry);
     json_builder_printf(&b,"},\"print_state\":");
     if(state)json_builder_printf(&b,"\"%s\"",state);else json_builder_printf(&b,"null");
+    json_builder_printf(&b,",\"homed_axes\":");
+    if(uds_fresh(&telemetry)&&telemetry.have_homed_axes)json_builder_printf(&b,"\"%s\"",telemetry.homed_axes);
+    else json_builder_printf(&b,"null");
+    json_builder_printf(&b,",\"light\":");
+    if(uds_fresh(&telemetry)&&telemetry.have_light)json_builder_printf(&b,"%s",telemetry.light?"true":"false");
+    else json_builder_printf(&b,"null");
     json_builder_printf(&b,"}\n");
     if(!b.failed)respond(fd,200,"OK","application/json",body,b.length);
 }
@@ -3423,7 +3429,7 @@ static void pid_status_response(int fd,console_state *console) {
     respond(fd,200,"OK","application/json",body,(size_t)n);
 }
 
-static void control_response(int fd,console_state *console,const mqtt_client *mqtt,const char *body,size_t body_len){
+static void control_response(int fd,console_state *console,mqtt_client *mqtt,const char *body,size_t body_len){
     char action[160],script[700],reason[256];
     while(body_len&&isspace((unsigned char)*body)){body++;body_len--;}
     while(body_len&&isspace((unsigned char)body[body_len-1]))body_len--;
@@ -3433,6 +3439,21 @@ static void control_response(int fd,console_state *console,const mqtt_client *mq
     }
     memcpy(action,body,body_len);action[body_len]='\0';
     if(plates_background_active() && strcmp(action,"system:emergency_stop")){plates_fail(fd,409,"Plate verification is still running");return;}
+    if(!strncmp(action,"light:",6)){
+        if(strcmp(action,"light:on")&&strcmp(action,"light:off")){
+            const char *error="{\"accepted\":false,\"error\":\"Unknown light state\"}\n";
+            respond(fd,400,"Bad Request","application/json",error,strlen(error));return;
+        }
+        pthread_mutex_lock(&console->lock);int busy=console->busy;pthread_mutex_unlock(&console->lock);
+        if(busy||mqtt_set_light(mqtt,!strcmp(action,"light:on"))!=0){
+            const char *error=busy?
+                "{\"accepted\":false,\"error\":\"Another command is running\"}\n":
+                "{\"accepted\":false,\"error\":\"Printer did not acknowledge the light command\"}\n";
+            respond(fd,409,"Conflict","application/json",error,strlen(error));return;
+        }
+        const char *ok="{\"accepted\":true}\n";
+        respond(fd,202,"Accepted","application/json",ok,strlen(ok));return;
+    }
     if(!strcmp(action,"pid:save")) {
         pthread_mutex_lock(&console->lock);int ready=pid_ready_locked(console);pthread_mutex_unlock(&console->lock);
         if(!ready){const char *error="{\"error\":\"Complete a PID calibration before saving\"}\n";respond(fd,409,"Conflict","application/json",error,strlen(error));return;}
@@ -3464,6 +3485,7 @@ static void control_response(int fd,console_state *console,const mqtt_client *mq
         int n=snprintf(response,sizeof(response),"{\"accepted\":false,\"error\":\"%s\"}\n",escaped);
         respond(fd,409,"Conflict","application/json; charset=utf-8",response,(size_t)n);return;
     }
+    if(!strncmp(action,"canvas:material:",16)||!strcmp(action,"canvas:reset-all")){mqtt->canvas_material_read_at=time(NULL)+1;mqtt->canvas_watch_until=time(NULL)+15;}
     if(z_action){z_offset_reference=z_reference;z_offset_session=1;z_offset_expected=z_next;z_offset_pending=1;z_offset_timed_out=0;clock_gettime(CLOCK_MONOTONIC,&z_offset_started);}
     const char *ok="{\"accepted\":true}\n";
     respond(fd,202,"Accepted","application/json; charset=utf-8",ok,strlen(ok));
@@ -3569,6 +3591,7 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
                query && strcmp(query,"namespace=lane_data")==0) {
         orca_lane_data_response(fd, mqtt);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/canvas")==0) {
+        mqtt->canvas_watch_until=time(NULL)+15;
         canvas_response(fd, mqtt);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/canvas/refresh")==0) {
         canvas_refresh_response(fd, mqtt);
@@ -3766,6 +3789,7 @@ int main(int argc, char **argv) {
         mqtt_tick(&mqtt);
         object_query_path = uds_path;
         uds_tick(&telemetry,uds_path);
+        uds_motion_light(&telemetry,&mqtt);
         plates_tick(&mqtt);
         plates_calibration_tick(&mqtt,&console);
         fd_set read_set;
@@ -3783,6 +3807,7 @@ int main(int argc, char **argv) {
         if(ready<0){if(errno==EINTR)continue;perror("select");break;}
         if(mqtt.fd>=0&&FD_ISSET(mqtt.fd,&read_set))(void)mqtt_process(&mqtt);
         if(telemetry.fd>=0&&FD_ISSET(telemetry.fd,&read_set))uds_process(&telemetry);
+        uds_motion_light(&telemetry,&mqtt);
         idle_motors_tick(&mqtt,&console);
         spools_tick(&mqtt);
         struct timespec now;clock_gettime(CLOCK_MONOTONIC,&now);
