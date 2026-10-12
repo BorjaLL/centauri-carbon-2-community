@@ -115,19 +115,22 @@ Read [first setup and LAN-code recovery](docs/FIRST_RUN.md#if-the-lan-code-chang
 
 ## Community contributions
 
-First and foremost, a special thank you to **[@Surfoo](https://github.com/Surfoo)** for redesigning the entire CC2 Control graphical interface. His outstanding work reshaped the layout, visual design and user experience across the whole application, with great care for usability and detail. Thank you also for the continuing interface improvements.
+Our sincere thanks to the contributors whose code, ideas, translations and validation helped build CC2 Control. **V4.4 retains their work from throughout the project's history**; credit follows original authorship, including work integrated through a later maintainer PR.
 
-A huge thank you to **DamiBFryta**, our dedicated beta tester, for ideas, testing and debugging throughout the project.
+| Contributor | Contributions included in the project |
+| --- | --- |
+| **[@Surfoo](https://github.com/Surfoo)** | The complete interface redesign, Control-page and mobile/tablet improvements; French translation and JSON localization; CI, sanitizers and ARM smoke tests; upload-slot fixes, byte-exact inputs, LAN-code visibility and release/version tooling. Selected PRs: [#24](https://github.com/Neme77/centauri-carbon-2-community/pull/24), [#15](https://github.com/Neme77/centauri-carbon-2-community/pull/15), [#19](https://github.com/Neme77/centauri-carbon-2-community/pull/19), [#50](https://github.com/Neme77/centauri-carbon-2-community/pull/50). |
+| **[@beanbo](https://github.com/beanbo)** | Spool inventory, the original build-plate library, persistent UDS subscriptions, printer states/refusals, Canvas auto-refill, camera handover, history, upload improvements, idle motor release and Russian translation. Selected PRs: [#97](https://github.com/Neme77/centauri-carbon-2-community/pull/97), [#83](https://github.com/Neme77/centauri-carbon-2-community/pull/83) → [#89](https://github.com/Neme77/centauri-carbon-2-community/pull/89), [#88](https://github.com/Neme77/centauri-carbon-2-community/pull/88), [#67](https://github.com/Neme77/centauri-carbon-2-community/pull/67). |
+| **[@efiten](https://github.com/efiten)** | Original OrcaSlicer/Canvas filament-sync implementation proposal, analysis and printer-side validation: [#8](https://github.com/Neme77/centauri-carbon-2-community/pull/8), integrated through [#12](https://github.com/Neme77/centauri-carbon-2-community/pull/12). |
+| **[@Skcycos](https://github.com/Skcycos)** | Simplified Chinese interface translation: [#26](https://github.com/Neme77/centauri-carbon-2-community/pull/26). |
 
-Thank you to **[@beanbo](https://github.com/beanbo)** for printer sub-states, refusal reporting, Canvas auto-refill and print history ([#67](https://github.com/Neme77/centauri-carbon-2-community/pull/67)), camera ownership across CC2 pages ([#71](https://github.com/Neme77/centauri-carbon-2-community/pull/71)), and the Files upload card, newest-file selection and clearer upload errors ([#78](https://github.com/Neme77/centauri-carbon-2-community/pull/78), [#80](https://github.com/Neme77/centauri-carbon-2-community/pull/80)).
+Special recognition to **Surfoo** for reshaping the interface and its development foundations, and to **beanbo** for the extensive additions to everyday printing and printer integration. Thank you to every contributor for the care, time and follow-through behind these improvements.
 
-Special recognition to **[@beanbo](https://github.com/beanbo)** for the spool inventory ([#97](https://github.com/Neme77/centauri-carbon-2-community/pull/97)), the original build-plate library integrated through [#89](https://github.com/Neme77/centauri-carbon-2-community/pull/89), persistent UDS subscriptions ([#88](https://github.com/Neme77/centauri-carbon-2-community/pull/88)), and continued work on camera, uploads, history, Canvas and translations. These contributions have made the everyday printing workflow substantially richer. The separate temperature/nozzle mesh extension in #104 is still under review and is not part of this release candidate.
+We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), and **beanbo** for the further mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104). These two extensions remain under review and **are not included in V4.4**; acknowledging the contribution does not announce its release.
 
-Special thanks to **[@efiten](https://github.com/efiten)** for the OrcaSlicer/Canvas synchronization proposal, analysis and real-printer validation, documented in the [integration guide](docs/CC2_CONTROL.md#orcaslicer-canvas-filament-synchronization).
+**[@Neme77](https://github.com/Neme77)** maintains the project, develops and integrates the firmware/control fixes, coordinates hardware validation and prepares release artifacts. The recent integration includes the Control/Canvas changes, Polish/Czech translations and new firmware-base port ([#107](https://github.com/Neme77/centauri-carbon-2-community/pull/107), [#108](https://github.com/Neme77/centauri-carbon-2-community/pull/108), [#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109), [#110](https://github.com/Neme77/centauri-carbon-2-community/pull/110)).
 
-Thank you to **[@Skcycos](https://github.com/Skcycos)** for the Simplified Chinese translation ([#26](https://github.com/Neme77/centauri-carbon-2-community/pull/26)), **[@beanbo](https://github.com/beanbo)** for the Russian translation ([#63](https://github.com/Neme77/centauri-carbon-2-community/pull/63)), and **[@Surfoo](https://github.com/Surfoo)** for the French translation and JSON localization system ([#15](https://github.com/Neme77/centauri-carbon-2-community/pull/15)). Their work makes CC2 Control accessible to more users.
-
-The new Polish and Czech interface translations were integrated by **[@Neme77](https://github.com/Neme77)** in [#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109), alongside the V4.4 integration, Control panel updates and printer-side validation.
+See [the detailed contributor credits and original PRs](docs/CONTRIBUTORS.md).
 
 ### Beta testers
 
@@ -157,6 +160,7 @@ Historical versions are preserved through Git tags, GitHub Releases and Git hist
 - [CC2 Control](docs/CC2_CONTROL.md)
 - [Source and third-party inputs](docs/SOURCE.md)
 - [Testing](docs/TESTING.md)
+- [Contributor credits](docs/CONTRIBUTORS.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## Interface preview
