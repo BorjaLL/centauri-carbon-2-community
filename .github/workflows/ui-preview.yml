@@ -36,6 +36,8 @@ jobs:
         run: npm run test:mesh
       - name: Verify camera streaming lifecycle
         run: npm run test:camera
+      - name: Verify numeric fan input and Control panel layout
+        run: npm run test:fans
       - name: Verify Quick Actions light telemetry and heater shutdown guards
         run: npm run test:quick
       - name: Verify timelapse selection and history deletion controls
