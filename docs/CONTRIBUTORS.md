@@ -57,9 +57,9 @@ Both extensions remain under review and are **excluded from this V4.4 release ca
 
 ## Beta testers
 
-Our sincere thanks to **DamiBFryta** and the community beta testers who offered their **time and their printers**, ran long printing sessions, repeated checks and provided precise bug reports. That contribution directly helped identify small issues and establish the release's real-world behavior.
+Special thanks to **DamiBFryta**, our very first beta tester, for being reliable, impartial and always available throughout development.
 
-<!-- Add the remaining individual beta-tester names supplied by the maintainer before publication. Do not infer participation from GitHub activity or invent handles. -->
+Our sincere thanks also go to **Barry Green**, **Michael Husbyn**, **[Jiří Heider](https://www.facebook.com/heiderakcze)**, **James Morriss Hill** and **Brian Mcmillion**, and to **all the other beta testers not named here**. By offering their time and their printers, running long printing sessions and providing patient, precise feedback, they helped identify issues and improve the stability of this release.
 
 ## Open-source and vendor acknowledgements
 

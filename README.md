@@ -134,9 +134,9 @@ See [the detailed contributor credits and original PRs](docs/CONTRIBUTORS.md).
 
 ### Beta testers
 
-Our sincere thanks to **DamiBFryta** and the community beta testers who offered their time, their printers and patient feedback. Long printing sessions, repeated checks and precise bug reports directly helped shape and stabilize this release.
+Special thanks to **DamiBFryta**, our very first beta tester, for being reliable, impartial and always available throughout development.
 
-<!-- Complete the individual beta-tester acknowledgements with the names supplied by the maintainer before the official release. Do not invent names or GitHub handles. -->
+Our sincere thanks also go to **Barry Green**, **Michael Husbyn**, **[Jiří Heider](https://www.facebook.com/heiderakcze)**, **James Morriss Hill** and **Brian Mcmillion**, and to **all the other beta testers not named here**. By offering their time and their printers, running long printing sessions and providing patient, precise feedback, they helped identify issues and improve the stability of this release.
 
 ## Source layout
 
