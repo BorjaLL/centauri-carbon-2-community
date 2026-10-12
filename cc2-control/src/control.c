@@ -198,6 +198,24 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
         if(slot<0||slot>3)return reject(reason,reason_cap,"Canvas slot must be 1..4");
         snprintf(script,cap,"CANVAS_UNLOAD_FILAMENT CHANNEL=%d",slot);return 1;
     }
+    /* Stock display reset_multi_filament_set resets the four channels by
+     * sending empty material fields through CANVAS_SET_FILAMENT_INFO. */
+    if(!strcmp(action,"canvas:reset-all")){
+        time_t now=time(NULL);
+        if(!m->connected||!m->registered||m->last_message<=0||now<m->last_message||now-m->last_message>15)
+            return reject(reason,reason_cap,"Printer telemetry must be connected and fresh");
+        if(printing(m))return reject(reason,reason_cap,"Canvas material editing is blocked while printing");
+        if(!m->have_machine_status||m->machine_status!=1)return reject(reason,reason_cap,"Canvas material editing requires the printer to be idle");
+        size_t used=0;
+        for(int channel=0;channel<4;channel++){
+            int n=snprintf(script+used,cap-used,
+                "%sCANVAS_SET_FILAMENT_INFO CHANNEL=%d COLOR= detailed_type=\"\" MANUFACTURER= nozzle_max_temp= nozzle_min_temp= TYPE=\"\" CODE=",
+                channel?"\n":"",channel);
+            if(n<0||(size_t)n>=cap-used)return reject(reason,reason_cap,"Canvas reset command is too long");
+            used+=(size_t)n;
+        }
+        return 1;
+    }
     /* Optionally followed by a spool's product line and maker, so the tray names the spool as the inventory does. */
     char line[48],maker[48];int short_end=-1,long_end=-1;
     int fields=sscanf(action,"canvas:material:%d:%31[^:]:%15[^:]:%d:%d%n:%47[^:]:%47[^:]%n",&slot,a,colour,&min_temp,&max_temp,&short_end,line,maker,&long_end);

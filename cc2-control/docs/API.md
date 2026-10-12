@@ -478,3 +478,9 @@ required validation. Displaying a report does not diagnose an unreported stop.
 
 Physical validation: a simulated spaghetti-detection event displayed correctly;
 the old message did not reappear after page refresh or a printer reboot.
+
+### Reset all Canvas filament records
+
+`POST /api/control` with body `canvas:reset-all` resets the material, colour and nozzle-temperature fields for slots 0–3 using the printer's native `CANVAS_SET_FILAMENT_INFO` commands. It does not unload filament or delete the spool inventory. The UI requests explicit confirmation and refreshes Canvas readback after submission.
+
+Requires connected, registered MQTT telemetry no older than 15 seconds, a valid timestamp and a known Idle machine state. Printing, paused printing, missing/stale telemetry and invalid command length are rejected. The four-command batch fits the existing console limit; acceptance reports submission rather than a confirmed firmware result.

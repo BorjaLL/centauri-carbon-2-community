@@ -6,7 +6,7 @@
     commands: [],
     fans: { part: 0, aux: 0, box: 0 },
     trays: [0, 1, 2, 3].map(i => ({tray_id:i,status:i===1||i===2?1:0,filament_color:['','#66BB6A','#48A7FA','#F5F5F5'][i],filament_name:['','PETG','PETG','PLA'][i],filament_type:['','PETG','PETG','PLA'][i]})),
-    preferences: { language: 'it', theme: 'dark' },
+    preferences: { language: 'it', theme: 'dark', ...JSON.parse(localStorage.getItem('cc2-fixture-preferences') || '{}') },
   }
   const printer = () => ({
     connected: state.connected, messages: 42, last_message_age: state.connected ? 0 : 60,
@@ -34,7 +34,10 @@
     const locale = path.match(/\/(?:locales|i18n)\/(\w+)\.json$/)
     if (locale) return reply(window.__CC2_PREVIEW_LOCALES[locale[1]] || window.__CC2_PREVIEW_LOCALES.en)
     if (path === '/api/preferences') {
-      if (options.method === 'PUT') Object.assign(state.preferences, JSON.parse(options.body))
+      if (options.method === 'PUT') {
+        Object.assign(state.preferences, JSON.parse(options.body))
+        localStorage.setItem('cc2-fixture-preferences', JSON.stringify(state.preferences))
+      }
       return reply(state.preferences)
     }
     if (path === '/api/camera/claim') return reply({viewer:String(options.body)})
@@ -53,6 +56,11 @@
       const action = String(options.body)
       state.commands.push(action)
       if (state.reject || !state.connected) return reply({ error: 'Comando rifiutato nella simulazione' }, 409)
+      if (action === 'canvas:reset-all') {
+        if (state.status !== 1) return reply({error:'Stampante occupata'},409)
+        state.trays.forEach(t=>Object.assign(t,{filament_color:'',filament_name:'',filament_type:'',min_nozzle_temp:0,max_nozzle_temp:0}))
+        return reply({accepted:true,simulated:true})
+      }
       const fan = action.match(/^fan:(part|aux|box):(\d+)$/)
       if (fan && Number(fan[2]) <= 100) {
         state.fans[fan[1]] = Number(fan[2])
