@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import struct
 import sys
@@ -22,6 +23,8 @@ def output(args):return run(args,stdout=subprocess.PIPE,text=True).stdout
 def main():
     if output([PREFIX+'-g++','-dumpversion']).strip()!='6.5.0':raise RuntimeError('Requires GCC 6.5.0')
     run([sys.executable,SOURCE/'assemble_dual44_gnu.py','--prefix',PREFIX])
+    # Both builder preflight paths must use the same newly reproduced, hash-qualified wrapper.
+    shutil.copyfile(SOURCE/'dual_verify_44.bin',HERE/'dualtrust/dual_verify.bin')
     libc=output([PREFIX+'-g++','-print-file-name=libc.so.6']).strip()
     if 'release version 2.23' not in output(['strings',libc]):raise RuntimeError('Requires glibc 2.23')
     vendor=SOURCE/'reactor/vendor-link/libcolib.so'
