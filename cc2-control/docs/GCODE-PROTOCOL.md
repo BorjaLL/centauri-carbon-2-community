@@ -96,6 +96,11 @@ fails with 503 and nothing is started. This is one request per print start, not
 a poll (docs/UDS_TELEMETRY.md). Starts with a Canvas mapping send no extra
 request.
 
+Clearing changes only the table in memory, so it is repeated before every
+external start. In the printer log of 2026-10-14 the touchscreen cleared the
+table at 01:06, but the Canvas record read at the next boot still held the old
+map, and the printer used it again.
+
 In the V4.2-R5 firmware (`Canvas::CMD_canvas_set_color_table` in
 `libelegoo_extras.so`), the command reads comma-separated `T`, `CHANNEL` and
 `COLOR` lists. Whenever `T` is given, it first empties the table, and a single
