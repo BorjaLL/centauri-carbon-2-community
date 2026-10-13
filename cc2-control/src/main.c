@@ -2098,11 +2098,7 @@ static double number_after_marker(const char *line, const char *marker) {
     return end != match && value >= 0.0 ? value : -1.0;
 }
 
-static double bounded_number_after_marker(const char *line, const char *marker,
-                                          double maximum) {
-    double value = number_after_marker(line, marker);
-    return value >= 0.0 && value <= maximum ? value : -1.0;
-}
+#include "gcode_metadata.h"
 
 static long duration_after_marker(const char *line, const char *marker) {
     const char *cursor = find_case_insensitive(line, marker);
@@ -2142,6 +2138,7 @@ static void gcode_metadata_response(int fd, const char *body, size_t body_len) {
     }
     int layers = 0, maximum_layer = -1; long estimated = -1;
     double filament = -1.0, nozzle = -1.0, bed = -1.0;
+    double first_nozzle = -1.0, first_bed = -1.0;
     while (fgets(line, sizeof(line), file)) {
         const char *comment=line;while(isspace((unsigned char)*comment))comment++;
         if(*comment!=';')continue;
@@ -2155,20 +2152,22 @@ static void gcode_metadata_response(int fd, const char *body, size_t body_len) {
             static const char *markers[] = {"estimated printing time", "estimated print time", "total print time"};
             for (size_t index = 0; index < sizeof(markers)/sizeof(markers[0]) && estimated < 0; ++index) estimated = duration_after_marker(line, markers[index]);
         }
-        if (filament < 0) {
-            static const char *markers[] = {"filament used [g]", "filament weight", "filament_used_g"};
-            for (size_t index = 0; index < sizeof(markers)/sizeof(markers[0]) && filament < 0; ++index) filament = number_after_marker(line, markers[index]);
-        }
+        /* Slicers may write an initial zero estimate before the final footer.
+         * Keep the latest valid total, summing every tool rather than tool 0. */
+        double grams = gcode_metadata_grams(line);
+        if (grams >= 0) filament = grams;
         if (nozzle < 0) {
-            nozzle = bounded_number_after_marker(line, "nozzle_temperature", 500.0);
-            if (nozzle < 0) nozzle = bounded_number_after_marker(line, "first_layer_temperature", 500.0);
+            nozzle = gcode_metadata_number(line, "nozzle_temperature", 500.0);
         }
         if (bed < 0) {
-            bed = bounded_number_after_marker(line, "bed_temperature", 200.0);
-            if (bed < 0) bed = bounded_number_after_marker(line, "first_layer_bed_temperature", 200.0);
+            bed = gcode_metadata_number(line, "bed_temperature", 200.0);
         }
+        if (first_nozzle < 0) first_nozzle = gcode_metadata_number(line, "first_layer_temperature", 500.0);
+        if (first_bed < 0) first_bed = gcode_metadata_number(line, "first_layer_bed_temperature", 200.0);
     }
     fclose(file);
+    if (first_nozzle >= 0) nozzle = first_nozzle;
+    if (first_bed >= 0) bed = first_bed;
     if (!layers && maximum_layer >= 0) layers = maximum_layer + 1;
     char layer_value[32], time_value[32], filament_value[32], nozzle_value[32], bed_value[32], response[512];
     if (layers > 0) snprintf(layer_value, sizeof(layer_value), "%d", layers); else snprintf(layer_value, sizeof(layer_value), "null");

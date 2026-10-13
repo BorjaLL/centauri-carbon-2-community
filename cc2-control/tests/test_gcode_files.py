@@ -99,9 +99,15 @@ def main():
             encoding="ascii",
         )
         (internal / "metadata.gcode").write_text(
+            "; bed_temperature_gcode = M190 S60\n"
+            "; bed_temperature_formula = 190\n"
             "; nozzle_temperature = 6211\n"
             "; first_layer_temperature = 215\n"
-            "; bed_temperature = 60\n",
+            "; bed_temperature = 55\n"
+            "; first_layer_bed_temperature = 60\n"
+            "; filament used [g] = 0, 0, 0, 0\n"
+            "G1 X10 Y20\n"
+            "; filament used [g] = 0, 21.2, 3.1, 0\n",
             encoding="ascii",
         )
         (internal / "ignored.txt").write_text("not gcode\n", encoding="ascii")
@@ -174,6 +180,23 @@ def main():
                 metadata = json.load(response)
             assert metadata["nozzle_temperature"] == 215.0
             assert metadata["bed_temperature"] == 60.0
+            assert metadata["filament_grams"] == 24.3
+
+            # Missing mass is unknown, not a fabricated zero. File replacement
+            # at the same path must invalidate the bounded analysis cache.
+            (internal / "metadata.gcode").write_text(
+                "; bed_temperature_gcode = M190 S60\n; filament used [mm] = 1200\n",
+                encoding="ascii",
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                metadata = json.load(response)
+            assert metadata["bed_temperature"] is None
+            assert metadata["filament_grams"] is None
+            (internal / "metadata.gcode").write_text(
+                "; filament used [g] = 0, 0\n", encoding="ascii"
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                assert json.load(response)["filament_grams"] == 0.0
 
             incomplete = urllib.request.Request(
                 f"http://127.0.0.1:{port}/api/gcode-files/print",
