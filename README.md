@@ -88,6 +88,10 @@ These releases keep their original assets, checksums and validation records. The
 
 </details>
 
+## SSH access
+
+Community Firmware defaults: username **`root`**, password **`MTY4ODE2`**. Connect with `ssh root@PRINTER-IP` using the printer’s local IP. This password is separate from the LAN access code; if you changed it, use your replacement. [English SSH reference](docs/FIRST_RUN.md#ssh-access-reference) · [Riferimento SSH in italiano](docs/FIRST_RUN.it.md#riferimento-per-laccesso-ssh).
+
 ## Changed the printer LAN access code?
 
 Open `http://PRINTER-IP:8081`, go to **Settings → Connection**, enter the replacement code and choose **Change / Revalidate**, then confirm. This saves the code and restarts the CC2 Control service; a separate “Save changes” step is not required for the LAN code.

@@ -74,6 +74,17 @@ Se non si riconnette, ricontrollare codice attuale sul display, IP e raggiungibi
 
 Per riavviare il servizio o recuperare una configurazione bloccata tramite SSH, consultare [la guida di installazione](INSTALL.md#recovery-if-the-old-code-blocks-configuration-access). Il reset della configurazione è un'opzione di recupero, non un passaggio normale della prima installazione.
 
+## Riferimento per l’accesso SSH
+
+Il Community Firmware permette l’accesso SSH locale per la manutenzione:
+
+| Parametro | Valore predefinito |
+| --- | --- |
+| Utente | `root` |
+| Password | `MTY4ODE2` |
+
+Da PowerShell o da un terminale eseguire `ssh root@IP-STAMPANTE`, sostituendo `IP-STAMPANTE` con l’indirizzo locale della stampante, e inserire la password quando richiesta. Durante la digitazione la password non viene mostrata. Se la password di root è stata cambiata, utilizzare quella personalizzata. È la password SSH, distinta dal codice LAN usato da CC2 Control. Questi riferimenti riguardano il Community Firmware; SSH non serve per la normale configurazione dal browser.
+
 ## Tornare al firmware originale ELEGOO
 
 [Scarica il firmware originale CC2 02.01.01.07](https://public.suchmeme.nl/cc2-02.01.01.07-1cbee81a985601d1944cea50773793ba-release-abroad.zip.sig). Il file è ospitato su un mirror esterno, non su un server ELEGOO. I suoi byte coincidono con la base ufficiale verificata dal builder V4.4.

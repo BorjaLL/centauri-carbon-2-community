@@ -24,6 +24,17 @@ SHA-256: `278a0606a072ae432e9bf2d4f0157acba4570d1c85dbc768c359fef53ac5f406`.
 
 Use the same USB/offline-update procedure in the first-installation guide with the original package. File identity has been verified, and the maintainer confirmed a successful return from V4.4 to this same-version original firmware on the printer. If the printer refuses the package, stop and record its message; do not change version metadata or bypass its checks. Original firmware does not include CC2 Control or community features.
 
+## SSH access reference
+
+The Community Firmware provides local SSH access for maintenance:
+
+| Setting | Default |
+| --- | --- |
+| Username | `root` |
+| Password | `MTY4ODE2` |
+
+From PowerShell or a terminal, run `ssh root@PRINTER-IP`, replacing `PRINTER-IP` with the printer’s local IP, and enter the password when prompted. Password entry is not displayed. If you have changed the root password, use your own replacement. This is the SSH password, separate from the printer LAN access code used by CC2 Control. These credentials refer to the Community Firmware; SSH is not required for normal browser setup.
+
 ## Changing the printer LAN access code
 
 If the LAN access code is changed from the printer, update the same code in CC2 Control:

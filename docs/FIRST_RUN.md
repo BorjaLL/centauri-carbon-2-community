@@ -74,6 +74,17 @@ If it still does not connect, recheck the current code on the display, the IP ad
 
 For service restart or connection-configuration recovery over SSH, see [Installation troubleshooting](INSTALL.md#recovery-if-the-old-code-blocks-configuration-access). A configuration reset is a recovery option, not a routine first-installation step.
 
+## SSH access reference
+
+The Community Firmware provides local SSH access for maintenance:
+
+| Setting | Default |
+| --- | --- |
+| Username | `root` |
+| Password | `MTY4ODE2` |
+
+From PowerShell or a terminal, run `ssh root@PRINTER-IP`, replacing `PRINTER-IP` with the printer’s local IP, and enter the password when prompted. Password entry is not displayed. If you have changed the root password, use your own replacement. This is the SSH password, separate from the printer LAN access code used by CC2 Control. These credentials refer to the Community Firmware; SSH is not required for normal browser setup.
+
 ## Return to original ELEGOO firmware
 
 [Download original CC2 02.01.01.07 firmware](https://public.suchmeme.nl/cc2-02.01.01.07-1cbee81a985601d1944cea50773793ba-release-abroad.zip.sig). This is an externally hosted mirror of the official package, not an ELEGOO-hosted download. Its bytes match the exact official base pinned by the V4.4 builder.
