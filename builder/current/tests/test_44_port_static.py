@@ -20,4 +20,13 @@ prepare = (BASE / 'prepare_reactor.py').read_text(encoding='utf-8')
 assert 'assemble_dual44_gnu.py' in prepare
 assert "'-dumpversion'" in prepare and "'6.5.0'" in prepare
 assert "'test', 'CROSS=', 'CC=gcc'" in (BASE / 'prepare.py').read_text(encoding='utf-8')
+assert "shutil.copyfile(SOURCE/'dual_verify_44.bin',HERE/'dualtrust/dual_verify.bin')" in prepare
+launcher = (BASE / 'launch_helpers/run_build.py').read_text(encoding='utf-8')
+assert 'cc2_eeb001_02.01.01.07_20260922210235.zip.sig' in launcher
+assert '02.01.00.00' not in launcher
+entry = (BASE / 'Build-Release.ps1').read_text(encoding='utf-8')
+assert 'UpdaterOnly' not in entry and 'PrinterIp' not in entry
+assert 'combined-test' not in entry
+assert "'/mnt/'" in entry and 'build_release.py' in entry
+assert 'cc2-control\\FIRMWARE_VERSION' in entry and "'CC2-Builder-V'+$firmwareVersion" in entry
 print('PASS: 4.4 OTA source pins, reproducible payload step and mandatory build tests')

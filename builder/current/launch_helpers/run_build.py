@@ -39,7 +39,7 @@ def build_arguments(root, mode, preflight=False, check_key=False, keep_work=Fals
     if check_key:
         command.append('--check-signing-key-only')
     else:
-        firmware = root / 'original_firmware/cc2_eeb001_02.01.00.00_20260707170825.zip.sig'
+        firmware = root / 'original_firmware/cc2_eeb001_02.01.01.07_20260922210235.zip.sig'
         aes = root / 'keys/cc2_aes_key_v1.bin'
         mk = root / 'tools/squashfs-tools-4.6.1/bin/mksquashfs'
         un = root / 'tools/squashfs-tools-4.6.1/bin/unsquashfs'
