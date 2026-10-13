@@ -37,7 +37,7 @@ as `components/cc2-control/source/source.zip`; the unpacked canonical source is
 available at the repository root under `cc2-control/`.
 
 The component is pinned to source commit
-`d9f8ef38463246b8b2f6f0c67075b298ebe1e640`, incorporating the validated
+`c2e1e07765a78fda0f8fc10b8cd3849ddbb5b02f`, incorporating the validated
 PR57–59 integration and authenticated loopback HTTP serial discovery, plus manual camera streaming
 with visibility suspension and bounded reconnection attempts, the Russian interface translation,
 printer sub-states and refusals, Canvas auto refill and the print history with time-lapse videos. It includes persistent UDS telemetry, MQTT workload reduction,
@@ -54,6 +54,7 @@ Telemetry asks the printer only when its stream falls silent, and the Job page r
 Bed Levelling keeps a build-plate library with each plate's mesh and Z offset; mounting a plate whose mesh is not in its side's slot writes that slot and restarts the printer.
 Spools tracks filament spools per Canvas slot from the printer's measured extrusion and asks which spool new filament belongs to.
 The snapshot also restores Input Shaper, adds calibration Quick Actions, aligns Control panels and expands the dashboard Live View without changing the video aspect ratio.
+A print started on the external feed first clears the printer's Canvas colour table, as the touchscreen does, and starts only after the printer acknowledges it; calibrated multicolour starts send the whole Canvas map in one command.
 Build plates keep a mesh per bed temperature and nozzle; a print started here loads the measurement nearest to its bed temperature, and bed mesh calibration with a bed soak runs on CC2 Control.
 The release candidate reads the canonical version files.
 Latest spool tracking and full firmware callback integration require hardware validation.
