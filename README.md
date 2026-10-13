@@ -62,7 +62,7 @@ The **callback patch is a central part of this work**: it addresses retained ref
 
 These are positive integration results, rather than a controlled measurement attributing every memory change to the callback patch. The runtime targets reactor retention; camera buffers, caches and other vendor allocations have separate lifecycles. [Read the callback mechanism and validation evidence](docs/CALLBACK_RUNTIME.md).
 
-**Release packaging:** the V4.4 release supplies complete firmware and its builder. The new CC2 Control application is included in that compatible firmware; **installing it separately on V4.3 is not supported**. A standalone application updater is deferred. Future application updates are planned in two clearly identified variants: the current MQTT Canvas path and an experimental UDS Canvas path, each with explicit firmware compatibility and separate validation results.
+**Release packaging:** the V4.4 release supplies complete firmware and its builder. The new CC2 Control application is included in that compatible firmware; **installing it separately on V4.3 is not supported**. The separate CC2 Control 1.2.5 updater is available exclusively for an existing V4.4 community installation; see the detailed update guide above. Future application updates are planned in two clearly identified variants: the current MQTT Canvas path and an experimental UDS Canvas path, each with explicit firmware compatibility and separate validation results.
 
 ## Downloads — V4.4
 
@@ -79,7 +79,7 @@ These are positive integration results, rather than a controlled measurement att
 | [SHA256SUMS.txt](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4/SHA256SUMS.txt) | Verify both release downloads. |
 | [Release notes and all assets](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) | Features, callback evidence, validation, installation and acknowledgements. |
 
-**There is no standalone CC2 Control updater for V4.4 in this release.** Do not install the new application separately on V4.3. For V4.4, use the complete signed firmware above. A factory reset is not required.
+**The original complete-firmware V4.4 release does not contain a standalone updater; the separate CC2 Control 1.2.5 application release is linked above.** Do not install the new application separately on V4.3. For V4.4, use the complete signed firmware above. A factory reset is not required.
 
 ## Original ELEGOO firmware
 
@@ -141,7 +141,7 @@ Our sincere thanks to the contributors whose code, ideas, translations and valid
 
 Special recognition to **Surfoo** for reshaping the interface and its development foundations, and to **beanbo** for the extensive additions to everyday printing and printer integration. Thank you to every contributor for the care, time and follow-through behind these improvements.
 
-We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), and **beanbo** for the further mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104). These two extensions remain under review and **are not included in V4.4**; acknowledging the contribution does not announce its release.
+We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), and **beanbo** for the further mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104). The physical-ejection extension remains under review. The advanced mesh extension is included in the separate CC2 Control 1.2.5 updater; neither changes the original complete V4.4 firmware assets.
 
 **[@Neme77](https://github.com/Neme77)** maintains the project, develops and integrates the firmware/control fixes, coordinates hardware validation and prepares release artifacts. The recent integration includes the Control/Canvas changes, Polish/Czech translations and new firmware-base port ([#107](https://github.com/Neme77/centauri-carbon-2-community/pull/107), [#108](https://github.com/Neme77/centauri-carbon-2-community/pull/108), [#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109), [#110](https://github.com/Neme77/centauri-carbon-2-community/pull/110)).
 

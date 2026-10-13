@@ -53,7 +53,7 @@ We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas fil
 
 Thank you to **[@beanbo](https://github.com/beanbo)** for the continued temperature/nozzle mesh and soaked-calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104).
 
-Both extensions remain under review and are **excluded from this V4.4 release candidate**. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
+The physical-ejection extension remains under review. Both are **excluded from the original complete V4.4 firmware**, while beanbo’s advanced mesh extension is included in the separate CC2 Control 1.2.5 application update. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
 
 ## CC2 Control 1.2.5 application update
 

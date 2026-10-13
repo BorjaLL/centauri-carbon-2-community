@@ -1,5 +1,7 @@
 # Builder 4.4 — official OTA 02.01.01.07 required
 
+Development sources now pin CC2 Control 1.2.5 for the V4.4-only application updater. The original published V4.4 firmware/source-builder assets still contain their validated 1.2.3 snapshot. See [application update](../../docs/UPDATE_CC2.md).
+
 This builder works **only with the new official CC2 firmware base `02.01.01.07`**, identified by the exact input SHA-256 pins. Provide `cc2_eeb001_02.01.01.07_20260922210235.zip.sig` in `original_firmware/`; do not substitute the firmware input from older builders. The 4.4 patch addresses and ELF layouts are specific to this base. The checks refuse unknown inputs.
 
 CC2 Control 1.2.3 includes the aligned Control panel, Enter-to-apply fan percentages, confirmed four-slot Canvas material reset, persistent camera viewing while scrolling and seven UI languages (English, Italian, French, Chinese, Russian, Polish and Czech). Canvas retains the bounded MQTT path; the experimental full Canvas UDS cache is excluded.
