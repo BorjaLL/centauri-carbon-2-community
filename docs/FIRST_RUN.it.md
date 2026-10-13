@@ -4,6 +4,8 @@
 
 La guida riguarda il Community Firmware **V4.4 con CC2 Control 1.2.3**, basato sul firmware ufficiale **CC2 02.01.01.07**. La 4.4 è in preparazione: scaricare i file di installazione quando verrà pubblicato il rilascio ufficiale.
 
+**Compatibilità del solo CC2 Control:** questa release include l’applicazione nel firmware completo 4.4. Non installare separatamente il nuovo CC2 Control sulla 4.3; l’updater della sola applicazione sarà pubblicato in seguito.
+
 ## 1. Scegliere il file corretto
 
 Aprire i [rilasci GitHub del progetto](https://github.com/Neme77/centauri-carbon-2-community/releases) e leggere le note della versione da installare.

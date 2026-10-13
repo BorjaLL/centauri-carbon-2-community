@@ -5,6 +5,16 @@ Community firmware, local printer control and reproducible build tools for the *
 > Independent community project. Not affiliated with, endorsed by or supported
 > by ELEGOO.
 
+<p align="center"><strong>Local control · Canvas · OrcaSlicer sync · Seven languages · Six themes</strong></p>
+
+<p align="center">
+  <a href="docs/FIRST_RUN.md">First installation</a> · <a href="docs/ORCASLICER.md">OrcaSlicer &amp; Canvas</a> · <a href="docs/SCREENSHOTS.md">Screenshots</a> · <a href="docs/CONTRIBUTORS.md">Community credits</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/cc2-control/dashboard-light.png" alt="CC2 Control 1.2.3: live camera, printer controls and thermal monitoring" width="1200">
+</p>
+
 ## Start here / Guide rapide
 
 | Guide | English | Italiano |
@@ -28,7 +38,21 @@ Community firmware, local printer control and reproducible build tools for the *
 
 The O0 callback runtime, protected live Z offset, spool inventory, build-plate library, mesh tools, history/timelapse, file uploads/downloads and Panda Breath compatibility are retained. PR103/104 and the experimental full Canvas UDS variant are not included in this candidate.
 
-**Beta evidence reported by the maintainer and testers:** prints running for 40 hours without reported problems, more than 20 confirmed long tests, and reported minor issues corrected. These are community hardware results, not a guarantee for every printer or proof that every test used the final release artifact.
+## Long-print results and callback patch
+
+The community beta campaign delivered encouraging results: **40-hour printing sessions without reported freezes** and **more than 20 confirmed long tests**. Tester feedback also helped resolve smaller issues in the interface and printer integration.
+
+| Evidence | Result |
+| --- | --- |
+| Long printer sessions | 40-hour prints and more than 20 long tests reported by the maintainer and beta testers, with no freezes reported in those sessions. |
+| Automatic validation | Host tests, ARM build/smoke checks, address/undefined and thread sanitizers, web UI checks, builder tests and reactor fixtures passed on the release-preparation PR. |
+| Callback runtime | Qualified O0 cleanup of completed callback references, timers and completion waiters, ported to the fingerprinted new printer executable. |
+
+The **callback patch is a central part of this work**: it addresses retained references in the reactor so completed requests do not keep the corresponding objects alive through those structures. Its cleanup and exception paths were qualified, and the 4.4 port preserves the same principle with the new executable addresses. During the beta cycle, the printer recovered available memory after activity and completed prolonged printing without the reported freezes we were investigating.
+
+These are positive integration results, rather than a controlled measurement attributing every memory change to the callback patch. The runtime targets reactor retention; camera buffers, caches and other vendor allocations have separate lifecycles. [Read the callback mechanism and validation evidence](docs/CALLBACK_RUNTIME.md).
+
+**Release packaging:** the V4.4 release supplies complete firmware and its builder. The new CC2 Control application is included in that compatible firmware; **installing it separately on V4.3 is not supported**. A standalone application updater is deferred. Future application updates are planned in two clearly identified variants: the current MQTT Canvas path and an experimental UDS Canvas path, each with explicit firmware compatibility and separate validation results.
 
 ## Current release
 
@@ -169,11 +193,7 @@ Real-printer screenshots of **CC2 Control 1.2.3**, supplied on 13 October 2026 f
 
 ### Dashboard
 
-Live camera, Quick Actions, print status and temperature history in the Light theme.
-
-<p align="center">
-  <img src="docs/images/cc2-control/dashboard-light.png" alt="CC2 Control 1.2.3 dashboard with live camera, Quick Actions and temperature history" width="1200">
-</p>
+The opening image shows the Light-theme dashboard with live camera, Quick Actions, print status and temperature history. [View it at full size](docs/images/cc2-control/dashboard-light.png).
 
 ### Control panel and Canvas
 
