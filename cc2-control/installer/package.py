@@ -56,6 +56,9 @@ def package(prepared, scripts, source, output):
                 archive.addfile(entry, io.BytesIO(data))
     public = {name: (HERE / name).read_bytes() for name in
               ('Install-CC2-Control.ps1', 'Install-Windows.cmd', 'install-cc2-control.sh', 'README.md')}
+    for name in ('README-TEST.md', 'README-TEST.it.md'):
+        trial_notes = HERE / name
+        if trial_notes.is_file(): public[name] = trial_notes.read_bytes()
     public['cc2-control-payload.tar.gz'] = payload.getvalue()
     public['cc2-control-sources.zip'] = source.read_bytes()
     public['SHA256SUMS'] = ''.join(hashlib.sha256(data).hexdigest() + '  ' + name + '\n'

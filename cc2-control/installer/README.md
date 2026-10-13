@@ -1,4 +1,8 @@
-# CC2 Control 1.2.5 updater — V4.4 only
+# CC2 Control 1.2.6 test updater — V4.4 only
+
+Combined candidate for PR117–120. See `README-TEST.md` (English) or
+`README-TEST.it.md` (Italian) for scope and printer
+checks before merge. This is not an official release or an update from Settings.
 
 **Only Community Firmware V4.4 is supported.** The installer fingerprints the installed and running community printer executable and update daemon. V4.3, stock firmware and unknown fingerprints are refused before backup or service stop.
 

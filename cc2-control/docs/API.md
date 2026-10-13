@@ -178,6 +178,14 @@ Calibrated starts first send method 1019 with `params.config.delay_video` and a 
 A matching successful acknowledgement is required within 1.5 seconds before the existing calibrated
 G-code start runs; rejection, disconnect or timeout prevents the start. Both modes require printer validation.
 
+## External feed print starts
+
+A `POST /api/gcode-files/print` with an empty Canvas mapping (the external feed) first clears the
+printer's Canvas colour table with one `CANVAS_SET_COLOR_TABLE T= CHANNEL=` request on the local
+socket, as the touchscreen does. The print starts only after the printer acknowledges it. Otherwise
+the reply is 503 with `"error":"Cannot clear the Canvas colour table for the external feed"`, and
+nothing is started. Details are in `cc2-control/docs/GCODE-PROTOCOL.md`.
+
 ## Delete print-history entries
 
 `POST /api/history/delete` takes one task ID per line, at most 50 distinct safe IDs of up to 64
