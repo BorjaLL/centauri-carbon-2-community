@@ -7,9 +7,9 @@ checksums remain attached to each GitHub release.
 
 - Bed mesh calibration takes a bed temperature (40–110 °C, 60 by default), a soak time (10 minutes by default; the firmware itself probes as soon as the bed reads the temperature) and a nozzle, and can save the result to a build plate. It runs on CC2 Control, so the page may be closed, and can be stopped until the probing starts. A plate keeps one measurement per temperature and nozzle; a print started from CC2 Control uses the one nearest to the file's bed temperature (or the one chosen in the print dialog), loaded during the print start without a restart. A nozzle list adds each nozzle's Z correction to the plate's Z offset, so one mesh serves every nozzle; a measurement's temperature and nozzle can be corrected later.
 
-### Community Firmware V4.4 / CC2 Control 1.2.3
+## Community Firmware V4.4 / CC2 Control 1.2.3 — 2026-10-13
 
-Built on official **02.01.01.07 only**. V4.4 has not been officially published; the final signed firmware filename, checksum and release date will be recorded with its GitHub Release.
+Built on official **02.01.01.07 only**. [Official release and verified downloads](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4): complete signed firmware, public source builder and SHA-256 checksums. CC2 Control 1.2.3 is included in the compatible firmware; no standalone application updater is supplied. Do not install this new application separately on V4.3.
 
 - Port the existing firmware patches to the new base, retaining the qualified O0 callback runtime, authentication, native camera integration and protected live Z offset.
 - Correct LAN/WAN transitions and registration recovery. Native light commands receive correlated acknowledgements and synchronize the printer display; own-printer PONG freshness keeps the connection indicator aligned with the link.
