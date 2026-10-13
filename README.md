@@ -21,7 +21,7 @@ Community firmware, local printer control and reproducible build tools for the *
 | --- | --- | --- |
 | First installation, printer IP and LAN access code | [First setup](docs/FIRST_RUN.md) | [Prima installazione](docs/FIRST_RUN.it.md) |
 | OrcaSlicer connection, upload and Canvas filament sync | [OrcaSlicer guide](docs/ORCASLICER.md) | [Guida OrcaSlicer](docs/ORCASLICER.it.md) |
-| All V4.4 improvements and retained features | [Changelog](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) | [Novità della release](CHANGELOG.md#unreleased) |
+| All V4.4 improvements and retained features | [Changelog](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) | [Novità della release](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) |
 
 ## V4.4 — now available
 
@@ -36,7 +36,7 @@ Community firmware, local printer control and reproducible build tools for the *
 | Camera | Live viewing continues while scrolling; hidden-tab, navigation and viewer-ownership controls remain active. |
 | Languages | English, Italian, French, Simplified Chinese, Russian, **Polish and Czech**. |
 
-The O0 callback runtime, protected live Z offset, spool inventory, build-plate library, mesh tools, history/timelapse, file uploads/downloads and Panda Breath compatibility are retained. PR103/104 and the experimental full Canvas UDS variant are not included in this candidate.
+The O0 callback runtime, protected live Z offset, spool inventory, build-plate library, mesh tools, history/timelapse, file uploads/downloads and Panda Breath compatibility are retained. PR103/104 and the experimental full Canvas UDS variant are not included in the published V4.4 firmware.
 
 ## Long-print results and callback patch
 
@@ -70,6 +70,12 @@ These are positive integration results, rather than a controlled measurement att
 | [Release notes and all assets](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) | Features, callback evidence, validation, installation and acknowledgements. |
 
 **There is no standalone CC2 Control updater for V4.4 in this release.** Do not install the new application separately on V4.3. For V4.4, use the complete signed firmware above. A factory reset is not required.
+
+## Original ELEGOO firmware
+
+[Download original CC2 02.01.01.07](https://public.suchmeme.nl/cc2-02.01.01.07-1cbee81a985601d1944cea50773793ba-release-abroad.zip.sig) · [Return-to-stock notes](docs/FIRST_RUN.md#return-to-original-elegoo-firmware) · [Istruzioni in italiano](docs/FIRST_RUN.it.md#tornare-al-firmware-originale-elegoo).
+
+The externally hosted package matches the exact official V4.4 base: SHA-256 `278a0606a072ae432e9bf2d4f0157acba4570d1c85dbc768c359fef53ac5f406`. **ELEGOO blocks downgrades to older firmware.** This is the original package for the same 02.01.01.07 version, not a downgrade tool. The maintainer confirmed a successful return from V4.4 to this same-version original firmware on the printer. A factory reset does not replace the firmware.
 
 <details>
 <summary>Previous releases and historical downloads</summary>
