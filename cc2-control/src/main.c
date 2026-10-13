@@ -1864,6 +1864,8 @@ static int build_calibrated_start_script(char *script, size_t cap, int force_ful
     return used ? 0 : -1;
 }
 
+static int canvas_color_table_clear(void);
+
 static void gcode_start_response(int fd, mqtt_client *mqtt,
                                  const char *body, size_t body_len) {
     char storage[16], filename[PATH_MAX_LOCAL];
@@ -2020,13 +2022,18 @@ static void gcode_start_response(int fd, mqtt_client *mqtt,
         snprintf(print_filename, sizeof(print_filename), "%s", filename);
     }
     int start_result = -1;
+    if (calibrated_start && (strchr(print_filename, '"') || strchr(print_filename, '\\'))) {
+        const char *error = "{\"accepted\":false,\"error\":\"Filename is incompatible with calibrated printing\"}\n";
+        respond(fd, 422, "Unprocessable Content", "application/json; charset=utf-8", error, strlen(error));
+        return;
+    }
+    if (!slot_count && canvas_color_table_clear() != 0) {
+        const char *error = "{\"accepted\":false,\"error\":\"Cannot clear the Canvas colour table for the external feed\"}\n";
+        respond(fd, 503, "Service Unavailable", "application/json; charset=utf-8", error, strlen(error));
+        return;
+    }
     if (calibrated_start) {
         char script[4096];
-        if (strchr(print_filename, '"') || strchr(print_filename, '\\')) {
-            const char *error = "{\"accepted\":false,\"error\":\"Filename is incompatible with calibrated printing\"}\n";
-            respond(fd, 422, "Unprocessable Content", "application/json; charset=utf-8", error, strlen(error));
-            return;
-        }
         if (mqtt_prepare_timelapse(mqtt,timelapse)==0 &&
             build_calibrated_start_script(script, sizeof(script), force_full_mesh,
                                           print_layout, print_media, print_filename,
@@ -2802,6 +2809,30 @@ failed:
     object_query_close();
     object_query_retry_ms = monotonic_ms() + 5000;
     return -1;
+}
+
+/* An empty slot map selects the external feed, but the printer keeps the colour
+ * table of the last Canvas print, even across reboots, and method 1020 leaves it
+ * unchanged. M6211 would then switch Canvas to that print's channel. Clear the
+ * table the way the touchscreen does, and start only after the printer has run
+ * the command: one request per print start, never a poll (docs/UDS_TELEMETRY.md). */
+static const char canvas_color_table_clear_request[] =
+    "{\"id\":205,\"method\":\"gcode/script\",\"params\":{\"script\":\"CANVAS_SET_COLOR_TABLE T= CHANNEL=\"}}\003";
+/* Tests replace the printer round trip. */
+static int (*canvas_color_table_uds)(const char *query, char **reply, size_t *length) = uds_query_json;
+
+static int canvas_color_table_clear(void) {
+    char *reply = NULL; size_t length = 0;
+    if (canvas_color_table_uds(canvas_color_table_clear_request, &reply, &length) != 0 || !reply) {
+        free(reply);
+        return -1;
+    }
+    const char *end = reply + length, *root = json_skip_space(reply, end);
+    const char *root_end = root < end && *root == '{' ? json_container_end(root, end) : NULL;
+    int acknowledged = root_end && json_member(root, root_end, "result") &&
+                       !json_member(root, root_end, "error");
+    free(reply);
+    return acknowledged ? 0 : -1;
 }
 
 static const char *exclude_object_payload(char *json, size_t length) {

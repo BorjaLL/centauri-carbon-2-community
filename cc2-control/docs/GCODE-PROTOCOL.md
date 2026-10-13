@@ -70,3 +70,34 @@ duplicate or stale mappings.
 `slot_map` remains available only when the user explicitly selects the external
 or default filament path for a single-filament job. Multicolour files require a
 complete Canvas mapping.
+
+## External feed and the Canvas colour table
+
+An empty `slot_map` does not reset the printer's Canvas colour table, which maps
+each tool to a Canvas channel. The firmware keeps the table of the last Canvas
+print, also across reboots: the Canvas record stores it as `color_table0`,
+`color_table1`, … and `color_table_size`. For an empty map, method 1020 only logs
+`Empty print slot map`. At print start, M6211 looks each tool up in that table and
+switches Canvas to the channel it finds. A table left by an earlier two-colour
+print therefore sends `T0` to that print's channel. In the printer log of
+2026-10-14 this paused an externally fed print at layer 0. With the Canvas cable
+unplugged, the switch failed with `current canvas lost` and error 1210. With the
+cable connected, the cutter cut the directly fed filament and the printer stopped
+with error 1220.
+
+The touchscreen clears the table before a single-filament print: its log of
+2026-09-14 shows `CANVAS_SET_COLOR_TABLE T= CHANNEL=` before `SDCARD_PRINT_FILE`.
+CC2 Control does the same before every start with an empty map, for saved-mesh
+and calibrated starts alike. Once the request has passed every other check, it
+sends that command once as `gcode/script` on `/tmp/elegoo_uds` and waits up to
+two seconds for the reply. Method 1020, or the calibrated preparation, follows
+only when the reply carries a `result` and no `error`. Otherwise the request
+fails with 503 and nothing is started. This is one request per print start, not
+a poll (docs/UDS_TELEMETRY.md). Starts with a Canvas mapping send no extra
+request.
+
+In the V4.2-R5 firmware (`Canvas::CMD_canvas_set_color_table` in
+`libelegoo_extras.so`), the command reads comma-separated `T`, `CHANNEL` and
+`COLOR` lists. Whenever `T` is given, it first empties the table, and a single
+empty `T=` adds no entry. A tool missing from the table gets channel −1 from
+`get_T_channel`, and M6211 then does not switch Canvas.
