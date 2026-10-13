@@ -16,15 +16,7 @@ The combined R2 predecessor passed a signed WSL build and an initial clean-reset
 
 ## Optional Canvas ejection component
 
-The complete touchscreen/web ejection implementation is opt-in with
-`--canvas-eject-component /path/to/component` and `--patchelf /path/to/patchelf`
-on the core builder invocation. It qualifies the exact 02.01 Canvas library
-and existing community GUI, preserves vendor executable code and dynamic
-symbol ABI, and audits the installed and re-extracted image. Source provenance,
-ARM module checks and normal firmware/signing checks remain required.
-Build and printer-validation instructions are in
-[experimental/canvas-eject](../../experimental/canvas-eject/README.md).
-Physical printer validation is pending; this component is not release-qualified.
+The imported touchscreen/web ejection prototype is opt-in on its legacy qualified base. The current 4.4 builder rejects it before installation: native integration and object layouts still require qualification. See [trial status](../../experimental/canvas-eject/TRIAL.md) for blockers and required physical tests. Default builds do not activate ejection.
 
 This directory contains the current firmware assembly logic and its host-side
 tests. Working filenames are stable; release numbers are recorded in Git tags,
@@ -51,11 +43,11 @@ as `components/cc2-control/source/source.zip`; the unpacked canonical source is
 available at the repository root under `cc2-control/`.
 
 The component is pinned to source commit
-`d9f8ef38463246b8b2f6f0c67075b298ebe1e640`, incorporating the validated
+`35937a00a46f24c794e1e4309a9fc4dd96d54262`, incorporating the validated
 PR57–59 integration and authenticated loopback HTTP serial discovery, plus manual camera streaming
 with visibility suspension and bounded reconnection attempts, the Russian interface translation,
 printer sub-states and refusals, Canvas auto refill and the print history with time-lapse videos. It includes persistent UDS telemetry, MQTT workload reduction,
-current UI and five languages, speed/flow controls, 128 MiB uploads, live Z offset,
+current UI and seven languages, speed/flow controls, 128 MiB uploads, live Z offset,
 A/B calibration, adaptive mesh start/rendering, emergency recovery and downloads.
 The Canvas print popup identifies each G-code filament by its colour and material before slot mapping.
 The 3D bed mesh frames absolute positive and negative probe offsets using the actual height range.
