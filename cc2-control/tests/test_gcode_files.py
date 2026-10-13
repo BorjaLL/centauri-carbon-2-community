@@ -56,6 +56,11 @@ def check_newest_files_listed(binary):
                     time.sleep(0.1)
             else:
                 raise AssertionError("server did not expose /api/gcode-files")
+            space = payload["internal"]["space"]
+            disk = os.statvfs(internal)
+            assert space["total_bytes"] == disk.f_frsize * disk.f_blocks
+            assert 0 <= space["available_bytes"] <= space["free_bytes"] <= space["total_bytes"]
+            assert payload["usb"]["space"] is None
             listing = payload["internal"]
             assert listing["truncated"] is True
             assert listing["count"] == 128 and listing["total"] == 200
@@ -129,6 +134,8 @@ def main():
                 raise AssertionError("server did not expose /api/gcode-files")
 
             assert payload["internal"]["available"] is True
+            assert payload["internal"]["space"]["total_bytes"] > 0
+            assert payload["usb"]["space"] is None, "plain USB directory must not report internal flash space"
             assert payload["internal"]["truncated"] is False
             assert payload["internal"]["count"] == payload["internal"]["total"] == 4
             assert payload["usb"]["available"] is True

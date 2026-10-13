@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Download, Film, RefreshCw, Trash2 } from 'lucide-preact'
 import { Card, CardHead, Page } from '@/components/ui/card'
+import { Pagination, PAGE_SIZE, pageIndex } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { Tag } from '@/components/ui/badge'
 import { errText, notify } from '@/lib/api'
@@ -21,7 +22,6 @@ import { usePoll } from '@/lib/poll'
 import { printer, view } from '@/lib/state'
 
 const I = { size: 16, strokeWidth: 1 }
-const STEP = 25
 const RESULT: Record<number, [Key, 'ok' | 'warning' | 'default']> = {
   1: ['history.completed', 'ok'],
   2: ['history.stopped', 'warning'],
@@ -83,7 +83,9 @@ const Video = ({ task, idle, busy }: { task: Task; idle: boolean; busy: boolean 
 export const History = () => {
   const h = history.use()
   const v = view(printer.use().data)
-  const [shown, setShown] = useState(STEP)
+  const [page, setPage] = useState(0)
+  const currentPage = pageIndex(page, h.tasks.length)
+  useEffect(() => setPage(currentPage), [currentPage])
   const [failure, setFailure] = useState('')
   // Reads come from CC2 Control's memory; only Refresh and opening the page ask the printer.
   const [deleting, setDeleting] = useState(false)
@@ -105,6 +107,7 @@ export const History = () => {
   }
   const refresh = async () => {
     try {
+      setPage(0)
       setFailure('')
       await requestHistory()
     } catch (e) {
@@ -165,7 +168,7 @@ export const History = () => {
               <span>{t('history.result')}</span>
               <span class="justify-self-end">{t('history.time_lapse')}</span>
             </div>
-            {h.tasks.slice(0, shown).map(task => {
+            {h.tasks.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE).map(task => {
               const [label, tone] = RESULT[task.status] ?? ['history.unknown', 'default']
               return (
                 <div key={task.id} class={cols}>
@@ -197,14 +200,7 @@ export const History = () => {
                 </div>
               )
             })}
-            {h.tasks.length > shown && (
-              <Button wide class="mt-3" onClick={() => setShown(n => n + STEP)}>
-                {tpl('history.show_more_n_of_total', {
-                  n: Math.min(STEP, h.tasks.length - shown),
-                  total: h.tasks.length,
-                })}
-              </Button>
-            )}
+            <Pagination page={currentPage} total={h.tasks.length} onChange={setPage} />
           </div>
         )}
       </Card>

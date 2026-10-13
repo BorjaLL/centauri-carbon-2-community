@@ -508,7 +508,7 @@ static void collect_gcode_files(const char *root, gcode_file_list *list) {
 }
 
 static void append_gcode_storage(json_builder *builder, const char *name,
-                                 const gcode_file_list *list) {
+                                 const gcode_file_list *list, const char *root) {
     json_builder_string(builder, name);
     json_builder_printf(builder, ":{\"available\":%s,\"truncated\":%s,\"count\":%lu,\"total\":%lu,\"files\":[",
                         list->available ? "true" : "false",
@@ -522,7 +522,19 @@ static void append_gcode_storage(json_builder *builder, const char *name,
         json_builder_printf(builder, ",\"size\":%lld,\"modified\":%lld}",
                             entry->size, entry->modified);
     }
-    json_builder_printf(builder, "]}");
+    json_builder_printf(builder, "]");
+    struct statvfs space;
+    struct stat st, parent;
+    char upper[PATH_MAX_LOCAL * 2];
+    int mounted = strcmp(name, "usb") != 0 ||
+        (snprintf(upper, sizeof(upper), "%s/..", root) < (int)sizeof(upper) &&
+         stat(root, &st) == 0 && stat(upper, &parent) == 0 && st.st_dev != parent.st_dev);
+    if (list->available && mounted && statvfs(root, &space) == 0) {
+        unsigned long long unit = space.f_frsize ? space.f_frsize : space.f_bsize;
+        json_builder_printf(builder, ",\"space\":{\"total_bytes\":%llu,\"available_bytes\":%llu,\"free_bytes\":%llu}",
+            unit * space.f_blocks, unit * space.f_bavail, unit * space.f_bfree);
+    } else json_builder_printf(builder, ",\"space\":null");
+    json_builder_printf(builder, "}");
 }
 
 static void gcode_files_response(int fd) {
@@ -542,9 +554,9 @@ static void gcode_files_response(int fd) {
     collect_gcode_files(gcode_usb_root, usb_files);
     json_builder builder = { body, 0, GCODE_JSON_CAP, 0 };
     json_builder_printf(&builder, "{");
-    append_gcode_storage(&builder, "internal", internal_files);
+    append_gcode_storage(&builder, "internal", internal_files, gcode_internal_root);
     json_builder_printf(&builder, ",");
-    append_gcode_storage(&builder, "usb", usb_files);
+    append_gcode_storage(&builder, "usb", usb_files, gcode_usb_root);
     json_builder_printf(&builder, "}\n");
     if (builder.failed) {
         const char *error = "{\"error\":\"File list is too large\"}\n";
@@ -3267,12 +3279,35 @@ static const char *preferences_quick_action(int slot) {
     return actions[slot];
 }
 
+static int preferences_camera_value(const char *body) {
+    const char *value = strstr(body, "\"camera_persistent\":");
+    if (!value) return -1;
+    value += strlen("\"camera_persistent\":");
+    while (isspace((unsigned char)*value)) value++;
+    int enabled;
+    if (!strncmp(value, "true", 4)) { enabled = 1; value += 4; }
+    else if (!strncmp(value, "false", 5)) { enabled = 0; value += 5; }
+    else return -1;
+    while (isspace((unsigned char)*value)) value++;
+    return (*value == ',' || *value == '}') ? enabled : -1;
+}
+
+static int preferences_camera_persistent(void) {
+    FILE *file = fopen(ui_preferences_path, "rb");
+    if (!file) return 0;
+    char body[512];
+    size_t length = fread(body, 1, sizeof(body) - 1, file);
+    fclose(file); body[length] = 0;
+    return preferences_camera_value(body) == 1;
+}
+
 static void preferences_get_response(int fd) {
-    char body[256];
+    char body[384];
     int length = snprintf(body, sizeof(body),
-        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick_actions\":[\"%s\",\"%s\",\"%s\",\"%s\"]}\n",
+        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick_actions\":[\"%s\",\"%s\",\"%s\",\"%s\"],\"camera_persistent\":%s}\n",
         preferences_language(), preferences_theme(), preferences_quick_action(0),
-        preferences_quick_action(1), preferences_quick_action(2), preferences_quick_action(3));
+        preferences_quick_action(1), preferences_quick_action(2), preferences_quick_action(3),
+        preferences_camera_persistent() ? "true" : "false");
     respond(fd, 200, "OK", "application/json; charset=utf-8", body, (size_t)length);
 }
 
@@ -3288,6 +3323,8 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
         if (!isspace((unsigned char)body[index])) input[compact_len++] = body[index];
     }
     input[compact_len] = '\0';
+    int has_camera = strstr(input, "\"camera_persistent\":") != NULL;
+    int camera_enabled = has_camera ? preferences_camera_value(input) : preferences_camera_persistent();
     char language_code[9];
     int has_language = strstr(input, "\"language\":") != NULL;
     int valid_language = has_language &&
@@ -3310,8 +3347,8 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
                 !quick_action_valid(quick[slot])) valid_quick = 0;
         }
     }
-    if ((!has_language && !has_theme && !has_quick) || (has_language && !valid_language) ||
-        !valid_quick ||
+    if ((!has_language && !has_theme && !has_quick && !has_camera) || (has_language && !valid_language) ||
+        !valid_quick || camera_enabled < 0 ||
         (has_theme && !valid_theme)) {
         const char *error = "{\"saved\":false,\"error\":\"Unsupported UI preference\"}\n";
         respond(fd, 400, "Bad Request", "application/json; charset=utf-8", error, strlen(error));
@@ -3325,10 +3362,10 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
         respond(fd, 500, "Internal Server Error", "application/json; charset=utf-8", error, strlen(error));
         return;
     }
-    char canonical[256];
+    char canonical[384];
     int canonical_len = snprintf(canonical, sizeof(canonical),
-        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick1\":\"%s\",\"quick2\":\"%s\",\"quick3\":\"%s\",\"quick4\":\"%s\"}\n",
-        language, theme, quick[0], quick[1], quick[2], quick[3]);
+        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick1\":\"%s\",\"quick2\":\"%s\",\"quick3\":\"%s\",\"quick4\":\"%s\",\"camera_persistent\":%s}\n",
+        language, theme, quick[0], quick[1], quick[2], quick[3], camera_enabled ? "true" : "false");
     FILE *file = fopen(temporary, "wb");
     int failed = !file;
     if (file) {

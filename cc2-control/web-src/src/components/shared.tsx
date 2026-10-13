@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { Dot } from '@/components/ui/badge'
 import { Card, CardHead } from '@/components/ui/card'
 import { Icon } from '@/components/icons'
-import { type Key, t } from '@/lib/i18n'
+import { cameraPreferences, type Key, t } from '@/lib/i18n'
 import { errText, notify, post, tpl } from '@/lib/api'
 import { usePoll } from '@/lib/poll'
 import { camera, printer, refreshPrinter } from '@/lib/state'
@@ -198,7 +198,27 @@ const CAMERA_RETRY_MS = [2500, 5000, 10000, 20000, 30000]
 const viewerId = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('')
 
-export const CameraCard = ({ tall, standalone }: { tall?: boolean; standalone?: boolean }) => {
+export const CameraCard = ({
+  tall,
+  standalone,
+  persistentHost,
+}: {
+  tall?: boolean
+  standalone?: boolean
+  persistentHost?: boolean
+}) => {
+  const persistent = cameraPreferences.use().persistent
+  if (persistent && !standalone && !persistentHost)
+    return (
+      <Card>
+        <CardHead icon="camera" title="common.live_camera" />
+        <p class="text-sm text-muted">{t('settings.camera_persistent_active')}</p>
+      </Card>
+    )
+  return <CameraStream tall={tall} standalone={standalone} />
+}
+
+const CameraStream = ({ tall, standalone }: { tall?: boolean; standalone?: boolean }) => {
   const [on, setOn] = useState(false)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -420,4 +440,16 @@ export const CameraWindow = () => {
       <CameraCard tall standalone />
     </main>
   )
+}
+
+export const PersistentCamera = () => {
+  const persistent = cameraPreferences.use().persistent
+  return persistent ? (
+    <aside
+      aria-label={t('common.live_camera')}
+      class="cc2-persistent-camera fixed bottom-3 right-3 z-40 w-[min(320px,calc(100vw_-_1.5rem))] shadow-xl"
+    >
+      <CameraCard persistentHost />
+    </aside>
+  ) : null
 }

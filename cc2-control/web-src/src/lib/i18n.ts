@@ -1,6 +1,6 @@
 import en from '../../public/locales/en.json'
 import { store, ls } from './store'
-import { notify } from './api'
+import { notify, request } from './api'
 import { setQuickFromServer } from './quick'
 
 export const LANGUAGE_NAMES: Record<string, string> = {
@@ -34,6 +34,16 @@ export const THEMES: { id: string; key?: Key; label?: string }[] = [
 ]
 const themeId = (mode: unknown) => (THEMES.some(x => x.id === mode) ? (mode as string) : 'dark')
 export const theme = store({ mode: themeId(ls.get('cc2-theme')) })
+
+export const cameraPreferences = store({ persistent: false })
+export async function setPersistentCamera(persistent: boolean) {
+  await request('/api/preferences', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-CC2-Request': '1' },
+    body: JSON.stringify({ camera_persistent: persistent }),
+  })
+  cameraPreferences.set({ persistent })
+}
 
 const cache: Record<string, Record<string, string>> = {}
 async function loadLocale(code: string) {
@@ -96,6 +106,7 @@ export function setTheme(mode: string, save = false) {
 export async function loadUiPreferences() {
   try {
     const p = await (await fetch('/api/preferences', { cache: 'no-store' })).json()
+    cameraPreferences.set({ persistent: p.camera_persistent === true })
     setTheme(p.theme)
     setQuickFromServer(p.quick_actions)
     await setLanguage(p.language || detectLanguage()) // empty: nothing saved on the printer yet
