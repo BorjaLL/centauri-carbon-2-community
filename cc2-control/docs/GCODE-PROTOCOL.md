@@ -101,3 +101,10 @@ In the V4.2-R5 firmware (`Canvas::CMD_canvas_set_color_table` in
 `COLOR` lists. Whenever `T` is given, it first empties the table, and a single
 empty `T=` adds no entry. A tool missing from the table gets channel −1 from
 `get_T_channel`, and M6211 then does not switch Canvas.
+
+Because every call replaces the whole table, a map must go in one command. Method
+1020 (`APIPrinter::set_print_tray_map` in `elegoo_printer`) sends
+`CANVAS_SET_COLOR_TABLE T=0,1 ID=0,0 CHANNEL=2,3`; the handler ignores `ID`.
+Calibrated starts send the same single command. CC2 Control 1.2.3 and earlier
+sent one command per tool, so a multicolour calibrated start kept only the last
+tool's channel.

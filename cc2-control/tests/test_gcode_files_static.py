@@ -30,6 +30,7 @@ required_main = (
     'BED_MESH_CALIBRATE PROFILE=%s BED_TEMP=60',
     'SDCARD_PRINT_FILE FILENAME=%s/\\"%s\\" SLICE_CFG_MODEL=1',
     'CANVAS_SET_COLOR_TABLE T= CHANNEL=',
+    '{"CANVAS_SET_COLOR_TABLE T=", " ID=", " CHANNEL="}',
     "!slot_count && canvas_color_table_clear() != 0",
     'print_media = "local"',
     'GCODE_USB_IMPORT_PREFIX "CC2_USB_"',

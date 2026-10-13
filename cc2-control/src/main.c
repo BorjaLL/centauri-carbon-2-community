@@ -1849,11 +1849,22 @@ static int build_calibrated_start_script(char *script, size_t cap, int force_ful
             "PRINT_SURFACE_SET PLANE=%d\n", print_layout == 'B' ? 1 : 0);
     }
     if (length > 0 && (size_t)length < cap) used = (size_t)length;
-    for (size_t index = 0; used && index < slot_count; ++index) {
-        length = snprintf(script + used, cap - used,
-            "CANVAS_SET_COLOR_TABLE T=%d ID=0 CHANNEL=%d\n", tools[index], trays[index]);
-        if (length <= 0 || (size_t)length >= cap - used) { used = 0; break; }
-        used += (size_t)length;
+    /* One command for the whole map, as the firmware's own method 1020 sends it
+     * (APIPrinter::set_print_tray_map): each CANVAS_SET_COLOR_TABLE replaces the
+     * whole table, so one command per tool would keep only the last tool. */
+    static const char *const map_keys[] = {"CANVAS_SET_COLOR_TABLE T=", " ID=", " CHANNEL="};
+    for (size_t key = 0; used && slot_count && key < 3; ++key) {
+        for (size_t index = 0; used && index < slot_count; ++index) {
+            length = snprintf(script + used, cap - used, "%s%d", index ? "," : map_keys[key],
+                              key == 0 ? tools[index] : key == 1 ? 0 : trays[index]);
+            if (length <= 0 || (size_t)length >= cap - used) used = 0;
+            else used += (size_t)length;
+        }
+    }
+    if (used && slot_count) {
+        length = snprintf(script + used, cap - used, "\n");
+        if (length <= 0 || (size_t)length >= cap - used) used = 0;
+        else used += (size_t)length;
     }
     if (used) {
         length = snprintf(script + used, cap - used,
