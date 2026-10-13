@@ -33,6 +33,9 @@ int main(void) {
     assert(gcode_metadata_grams("; filament weight [g] = 0; 8.5\n") == 8.5);
     assert(gcode_metadata_grams("; filament weight (g) = 4.5\n") == 4.5);
     assert(gcode_metadata_grams("; total filament weight [g]: 5\n") == 5);
+    assert(gcode_metadata_grams("; filament used [g] = 0.00, 21.24\n") == 21.24);
+    assert(gcode_metadata_grams("; total filament used [g] = 21.24\n") == 21.24);
+    assert(gcode_metadata_number("; machine_start_gcode = M140 S[bed_temperature_initial_layer_single]\\nM190 S[bed_temperature_initial_layer_single] A\n", "bed_temperature", 200) < 0);
     assert(gcode_metadata_grams("; filament_used_g = 0\n") == 0);
     assert(gcode_metadata_grams("; filament used [mm] = 1000\n") < 0);
     assert(gcode_metadata_grams("; filament weight_formula = 31.3\n") < 0);

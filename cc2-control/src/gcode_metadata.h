@@ -51,7 +51,7 @@ static double gcode_metadata_bed_command(const char *line, int *wait) {
 
 static double gcode_metadata_grams(const char *line) {
     static const char *keys[] = {"filament used [g]", "filament weight", "filament_used_g",
-        "filament weight [g]", "filament weight (g)", "total filament weight [g]"};
+        "filament weight [g]", "filament weight (g)", "total filament weight [g]", "total filament used [g]"};
     const char *p = NULL;
     for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]) && !p; i++)
         p = gcode_metadata_value(line, keys[i]);

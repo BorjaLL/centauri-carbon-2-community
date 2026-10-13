@@ -202,6 +202,25 @@ def main():
                 metadata = json.load(response)
             assert metadata["bed_temperature"] == 60.0
             assert metadata["nozzle_temperature"] == 225.0
+            # Reproduce the reporter's OrcaSlicer export: tool 0 is unused;
+            # a start-script comment contains M190 after a bed placeholder.
+            (internal / "metadata.gcode").write_text(
+                "M140 S55\nM190 S55 A\n"
+                "; filament used [g] = 0.00, 21.24\n"
+                "; total filament used [g] = 21.24\n"
+                "; bed_temperature_formula = by_highest_temp\n"
+                "; machine_start_gcode = M140 S[bed_temperature_initial_layer_single]\\nM190 S[bed_temperature_initial_layer_single] A\n"
+                "; nozzle_temperature = 220,220\n"
+                "; nozzle_temperature_initial_layer = 220,220\n"
+                "; first_layer_bed_temperature = 55\n"
+                "; first_layer_temperature = 220\n",
+                encoding="ascii",
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                metadata = json.load(response)
+            assert metadata["bed_temperature"] == 55.0
+            assert metadata["nozzle_temperature"] == 220.0
+            assert metadata["filament_grams"] == 21.24
             (internal / "metadata.gcode").write_text(
                 "; filament used [g] = 0, 0\n", encoding="ascii"
             )
