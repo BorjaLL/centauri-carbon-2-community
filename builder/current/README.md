@@ -1,5 +1,7 @@
 # Builder 4.4 — official OTA 02.01.01.07 required
 
+The separate Canvas-ejection prototype is under qualification: [trial status](../../experimental/canvas-eject/TRIAL.md). Default firmware builds do not enable it. The optional old-base adapter is explicitly rejected on the new base.
+
 This builder works **only with the new official CC2 firmware base `02.01.01.07`**, identified by the exact input SHA-256 pins. Provide `cc2_eeb001_02.01.01.07_20260922210235.zip.sig` in `original_firmware/`; do not substitute the firmware input from older builders. The 4.4 patch addresses and ELF layouts are specific to this base. The checks refuse unknown inputs.
 
 CC2 Control 1.2.3 includes the aligned Control panel, Enter-to-apply fan percentages, confirmed four-slot Canvas material reset, persistent camera viewing while scrolling and seven UI languages (English, Italian, French, Chinese, Russian, Polish and Czech). Canvas retains the bounded MQTT path; the experimental full Canvas UDS cache is excluded.
@@ -11,6 +13,18 @@ Run `Build-Release.cmd` or the qualified Linux build sequence. `build_release.py
 The combined R2 predecessor passed a signed WSL build and an initial clean-reset printer trial reported by the maintainer. New languages and source-only wrapper generation require this branch's CI/toolchain validation. Treat the output as a hardware-test candidate before publication.
 
 # Current firmware builder
+
+## Optional Canvas ejection component
+
+The complete touchscreen/web ejection implementation is opt-in with
+`--canvas-eject-component /path/to/component` and `--patchelf /path/to/patchelf`
+on the core builder invocation. It qualifies the exact 02.01 Canvas library
+and existing community GUI, preserves vendor executable code and dynamic
+symbol ABI, and audits the installed and re-extracted image. Source provenance,
+ARM module checks and normal firmware/signing checks remain required.
+Build and printer-validation instructions are in
+[experimental/canvas-eject](../../experimental/canvas-eject/README.md).
+Physical printer validation is pending; this component is not release-qualified.
 
 This directory contains the current firmware assembly logic and its host-side
 tests. Working filenames are stable; release numbers are recorded in Git tags,
