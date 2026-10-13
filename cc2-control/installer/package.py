@@ -13,6 +13,10 @@ import zipfile
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 VERSION = (HERE.parent / 'VERSION').read_text().strip()
+FIRMWARE_VERSION = (HERE.parent / 'FIRMWARE_VERSION').read_text().strip()
+COMPATIBILITY = json.loads((HERE / 'compatibility.json').read_text())
+if hashlib.sha256((HERE.parent / 'FIRMWARE_VERSION').read_bytes()).hexdigest() != COMPATIBILITY['firmware_version_file_sha256']:
+    raise ValueError('Updater firmware compatibility record does not match FIRMWARE_VERSION')
 
 def package(prepared, scripts, source, output):
     binary = (prepared / 'cc2-control').read_bytes()
@@ -31,12 +35,14 @@ def package(prepared, scripts, source, output):
     if 'web/index.html' not in files or 'web/locales/en.json' not in files:
         raise ValueError('Prepared UI is incomplete')
     for name in ('install-on-printer.sh', 'restore-on-printer.sh'):
-        text = (HERE / name).read_text().replace('@BINARY_SHA256@', binary_hash).replace('@VERSION@', VERSION)
+        text = (HERE / name).read_text().replace('@BINARY_SHA256@', binary_hash).replace('@VERSION@', VERSION).replace('@FIRMWARE_VERSION@', FIRMWARE_VERSION).replace('@PRINTER_SHA256@', COMPATIBILITY['printer_sha256']).replace('@DAEMON_SHA256@', COMPATIBILITY['daemon_sha256'])
         files[name] = text.encode()
     files['build-info.json'] = (json.dumps({
         'version': VERSION, 'binary_sha256': binary_hash,
         'source_archive_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
         'change': 'CC2 Control application updater',
+        'required_community_firmware': FIRMWARE_VERSION,
+        'compatibility': COMPATIBILITY,
     }, indent=2) + '\n').encode()
     files['SHA256SUMS'] = ''.join(hashlib.sha256(data).hexdigest() + '  ' + name + '\n'
         for name, data in sorted(files.items())).encode()
@@ -63,6 +69,7 @@ def package(prepared, scripts, source, output):
             archive.writestr(entry, data)
     print('Updater:', output)
     print('ARM binary SHA256:', binary_hash)
+    output.with_suffix(output.suffix + '.sha256').write_text(hashlib.sha256(output.read_bytes()).hexdigest() + '  ' + output.name + '\n')
     print('Updater SHA256:', hashlib.sha256(output.read_bytes()).hexdigest())
 
 if __name__ == '__main__':

@@ -1,67 +1,23 @@
-# CC2 Control updater
+# CC2 Control 1.2.5 updater — V4.4 only
 
-Updates an existing, configured CC2 Control installation on a Centauri Carbon 2
-with SSH access. The printer must be connected, Idle, and reporting fresh state.
-This is an application updater; it does not flash firmware or install SSH.
+**Only Community Firmware V4.4 is supported.** The installer fingerprints the installed and running community printer executable and update daemon. V4.3, stock firmware and unknown fingerprints are refused before backup or service stop.
 
-Extract the entire ZIP before running a launcher. Configuration (including the
-LAN code), material presets, UI preferences and the plate library are preserved. The updater keeps
-a backup, verifies checksums and the running binary, and waits for MQTT registration
-and a printer snapshot for up to 240 seconds, including the launcher delay.
-On failure, inspect the output for rollback status.
+Extract the entire ZIP on the computer. Windows: Install-Windows.cmd. Linux/macOS: sh ./install-cc2-control.sh PRINTER-IP. Requires local network access and OpenSSH. SSH username root, default password MTY4ODE2 (or your changed password); this is separate from the LAN access code.
 
-Windows: double-click `Install-Windows.cmd`, or run:
+Printer must be configured, connected, Idle and cold: nozzle/bed at most 50 °C, both targets zero. No print or calibration should be running. Configuration, materials, UI preferences, plates/nozzles and spools are retained. Backup and rollback are included. Health, running binary checksum, MQTT registration and snapshot are checked for up to 240 seconds.
 
-```powershell
-.\Install-CC2-Control.ps1 -PrinterIp 192.0.2.10
-```
+This changes only CC2 Control; firmware and callback runtime stay in place. Restart once while Idle and check automatic startup.
 
-Linux/macOS:
-
-```sh
-sh ./install-cc2-control.sh 192.0.2.10
-```
-
-Windows requires the OpenSSH client. SSH credentials are requested by OpenSSH.
-After installation, restart the printer while Idle to verify automatic startup
-and realign Canvas. The saved LAN code should not be requested again.
+[Detailed English instructions](https://github.com/Neme77/centauri-carbon-2-community/blob/develop/docs/UPDATE_CC2.md) · [Istruzioni italiane](https://github.com/Neme77/centauri-carbon-2-community/blob/develop/docs/UPDATE_CC2.it.md)
 
 ## SSH host-key changes
 
-Only for an expected host-key change, add `-ResetHostKey` on Windows or
-`--reset-host-key` on Linux/macOS. Recovery requires typing the exact printer
-address. It removes only that address from the default `known_hosts` file with
-`ssh-keygen -R`; OpenSSH then performs normal verification. Verify the new
-fingerprint through a trusted channel before accepting it. Printer keys are
-not regenerated. Custom `known_hosts` files and `HostKeyAlias` need manual recovery.
+Only for an expected change use -ResetHostKey (Windows) or --reset-host-key (Linux/macOS). Type the exact printer address to confirm. Only that address is removed from default known_hosts via ssh-keygen -R. Verify the new fingerprint before accepting. Custom known_hosts and HostKeyAlias require manual recovery.
 
 ## Restore
 
-The updater prints the backup directory and exact restore command. Run it only
-while the printer is connected and Idle. Restore preserves current configuration,
-material presets, UI preferences and the plate library. Firmware builds remain in `/opt/inst`;
-this updater installs the application in `/opt/usr` and points the service there.
+Use the backup directory and exact restore command printed by your installation while connected, Idle and cold with heater targets zero. Persistent data is retained. A firmware-integrated predecessor uses /opt/inst; the updater uses /opt/usr and restores the previous init script as needed. Do not use another printer backup.
 
-## Rebuild the package
+## Rebuild
 
-After preparing the ARM component, from the repository root:
-
-```sh
-python3 cc2-control/installer/package.py
-```
-
-The package uses the prepared ARM binary and UI, standalone scripts and source
-archive. It emits a ZIP with explicit payload permissions, checksum files,
-launchers, rollback script and source archive. Generated artifacts are not
-committed. The packaging script does not compile or sign firmware.
-
-Tests from the repository root:
-
-```sh
-python3 cc2-control/tests/test_installer_ssh.py
-python3 cc2-control/tests/test_installer_package.py
-```
-
-The serial discovery binary was validated through firmware installation,
-first configuration with one LAN-code entry, and automatic reconnection after
-reboot. Validation of this standalone updater on a printer is a separate step.
+Run the ARM build, then python3 cc2-control/installer/package.py with --prepared pointing to the application dist directory. Package includes checksums, explicit permissions, source archive, launchers and restore script. It contains no vendor firmware or private signing keys. Run installer/package regression tests and record printer validation separately.

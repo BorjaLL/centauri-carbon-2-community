@@ -55,9 +55,9 @@ Thank you to **[@beanbo](https://github.com/beanbo)** for the continued temperat
 
 Both extensions remain under review and are **excluded from this V4.4 release candidate**. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
 
-## Translation for the next CC2 Control update
+## CC2 Control 1.2.5 application update
 
-Thank you to **[@pezso92](https://github.com/pezso92)** for the complete **Hungarian (Magyar)** translation in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115): 879 entries, matching source keys and dynamic placeholders. The maintainer’s packaging/test follow-up preserves the original translation commits and author credit. This contribution is for the next update and is not part of the already published V4.4 assets.
+Thank you to **[@pezso92](https://github.com/pezso92)** for the complete **Hungarian (Magyar)** translation in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115): 879 entries, matching source keys and dynamic placeholders. The maintainer’s packaging/test follow-up preserves the original translation commits and author credit. This translation is included in the V4.4-only application updater, while the original complete V4.4 firmware assets retain their original seven languages. The same updater includes beanbo’s advanced temperature/nozzle mesh and soaked calibration from #104, with his original authorship retained.
 
 ## Beta testers
 

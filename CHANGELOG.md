@@ -5,6 +5,13 @@ checksums remain attached to each GitHub release.
 
 ## Unreleased
 
+## CC2 Control 1.2.5 — application update for Community Firmware V4.4
+
+- First separate application update for V4.4: Hungarian by pezso92 and temperature/nozzle mesh storage with soaked calibration by beanbo.
+- Installer checks actual installed/running fingerprints before service stop and refuses V4.3, original firmware and unknown bases. Requires connected fresh Idle state and cold heaters with zero targets.
+- Retains credentials, materials, preferences, plates/nozzles and spools with backup/rollback. Verifies installed binary/UI/locales and reconnection. Canvas stays on MQTT and the firmware/callback runtime is retained.
+
+
 - Add the complete Hungarian interface (Magyar) by [@pezso92](https://github.com/pezso92), contributed in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115). Preserve all 879 entries/placeholders, include the locale in the pinned builder snapshot, and test selection, saved preference, hu-HU detection and mobile layouts. Published V4.4 artifacts remain unchanged.
 
 - Bed mesh calibration takes a bed temperature (40–110 °C, 60 by default), a soak time (10 minutes by default; the firmware itself probes as soon as the bed reads the temperature) and a nozzle, and can save the result to a build plate. It runs on CC2 Control, so the page may be closed, and can be stopped until the probing starts. A plate keeps one measurement per temperature and nozzle; a print started from CC2 Control uses the one nearest to the file's bed temperature (or the one chosen in the print dialog), loaded during the print start without a restart. A nozzle list adds each nozzle's Z correction to the plate's Z offset, so one mesh serves every nozzle; a measurement's temperature and nozzle can be corrected later.

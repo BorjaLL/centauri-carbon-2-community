@@ -43,6 +43,21 @@ finish() {
 trap finish 0
 trap 'exit 130' 1 2 15
 (cd "$STAGE" && sha256sum -c SHA256SUMS)
+# Fingerprint the installed and running vendor components before any backup or service stop.
+# The application-reported firmware number alone cannot identify the installed base.
+required_firmware='@FIRMWARE_VERSION@'
+expected_printer='@PRINTER_SHA256@'
+expected_daemon='@DAEMON_SHA256@'
+require_hash() {
+    actual=$(sha256sum "$1" 2>/dev/null | awk '{print $1}')
+    [ "$actual" = "$2" ] || { echo "Incompatible firmware: Community Firmware V$required_firmware is required ($1)." >&2; exit 1; }
+}
+require_hash /opt/bin/elegoo_printer "$expected_printer"
+require_hash /opt/inst/daemon-000/daemon-000 "$expected_daemon"
+printer_pid=$(pidof elegoo_printer 2>/dev/null || true)
+case "$printer_pid" in ''|*' '*) echo 'Cannot identify the running printer process.' >&2; exit 1;; esac
+require_hash "/proc/$printer_pid/exe" "$expected_printer"
+
 test -d "$TARGET"
 test -x "$INIT"
 STATUS=$(wget -qO- http://127.0.0.1:8081/api/printer)
@@ -52,6 +67,14 @@ case "$HEALTH" in *'"mqtt_registered":true'*) ;; *) echo 'MQTT registration unav
 AGE=$(printf '%s' "$STATUS" | sed -n 's/.*"last_message_age":\([0-9][0-9]*\),.*/\1/p')
 case "$AGE" in ''|*[!0-9]*) echo 'Missing fresh printer state.' >&2; exit 1;; esac
 [ "$AGE" -le 15 ] || { echo 'Printer state is stale.' >&2; exit 1; }
+require_cold() {
+    for heater in extruder heater_bed; do
+        temperatures=$(printf '%s' "$STATUS" | sed -n "s/.*\"$heater\":{\"temperature\":\([-0-9.]*\),\"target\":\([-0-9.]*\)}.*/\1 \2/p")
+        printf '%s\n' "$temperatures" | awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+([.][0-9]+)?$/ && $1 <= 50 && $2 == 0 {valid=1} END {exit !valid}' ||
+            { echo 'Printer must be cold (heaters at most 50 C, targets zero) with valid readback.' >&2; exit 1; }
+    done
+}
+require_cold
 BACKUP="/opt/usr/cc2-control-backup-$(date +%Y%m%d-%H%M%S)-$$"
 mkdir "$BACKUP"
 cp -a "$TARGET" "$BACKUP/installation"
@@ -59,6 +82,7 @@ cp -p "$INIT" "$BACKUP/init.before"
 cp "$STAGE/restore-on-printer.sh" "$BACKUP/restore.sh"
 STATUS=$(wget -qO- http://127.0.0.1:8081/api/printer)
 case "$STATUS" in *'"connected":true'*'"machine":{"status":1,'*) ;; *) echo 'Printer state changed; update cancelled.' >&2; exit 1;; esac
+require_cold
 STOPPED=1
 "$INIT" stop
 if ! wait_stopped; then echo 'Service did not stop; update cancelled.' >&2; exit 1; fi
@@ -81,9 +105,15 @@ for file in cc2-control start.sh launch.sh web/index.html build-info.json; do
     AFTER=$(sha256sum "$TARGET/$file" | awk '{print $1}')
     [ "$BEFORE" = "$AFTER" ] || { echo "Installed checksum mismatch: $file" >&2; exit 1; }
 done
+for locale in "$STAGE/web/locales/"*.json; do
+    name=${locale##*/}
+    before=$(sha256sum "$locale" | awk '{print $1}')
+    after=$(sha256sum "$TARGET/web/locales/$name" | awk '{print $1}')
+    [ "$before" = "$after" ] || { echo "Installed locale checksum mismatch: $name" >&2; exit 1; }
+done
 "$INIT" start
 tries=0
-# The launcher waits up to 120 seconds for the vendor process, then 60
+# The launcher waits up to 120 seconds for the vendor process, then 30
 # seconds for hardware initialization. Leave time for MQTT registration too.
 while [ "$tries" -lt 120 ]; do
     RESULT=$(wget -qO- http://127.0.0.1:8081/api/health 2>/dev/null || true)
