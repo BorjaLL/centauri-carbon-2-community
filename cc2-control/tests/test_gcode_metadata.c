@@ -9,6 +9,14 @@
 #include "../src/gcode_metadata.h"
 
 int main(void) {
+    int wait = 0;
+    assert(gcode_metadata_bed_command("; start_gcode = M190 S190\n", &wait) < 0);
+    assert(gcode_metadata_bed_command("M140 S0\n", &wait) < 0);
+    assert(gcode_metadata_bed_command("M140 S30\n", &wait) == 30 && !wait);
+    assert(gcode_metadata_bed_command("M190 S60 ; bed\n", &wait) == 60 && wait);
+    assert(gcode_metadata_bed_command(" m190 R65\n", &wait) == 65 && wait);
+    assert(gcode_metadata_bed_command("M190 S{bed_temperature}\n", &wait) < 0);
+    assert(gcode_metadata_bed_command("M1900 S190\n", &wait) < 0);
     assert(gcode_metadata_number("; bed_temperature_gcode = M190 S60\n", "bed_temperature", 200) < 0);
     assert(gcode_metadata_number("; bed_temperature_formula = M190 S60\n", "bed_temperature", 200) < 0);
     assert(gcode_metadata_number("; first_layer_bed_temperature = 60\n", "bed_temperature", 200) < 0);
@@ -19,6 +27,7 @@ int main(void) {
     assert(gcode_metadata_number("; bed_temperature = 201\n", "bed_temperature", 200) < 0);
     assert(gcode_metadata_number("; bed_temperature = -60\n", "bed_temperature", 200) < 0);
     assert(gcode_metadata_number("; nozzle_temperature = 220\n", "nozzle_temperature", 500) == 220);
+    assert(gcode_metadata_number("; nozzle_temperature_initial_layer = 225\n", "nozzle_temperature_initial_layer", 500) == 225);
     assert(fabs(gcode_metadata_grams("; filament used [g] = 0, 21.2, 3.1, 0\n") - 24.3) < 1e-8);
     assert(gcode_metadata_grams("; filament weight = 31.3g\n") == 31.3);
     assert(gcode_metadata_grams("; filament weight [g] = 0; 8.5\n") == 8.5);

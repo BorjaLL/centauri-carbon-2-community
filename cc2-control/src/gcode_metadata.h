@@ -28,6 +28,27 @@ static double gcode_metadata_number(const char *line, const char *key, double ma
     return value;
 }
 
+/* Only executable bed-heater commands, never their text in a comment or a
+ * slicer start-script setting. Return a wait flag so M190 outranks preheat. */
+static double gcode_metadata_bed_command(const char *line, int *wait) {
+    const char *p = line;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p != 'M' && *p != 'm') return -1;
+    char *end;
+    long command = strtol(p + 1, &end, 10);
+    if ((command != 140 && command != 190) || (*end != ' ' && *end != '\t')) return -1;
+    for (p = end; *p && *p != ';'; p++) {
+        if ((*p != 'S' && *p != 's' && !(command == 190 && (*p == 'R' || *p == 'r'))) ||
+            (p[-1] != ' ' && p[-1] != '\t')) continue;
+        double value = strtod(p + 1, &end);
+        if (end == p + 1 || !isfinite(value) || value <= 0 || value > 200) return -1;
+        if (*end && !isspace((unsigned char)*end) && *end != ';') return -1;
+        *wait = command == 190;
+        return value;
+    }
+    return -1;
+}
+
 static double gcode_metadata_grams(const char *line) {
     static const char *keys[] = {"filament used [g]", "filament weight", "filament_used_g",
         "filament weight [g]", "filament weight (g)", "total filament weight [g]"};

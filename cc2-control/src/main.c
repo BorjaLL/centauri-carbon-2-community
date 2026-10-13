@@ -2139,9 +2139,20 @@ static void gcode_metadata_response(int fd, const char *body, size_t body_len) {
     int layers = 0, maximum_layer = -1; long estimated = -1;
     double filament = -1.0, nozzle = -1.0, bed = -1.0;
     double first_nozzle = -1.0, first_bed = -1.0;
+    double commanded_bed = -1.0, waited_bed = -1.0;
     while (fgets(line, sizeof(line), file)) {
         const char *comment=line;while(isspace((unsigned char)*comment))comment++;
-        if(*comment!=';')continue;
+        if(*comment!=';') {
+            if (waited_bed < 0) {
+                int wait = 0;
+                double value = gcode_metadata_bed_command(line, &wait);
+                if (value >= 0) {
+                    if (wait) waited_bed = value;
+                    else if (commanded_bed < 0) commanded_bed = value;
+                }
+            }
+            continue;
+        }
         static const char *layer_markers[] = {"total layer number", "total_layer_count", "total layers count", "total layers", "layer_count:"};
         for (size_t index = 0; index < sizeof(layer_markers)/sizeof(layer_markers[0]); ++index) {
             int value = positive_integer_after(line, layer_markers[index]); if (value > layers) layers = value;
@@ -2164,10 +2175,13 @@ static void gcode_metadata_response(int fd, const char *body, size_t body_len) {
         }
         if (first_nozzle < 0) first_nozzle = gcode_metadata_number(line, "first_layer_temperature", 500.0);
         if (first_bed < 0) first_bed = gcode_metadata_number(line, "first_layer_bed_temperature", 200.0);
+        if (first_nozzle < 0) first_nozzle = gcode_metadata_number(line, "nozzle_temperature_initial_layer", 500.0);
+        if (first_bed < 0) first_bed = gcode_metadata_number(line, "bed_temperature_initial_layer", 200.0);
     }
     fclose(file);
     if (first_nozzle >= 0) nozzle = first_nozzle;
     if (first_bed >= 0) bed = first_bed;
+    if (bed < 0) bed = waited_bed >= 0 ? waited_bed : commanded_bed;
     if (!layers && maximum_layer >= 0) layers = maximum_layer + 1;
     char layer_value[32], time_value[32], filament_value[32], nozzle_value[32], bed_value[32], response[512];
     if (layers > 0) snprintf(layer_value, sizeof(layer_value), "%d", layers); else snprintf(layer_value, sizeof(layer_value), "null");

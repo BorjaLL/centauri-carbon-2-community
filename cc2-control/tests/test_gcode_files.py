@@ -193,6 +193,16 @@ def main():
             assert metadata["bed_temperature"] is None
             assert metadata["filament_grams"] is None
             (internal / "metadata.gcode").write_text(
+                "; bed_temperature_gcode = M190 S190\n"
+                "M140 S0\nM140 S30\nM190 S60\n"
+                "; nozzle_temperature = 220\n; nozzle_temperature_initial_layer = 225\n",
+                encoding="ascii",
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                metadata = json.load(response)
+            assert metadata["bed_temperature"] == 60.0
+            assert metadata["nozzle_temperature"] == 225.0
+            (internal / "metadata.gcode").write_text(
                 "; filament used [g] = 0, 0\n", encoding="ascii"
             )
             with urllib.request.urlopen(metadata_request, timeout=1) as response:
