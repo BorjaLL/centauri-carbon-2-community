@@ -82,6 +82,7 @@ def reqhash(p,h,label):
 CC2_CONTROL_SOURCE_COMMIT='ebe790e357307ff0a9d44bcc3677d9865befc97f'
 CC2_CONTROL_SOURCE_SHA256='ccedc424f7e7b8622272bc7c7cff891a743d1167b571896007242206a5cbd660'
 CC2_CONTROL_FILES=('cc2-control','web/index.html','defaults/material-presets.json','start.sh','launch.sh','cc2-control.init','cc2-configure')
+CC2_UPDATE_FILES=('cc2-update-worker', 'cc2-https-download', 'update-runner.sh', 'ca-bundle.pem', 'updater-trusted-key.json', 'THIRD_PARTY_NOTICES.txt')
 # Translation files are optional and open-ended (one per language), unlike the
 # fixed files above; names are validated so only web/locales/<code>.json passes.
 CC2_CONTROL_LOCALE=re.compile(r'web/locales/[a-z]{2,5}(-[A-Z]{2})?\.json')
@@ -92,7 +93,10 @@ def cc2_control_files(files):
   raise RuntimeError('Invalid CC2 Control locale file name')
  if locales and 'web/locales/en.json' not in locales:
   raise RuntimeError('CC2 Control locales present without web/locales/en.json')
- return CC2_CONTROL_FILES+tuple(locales)
+ updates=tuple(k for k in CC2_UPDATE_FILES if k in files)
+ if len(updates)!=len(CC2_UPDATE_FILES):
+  raise RuntimeError('Missing or incomplete CC2 Control updater component')
+ return CC2_CONTROL_FILES+updates+tuple(locales)
 
 def cc2_control_destinations(root,manifest):
  app=root/'opt/inst/cc2-control'
@@ -410,6 +414,12 @@ def install_release_printer(printer,reference):
 
 REACTOR_HELPER_SHA256='170851f47569d9f02072403ffda497e3135c1e01574e0a95a543a0f451f31b84'
 
+def firmware_release_version():
+ version=(BASE/'RELEASE_VERSION').read_text(encoding='utf-8').strip()
+ if not re.fullmatch(r'4\.4\.\d+',version):
+  raise RuntimeError('Invalid firmware release version for the qualified 4.4 family')
+ return version
+
 def firmware_version():
  source=BASE/'components/cc2-control/source/source.zip'
  reqhash(source,CC2_CONTROL_SOURCE_SHA256,'CC2 Control source snapshot')
@@ -467,7 +477,7 @@ def main():
  if a.check_signing_key_only:
   print('SIGNING KEY CHECK PASS; no firmware built or installed'); return 0
  release_tag='STOCK_BOOTSTRAP' if a.signing_mode=='stock' else 'COMMUNITY'
- fw_tag=firmware_version().replace('.','_')
+ fw_tag=firmware_release_version().replace('.','_')
  a.output=a.output or ('CC2_FULL_V'+fw_tag+'_'+release_tag+'.zip.sig')
  stock_pkg=req(a.stock_package,'official stock .zip.sig')
  aes_path=req(a.aes_key,'AES key'); reqhash(aes_path,EXPECTED['aes_key'],'AES key v1'); aes=aes_path.read_bytes()
