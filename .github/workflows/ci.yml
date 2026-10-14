@@ -51,6 +51,17 @@ jobs:
           path: output/CC2-Control-*-Multiplatform-Update.zip*
           if-no-files-found: error
 
+      - name: Build a version-only successor for the real panel-install trial
+        working-directory: .
+        run: python3 .github/scripts/build-next-app-trial.py
+
+      - name: Save the unsigned panel-install trial for local maintainer signing
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: cc2-control-v44-panel-install-trial
+          path: output/panel-install-trial/*
+          if-no-files-found: error
+
   web:
     name: Web UI (type-check, build, up to date)
     runs-on: ubuntu-26.04
