@@ -46,6 +46,8 @@ try {
   releaseAnalysis()
   const dialog = page.getByRole('dialog')
   await dialog.waitFor()
+  assert.equal(await page.getByRole('button', { name: 'Dismiss', exact: true }).count(), 0,
+    'clearing the analysis message must remove its toast, not leave an empty box with a close icon')
   assert.match(await dialog.innerText(), /PLA · #FF0000/)
   assert.match(await dialog.innerText(), /PETG · #00FF00/)
   const tool0 = dialog.getByRole('group', { name: 'Filament T0', exact: true })
