@@ -4,6 +4,7 @@ Not an official release. The sources differ only in their central VERSION;
 the derived source archive is included, so the candidate is reproducible.
 Never create or upload a production signing key in CI.
 """
+import argparse
 import io
 import os
 from pathlib import Path
@@ -14,7 +15,10 @@ import zipfile
 repo=Path(__file__).resolve().parents[2]
 source=repo/'builder/current/components/cc2-control/source/source.zip'
 current=(repo/'cc2-control/VERSION').read_text().strip()
-parts=list(map(int,current.split('.')));parts[-1]+=1
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--increments',type=int,choices=(1,2),default=1)
+args=parser.parse_args()
+parts=list(map(int,current.split('.')));parts[-1]+=args.increments
 next_version='.'.join(map(str,parts))
 output=repo/'output/panel-install-trial'
 output.mkdir(parents=True,exist_ok=True)

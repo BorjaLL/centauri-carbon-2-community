@@ -53,7 +53,7 @@ jobs:
 
       - name: Build a version-only successor for the real panel-install trial
         working-directory: .
-        run: python3 .github/scripts/build-next-app-trial.py
+        run: python3 .github/scripts/build-next-app-trial.py --increments 2
 
       - name: Save the unsigned panel-install trial for local maintainer signing
         uses: actions/upload-artifact@v7.0.2
