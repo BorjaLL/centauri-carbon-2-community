@@ -39,7 +39,7 @@ keep the first error and rollback outcome. Do not factory-reset for this trial.
   pages. Use the normal Dashboard/Job card; no floating window is created.
   Minimize the browser: video must continue. Pause, disabling the preference
   or closing the page stops it; reload still requires a new manual start.
-  pages. Disabling the option should restore the previous camera behaviour.
+  Disabling the option should restore the previous camera behaviour.
 - The reported OrcaSlicer file should show **55 °C bed**, **220 °C nozzle**
   and **21.2 g estimated filament**. This is separate from measured spool usage.
 - PR119: an external-feed start after a previous mapped Canvas job, following
