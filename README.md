@@ -129,6 +129,8 @@ SSH username: **`root`**. Use your SSH password; the default access reference is
 
 ## Changed the printer LAN access code?
 
+**Why updates ask for the LAN code:** reading the update list does not require it. Downloading/uploading a package and installing it require a separate confirmation with the code configured for this printer, even when CC2 Control is already connected. Read it on the display under **Settings → LAN only**; it is different from the SSH password. [English explanation](docs/UPDATE_CC2.md#why-the-lan-code-is-required) · [Spiegazione italiana](docs/UPDATE_CC2.it.md#perché-viene-richiesto-il-codice-lan).
+
 Open `http://PRINTER-IP:8081`, go to **Settings → Connection**, enter the replacement code and choose **Change / Revalidate**, then confirm. This saves the code and restarts the CC2 Control service; a separate “Save changes” step is not required for the LAN code.
 
 Read [first setup and LAN-code recovery](docs/FIRST_RUN.md#if-the-lan-code-changes) or [prima configurazione e codice LAN](docs/FIRST_RUN.it.md#se-cambia-il-codice-lan). Advanced SSH recovery remains in [Installation](docs/INSTALL.md#recovery-if-the-old-code-blocks-configuration-access).

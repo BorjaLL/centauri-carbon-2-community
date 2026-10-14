@@ -18,6 +18,18 @@ The same idle/cold/zero-target requirements apply to either method. Verification
 
 After installation, Settings → Appearance also controls **persistent camera**: enable it, then explicitly Start live view. It keeps the same stream through menu navigation and hidden/minimized pages. Pause, disabling, closing/leaving the page and viewer handover stop it. Reload retains the preference but does not automatically start video.
 
+## Why the LAN code is required
+
+The LAN code confirms that you are authorized to update this printer. **Check for updates** does not require it; **Download and verify**, uploading a `.cc2update` file and **Install** do. The package signature checks the application's origin, while the LAN code confirms authorization on the printer.
+
+1. On the printer display, open **Settings → LAN only** and read the access code. Distinguish the letter **O** from the digit **0** and preserve letter case.
+2. In **Settings → Updates**, enter that code in **LAN access code**, even when CC2 Control is already configured and connected. This is a separate confirmation: the panel does not automatically fill the saved code and clears the field after starting installation.
+3. Download/verify the package, then select **Install** and confirm. Entering the code alone does not start installation.
+
+**This is not the SSH/root password or a GitHub code.** Updates also work in the supported hybrid WAN mode using the same code configured in CC2 Control. If you temporarily switch to LAN only to read it, return to your usual mode and check that CC2 Control is connected before updating.
+
+A factory reset may change the code: enter the new code in the **Connection** tab, choose **Change / Revalidate** and confirm. The service saves the code and restarts; verify the connection, then enter the new code in **Updates** too. The panel compares your confirmation with the code configured in the service. After five incorrect attempts, wait 60 seconds before retrying. Do not share the code in public GitHub comments or screenshots.
+
 ## 1. Prepare
 
 1. Download **CC2-Control-1.2.10-Multiplatform-Update.zip** and its checksum from the [application release](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.10-V4.4).

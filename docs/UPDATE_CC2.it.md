@@ -18,6 +18,18 @@ Per entrambi i metodi valgono stampante inattiva/fredda e target zero. La sola v
 
 Da Impostazioni → Aspetto si può abilitare anche la **camera persistente**: attivare la preferenza e poi avviare esplicitamente il live. Lo stesso stream continua durante navigazione e schede nascoste/minimizzate. Pausa, disattivazione, chiusura/uscita dalla pagina e passaggio a un altro viewer lo interrompono. Ricaricare conserva la preferenza ma non avvia automaticamente il video.
 
+## Perché viene richiesto il codice LAN
+
+Il codice LAN conferma che sei autorizzato ad aggiornare questa stampante. **Controlla aggiornamenti** non lo richiede; **Scarica e verifica**, il caricamento di un file `.cc2update` e **Installa** lo richiedono. La firma del pacchetto verifica la provenienza dell'applicazione; il codice LAN conferma invece l'autorizzazione sulla stampante.
+
+1. Sul display apri **Impostazioni → Solo LAN** e leggi il codice di accesso. Distingui con attenzione la lettera **O** dal numero **0** e rispetta maiuscole/minuscole.
+2. In **Impostazioni → Aggiornamenti** inserisci quel codice nel campo **Codice di accesso LAN**, anche se CC2 Control è già configurato e connesso. È una conferma separata: il pannello non recupera automaticamente il codice salvato e lo svuota dopo l'avvio dell'installazione.
+3. Scarica/verifica il pacchetto, quindi premi **Installa** e conferma. Inserire il codice da solo non avvia alcuna installazione.
+
+**Non è la password SSH/root e non è un codice GitHub.** Funziona anche nella modalità WAN ibrida supportata, usando lo stesso codice configurato in CC2 Control. Se lo leggi passando temporaneamente a Solo LAN, al ritorno nella modalità abituale verifica che CC2 Control risulti connesso prima di aggiornare.
+
+Dopo un ripristino di fabbrica il codice può cambiare: inserisci prima il nuovo codice nella scheda **Connessione**, scegli **Cambia / Rivalida** e conferma. Il servizio salva il codice e si riavvia; verifica la connessione, poi inserisci il nuovo codice anche nella scheda **Aggiornamenti**. Il pannello confronta la conferma con il codice configurato nel servizio. Dopo cinque tentativi errati attende 60 secondi prima di accettare un nuovo tentativo. Non inviare il codice in commenti GitHub o screenshot pubblici.
+
 ## 1. Preparazione
 
 1. Scaricare **CC2-Control-1.2.10-Multiplatform-Update.zip** e checksum dalla [release applicativa](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.10-V4.4).
