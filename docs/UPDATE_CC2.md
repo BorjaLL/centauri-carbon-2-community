@@ -1,4 +1,4 @@
-# CC2 Control 1.2.5 update — Community Firmware V4.4 only
+# CC2 Control 1.2.10 update — Community Firmware V4.4 only
 
 [Italiano](UPDATE_CC2.it.md) · [Homepage](../README.md)
 
@@ -8,13 +8,23 @@ Includes Hungarian (Magyar) by [pezso92](https://github.com/pezso92), and advanc
 
 This ZIP updates the application over SSH. It does not flash firmware, install SSH or replace the callback module. Canvas stays on MQTT. LAN/WAN, lights and the existing validated features remain included.
 
+## Choose your update method
+
+- **No Settings → Updates tab yet:** follow the computer-assisted ZIP installation below once. It installs the updater helpers with CC2 Control.
+- **Updater panel already installed:** open Settings → Updates, Stable, then Check for updates. Enter the printer LAN code, choose Download and verify, and only after verification choose Install and confirm separately. Alternatively upload `CC2-Control-1.2.10-V4.4.cc2update` from the release. The panel does not accept the installer ZIP.
+- If the panel already reports 1.2.10, you are current; no reinstallation is required. A manual Check refreshes the cached index.
+
+The same idle/cold/zero-target requirements apply to either method. Verification alone does not install anything. The online index and application are signed; incompatible bases and same/older application versions are refused. Do not turn power off during installation. Wait for completion, reload and recheck connection/Canvas/settings after an idle reboot.
+
+After installation, Settings → Appearance also controls **persistent camera**: enable it, then explicitly Start live view. It keeps the same stream through menu navigation and hidden/minimized pages. Pause, disabling, closing/leaving the page and viewer handover stop it. Reload retains the preference but does not automatically start video.
+
 ## 1. Prepare
 
-1. Download **CC2-Control-1.2.5-Multiplatform-Update.zip** and its checksum from the [application release](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.5-V4.4).
+1. Download **CC2-Control-1.2.10-Multiplatform-Update.zip** and its checksum from the [application release](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.10-V4.4).
 2. Verify the ZIP SHA-256 against the release checksum:
 
 ~~~powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath '.\CC2-Control-1.2.5-Multiplatform-Update.zip'
+Get-FileHash -Algorithm SHA256 -LiteralPath '.\CC2-Control-1.2.10-Multiplatform-Update.zip'
 ~~~
 
 3. Confirm V4.4 is installed and CC2 Control reports **Printer connected**.
@@ -49,7 +59,7 @@ Replace the example IP.
 
 ### SSH and completion
 
-Username **root**, default password **MTY4ODE2**, or your replacement if changed. Password entry is invisible and may be requested more than once. This is separate from the LAN access code.
+Username **root**, using your SSH password ([SSH reference](FIRST_RUN.md#ssh-access-reference)). Password entry is invisible and may be requested more than once. This is separate from the LAN access code.
 
 Verify the printer host-key fingerprint before accepting a first SSH connection. For an expected host-key change only, follow [host-key recovery](../cc2-control/installer/README.md#ssh-host-key-changes).
 
@@ -60,13 +70,13 @@ Success prints **INSTALLATION PASSED**, the backup directory and exact restore c
 ## 3. Verify
 
 1. Open http://PRINTER-IP:8081 and reload; use Ctrl+F5 if the old interface persists.
-2. Check **1.2.5**, **Printer connected**, temperatures and Canvas slots. The saved LAN code should not be requested again.
+2. Check **1.2.10**, **Printer connected**, temperatures and Canvas slots. The saved LAN code should not be requested again.
 3. Select **Magyar** under **Settings → Appearance**. Eight languages are available.
 4. Inspect plates/nozzles in **Bed Levelling**. Calibration accepts bed temperature **40–110 °C**, soak **0–60 minutes** (default **10**) and nozzle. Keep the bed clear before confirming.
 5. Each plate keeps measurements by temperature and nozzle. The print dialog uses the nearest bed-temperature measurement or your chosen measurement, with the selected nozzle Z correction.
 6. Restart once while Idle, then verify automatic startup, connection and Canvas again.
 
-A factory reset and LAN-code replacement are not required. The printer display retains vendor base 02.01.01.07; the application version is 1.2.5.
+A factory reset and LAN-code replacement are not required. The printer display retains vendor base 02.01.01.07; the application version is 1.2.10.
 
 ## 4. Restore the previous application
 
