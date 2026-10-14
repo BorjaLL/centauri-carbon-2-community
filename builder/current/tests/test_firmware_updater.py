@@ -35,6 +35,7 @@ class FirmwareUpdater(unittest.TestCase):
             self.assertEqual(p.prepared_mode(name), 0o755 if name in
                              ('cc2-update-worker','cc2-https-download','update-runner.sh') else 0o644)
         start = (BASE/'components/cc2-control/runtime/start.sh').read_text()
+        self.assertIn('--plates "$PERSIST/bed-plates.json"', start)
         for flag, name in (('verifier','cc2-update-worker'), ('downloader','cc2-https-download'),
                            ('ca','ca-bundle.pem'), ('runner','update-runner.sh')):
             self.assertIn(f'--update-{flag} "$BASE/{name}"', start)
