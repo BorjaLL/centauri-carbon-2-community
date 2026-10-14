@@ -124,4 +124,3 @@ try {
   assert.deepEqual(errors, [])
   console.log('PASS: update controls, auth/confirmations, mobile layout, installed/older note hiding, 8-language selection and labelled legacy/malformed fallback')
 } finally { await browser?.close(); await server.close() }
-
