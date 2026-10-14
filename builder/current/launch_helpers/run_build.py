@@ -14,7 +14,7 @@ SOURCE = Path(__file__).resolve().parents[1] / 'components/cc2-control/source/so
 with zipfile.ZipFile(SOURCE) as snapshot:
     FIRMWARE_VERSION = snapshot.read('FIRMWARE_VERSION').decode().strip()
 
-BUILDER_SHA256='e3e7041dba9c9bfa3f7565c49ec8b9c879b76d61cb112a9f2722c39990d548b7'
+BUILDER_SHA256='836a8dd85316e09c00932fc15c55ce58e258b58a5db3f18573c9380c35365a2c'
 
 def sha256(path):
     h = hashlib.sha256()
@@ -125,3 +125,4 @@ if __name__ == '__main__':
     except (OSError, RuntimeError, ValueError) as exc:
         print('LAUNCH FAIL:', exc, file=sys.stderr)
         sys.exit(1)
+

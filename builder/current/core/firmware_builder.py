@@ -79,8 +79,8 @@ def reqhash(p,h,label):
  if a!=h: raise RuntimeError(f"{label} SHA256 mismatch\n expected {h}\n actual   {a}")
  print(f"[OK] {label}: {a[:16]}...")
 
-CC2_CONTROL_SOURCE_COMMIT='74260475d091caa3eb1e957eb644b7021d39fc4b'
-CC2_CONTROL_SOURCE_SHA256='77ff69cbe37afdacff19119c2ae7f9f7a648c7ca7b97b805db4037ce17610fac'
+CC2_CONTROL_SOURCE_COMMIT='014407052069d849605c07a2147f87b87d8d20d4'
+CC2_CONTROL_SOURCE_SHA256='e96cdadb038c25e218c519b34d48647db2c2771da087a85b6e42af8a62fb8803'
 CC2_CONTROL_FILES=('cc2-control','web/index.html','defaults/material-presets.json','start.sh','launch.sh','cc2-control.init','cc2-configure')
 CC2_UPDATE_FILES=('cc2-update-worker', 'cc2-https-download', 'update-runner.sh', 'ca-bundle.pem', 'updater-trusted-key.json', 'THIRD_PARTY_NOTICES.txt')
 # Translation files are optional and open-ended (one per language), unlike the
@@ -624,3 +624,4 @@ def main():
 if __name__=='__main__':
  try: sys.exit(main())
  except Exception as e: print('BUILD FAIL:',e,file=sys.stderr); sys.exit(1)
+
