@@ -25,10 +25,10 @@ assert '/opt/usr/cc2-control/launch.sh' not in runtime_init
 def prepare(root,extra=()):
     component=root/'prepared';component.mkdir()
     files={}
-    for relative in b.CC2_CONTROL_FILES+tuple(extra):
+    for relative in b.CC2_CONTROL_FILES+b.CC2_UPDATE_FILES+tuple(extra):
         path=component/relative;path.parent.mkdir(parents=True,exist_ok=True)
         path.write_bytes(('TEST '+relative+'\n').encode())
-        path.chmod(0o755 if relative in ('cc2-control','start.sh','launch.sh','cc2-control.init','cc2-configure') else 0o644)
+        path.chmod(0o755 if relative in ('cc2-control','cc2-update-worker','cc2-https-download','update-runner.sh','start.sh','launch.sh','cc2-control.init','cc2-configure') else 0o644)
         files[relative]={'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
                          'mode':oct(path.stat().st_mode&0o777)}
     manifest_path=root/'manifest.json'

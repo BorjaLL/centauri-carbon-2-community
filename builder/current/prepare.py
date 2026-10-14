@@ -29,13 +29,15 @@ def sha256(path):
             h.update(block)
     return h.hexdigest()
 
-def validate_arm_elf(path):
+UPDATE_FILES = ('cc2-update-worker', 'cc2-https-download', 'update-runner.sh', 'ca-bundle.pem', 'updater-trusted-key.json', 'THIRD_PARTY_NOTICES.txt')
+
+def validate_arm_elf(path, require_version=True):
     data = path.read_bytes()[:64]
     if len(data) < 20 or data[:4] != b'\x7fELF' or data[4] != 1 or data[5] != 1:
         raise RuntimeError('CC2 Control output is not a 32-bit little-endian ELF')
     if struct.unpack_from('<H', data, 18)[0] != 40:
         raise RuntimeError('CC2 Control output is not an ARM executable')
-    if VERSION.encode() not in path.read_bytes():
+    if require_version and VERSION.encode() not in path.read_bytes():
         raise RuntimeError(f'CC2 Control binary does not identify version {VERSION}')
 
 def copy_shell_lf(source, destination):
@@ -49,7 +51,7 @@ def copy_shell_lf(source, destination):
     destination.chmod(0o755)
 
 def prepared_mode(relative):
-    return 0o755 if relative in ('cc2-control', 'start.sh', 'launch.sh', 'cc2-control.init', 'cc2-configure') else 0o644
+    return 0o755 if relative in ('cc2-control', 'cc2-update-worker', 'cc2-https-download', 'update-runner.sh', 'start.sh', 'launch.sh', 'cc2-control.init', 'cc2-configure') else 0o644
 
 def main():
     firmware_init = (RUNTIME / 'cc2-control.init').read_text(encoding='utf-8')
@@ -71,13 +73,22 @@ def main():
         copy_shell_lf(RUNTIME / 'start.sh', firmware_start)
         subprocess.run(['make', 'clean', 'test', 'CROSS=', 'CC=gcc'], cwd=tree, check=True)
         compiler='/opt/cc2-cross/toolchain-out/bin/arm-cortex_a15-linux-gnueabihf-gcc'
-        subprocess.run(['make', 'clean', 'all', 'CROSS=', 'CC='+compiler, 'EXTRA_CFLAGS=-mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard'], cwd=tree, check=True)
+        subprocess.run(['make', 'clean', 'all', 'CROSS='+compiler.removesuffix('gcc'), 'CC='+compiler, 'AR='+compiler.removesuffix('gcc')+'ar', 'EXTRA_CFLAGS=-mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard'], cwd=tree, check=True)
         binary = tree / 'dist/cc2-control/cc2-control'
         web = tree / 'dist/cc2-control/web/index.html'
         validate_arm_elf(binary)
         (OUTPUT / 'web').mkdir(parents=True)
         (OUTPUT / 'defaults').mkdir(parents=True)
         shutil.copy2(binary, OUTPUT / 'cc2-control')
+        for name in UPDATE_FILES:
+            helper = tree / 'dist/cc2-control' / name
+            if name in ('cc2-update-worker', 'cc2-https-download'):
+                validate_arm_elf(helper, require_version=False)
+            if name.endswith('.sh'):
+                copy_shell_lf(helper, OUTPUT / name)
+            else:
+                shutil.copy2(helper, OUTPUT / name)
+            (OUTPUT / name).chmod(prepared_mode(name))
         shutil.copy2(web, OUTPUT / 'web/index.html')
         # Older snapshots embed their translations in index.html; newer ones
         # fetch /i18n/<code>.json and must ship web/locales alongside it.

@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import hashlib
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -13,7 +14,7 @@ SOURCE = Path(__file__).resolve().parents[1] / 'components/cc2-control/source/so
 with zipfile.ZipFile(SOURCE) as snapshot:
     FIRMWARE_VERSION = snapshot.read('FIRMWARE_VERSION').decode().strip()
 
-BUILDER_SHA256='d5bdc161d07a5b9ac81e6aad638fc230e184fcab72667fc6400d3ca6f969ebb8'
+BUILDER_SHA256='e0892d8abbae4f79ae808a0fdacabf0848b86047d2ca9f0f91bee8119cfda2c6'
 
 def sha256(path):
     h = hashlib.sha256()
@@ -35,7 +36,10 @@ def build_arguments(root, mode, preflight=False, check_key=False, keep_work=Fals
     output = None
     action = 'check_key' if check_key else ('preflight' if preflight else 'build')
     stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '_' + uuid.uuid4().hex[:8]
-    stem = 'CC2_V' + FIRMWARE_VERSION.replace('.', '_') + '_' + mode.upper() + '_' + stamp
+    release_version = (Path(__file__).resolve().parents[1] / 'RELEASE_VERSION').read_text().strip()
+    if not re.fullmatch(re.escape(FIRMWARE_VERSION)+r'\.\d+', release_version):
+        raise RuntimeError('Versione release firmware non valida')
+    stem = 'CC2_V' + release_version.replace('.', '_') + '_' + mode.upper() + '_' + stamp
     if check_key:
         command.append('--check-signing-key-only')
     else:

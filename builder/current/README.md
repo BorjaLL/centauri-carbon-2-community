@@ -1,14 +1,20 @@
-# Builder 4.4 — official OTA 02.01.01.07 required
+# Builder V4.4.1 — official OTA 02.01.01.07 required
 
 This builder works **only with the new official CC2 firmware base `02.01.01.07`**, identified by the exact input SHA-256 pins. Provide `cc2_eeb001_02.01.01.07_20260922210235.zip.sig` in `original_firmware/`; do not substitute the firmware input from older builders. The 4.4 patch addresses and ELF layouts are specific to this base. The checks refuse unknown inputs.
 
-CC2 Control 1.2.3 includes the aligned Control panel, Enter-to-apply fan percentages, confirmed four-slot Canvas material reset, persistent camera viewing while scrolling and seven UI languages (English, Italian, French, Chinese, Russian, Polish and Czech). Canvas retains the bounded MQTT path; the experimental full Canvas UDS cache is excluded.
+CC2 Control **1.2.10** is integrated with its signed-update verifier, HTTPS downloader, CA bundle, public trust key and independent installer runner. **Settings → Updates works from the first firmware installation**, without a separate application bootstrap from the computer. Future updates require an explicit confirmation; they are not installed unattended. Canvas retains the bounded MQTT path; the experimental full Canvas UDS cache and PRs #103/#114 are excluded.
+
+The application includes the aligned Control panel, numeric fan percentages, four-slot Canvas material reset, persistent camera preference, advanced plate/nozzle meshes, file/history pagination and corrected OrcaSlicer metadata. Eight UI languages are included: English, Italian, French, Chinese, Russian, Polish, Czech and Hungarian. See [contributors](../../docs/CONTRIBUTORS.md) and [application update instructions](../../docs/UPDATE_CC2.md).
+
+`RELEASE_VERSION` identifies the complete firmware as **4.4.1**. The application compatibility family remains **4.4**, preserving compatibility with the qualified application update channel and existing vendor fingerprints.
+
+The updater asks for the printer's **LAN access code**, read from **Settings → LAN only** on the display, as a separate authorization for download/upload and installation. It is not the SSH password. [English explanation](../../docs/UPDATE_CC2.md#why-the-lan-code-is-required) · [Spiegazione italiana](../../docs/UPDATE_CC2.it.md#perché-viene-richiesto-il-codice-lan).
 
 Existing validated callback O0, light/display acknowledgement, authenticated LAN/WAN fallback, application registration recovery, own-PONG freshness, UDS homing/light diagnostics, Z offset, PID/Input Shaper and Orca Canvas synchronization remain included. The source snapshot and launcher checksum are updated together.
 
 Run `Build-Release.cmd` or the qualified Linux build sequence. `build_release.py` runs builder/launcher tests, full CC2 host tests, ARM compilation and signing checks before `CANDIDATE BUILD PASS`. The generated Dual Trust ARM wrapper is reproduced from source and checked against the unchanged qualified payload hash; no generated vendor firmware, ARM runtime modules or private keys are included in Git.
 
-The combined R2 predecessor passed a signed WSL build and an initial clean-reset printer trial reported by the maintainer. New languages and source-only wrapper generation require this branch's CI/toolchain validation. Treat the output as a hardware-test candidate before publication.
+The preceding V4.4 firmware and CC2 Control 1.2.10 application were validated separately on the maintainer's printer. **This new combined V4.4.1 image still requires a complete signed WSL build and real-printer validation** of first boot, integrated updater, connection, Canvas, camera, restart and printing before publication. The preceding hardware results do not qualify an unbuilt image.
 
 # Current firmware builder
 

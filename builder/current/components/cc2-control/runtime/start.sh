@@ -41,10 +41,15 @@ sleep 30
 logger -t cc2-control "Starting CC2 Control for the community firmware"
 
 exec "$BASE/cc2-control" \
+    --update-verifier "$BASE/cc2-update-worker" \
+    --update-downloader "$BASE/cc2-https-download" \
+    --update-ca "$BASE/ca-bundle.pem" \
+    --update-runner "$BASE/update-runner.sh" \
     --port 8081 \
     --panda-port 7125 \
     --web-root "$BASE/web" \
     --config "$PERSIST/cc2-control.conf" \
     --presets "$PERSIST/material-presets.json" \
     --preferences "$PERSIST/ui-preferences.json" \
+    --plates "$PERSIST/bed-plates.json" \
     --spools "$PERSIST/spools.json"
