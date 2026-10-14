@@ -100,7 +100,8 @@ try {
   for (const language of Object.keys(localized)) {
     const dict = JSON.parse(await readFile(path.join(root, `public/locales/${language}.json`)))
     await page.getByRole('tab', { name: previous['settings.appearance'], exact: true }).click()
-    await page.getByLabel(previous['settings.language'], { exact: true }).selectOption(language)
+    await page.locator('main select:has(option[value="hu"])').selectOption(language)
+    await page.waitForFunction(code => document.documentElement.lang === code, language)
     await page.getByRole('tab', { name: dict['updates.title'], exact: true }).click()
     await page.getByText(localized[language], { exact: true }).waitFor()
     if (language !== 'en') assert.equal(await page.getByText(localized.en, { exact: true }).count(), 0)
@@ -123,3 +124,4 @@ try {
   assert.deepEqual(errors, [])
   console.log('PASS: update controls, auth/confirmations, mobile layout, installed/older note hiding, 8-language selection and labelled legacy/malformed fallback')
 } finally { await browser?.close(); await server.close() }
+
