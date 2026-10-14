@@ -125,7 +125,7 @@ These releases keep their original assets, checksums and validation records. The
 
 ## SSH access
 
-Community Firmware defaults: username **`root`**, password **`MTY4ODE2`**. Connect with `ssh root@PRINTER-IP` using the printer’s local IP. This password is separate from the LAN access code; if you changed it, use your replacement. [English SSH reference](docs/FIRST_RUN.md#ssh-access-reference) · [Riferimento SSH in italiano](docs/FIRST_RUN.it.md#riferimento-per-laccesso-ssh).
+SSH username: **`root`**. Use your SSH password; the default access reference is documented in the installation guides linked below. This is separate from the LAN access code. [English SSH reference](docs/FIRST_RUN.md#ssh-access-reference) · [Riferimento SSH in italiano](docs/FIRST_RUN.it.md#riferimento-per-laccesso-ssh).
 
 ## Changed the printer LAN access code?
 
@@ -162,11 +162,11 @@ Our sincere thanks to the contributors whose code, ideas, translations and valid
 | **[@efiten](https://github.com/efiten)** | Original OrcaSlicer/Canvas filament-sync implementation proposal, analysis and printer-side validation: [#8](https://github.com/Neme77/centauri-carbon-2-community/pull/8), integrated through [#12](https://github.com/Neme77/centauri-carbon-2-community/pull/12). |
 | **[@Skcycos](https://github.com/Skcycos)** | Simplified Chinese interface translation: [#26](https://github.com/Neme77/centauri-carbon-2-community/pull/26). |
 
-**CC2 Control 1.2.5 translation:** thanks to **[@pezso92](https://github.com/pezso92)** for the complete Hungarian interface (**Magyar**), all 879 source entries and preserved placeholders in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115). Maintainer integration retains his original commits and adds builder packaging and language tests. Hungarian is included in the separate V4.4-only application update; the original complete V4.4 firmware still ships seven languages.
+**Hungarian translation:** thanks to **[@pezso92](https://github.com/pezso92)** for the complete Hungarian interface (**Magyar**), all 879 source entries and preserved placeholders in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115). Maintainer integration retains his original commits and adds builder packaging and language tests. Hungarian is included in CC2 Control 1.2.10; the original complete V4.4 firmware still ships seven languages.
 
 Special recognition to **Surfoo** for reshaping the interface and its development foundations, and to **beanbo** for the extensive additions to everyday printing and printer integration. Thank you to every contributor for the care, time and follow-through behind these improvements.
 
-We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), and **beanbo** for the further mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104). These two extensions remain under review and **are not included in V4.4**; acknowledging the contribution does not announce its release.
+We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), which remains excluded together with PR114. **beanbo**'s advanced mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104) is merged and included in CC2 Control 1.2.10. The original complete V4.4 firmware artifacts remain unchanged and do not contain that extension.
 
 **[@Neme77](https://github.com/Neme77)** maintains the project, develops and integrates the firmware/control fixes, coordinates hardware validation and prepares release artifacts. The recent integration includes the Control/Canvas changes, Polish/Czech translations and new firmware-base port ([#107](https://github.com/Neme77/centauri-carbon-2-community/pull/107), [#108](https://github.com/Neme77/centauri-carbon-2-community/pull/108), [#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109), [#110](https://github.com/Neme77/centauri-carbon-2-community/pull/110)).
 
