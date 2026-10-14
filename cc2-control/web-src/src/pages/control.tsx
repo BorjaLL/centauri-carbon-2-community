@@ -773,6 +773,34 @@ export const Control = () => {
                 {t('common.fans_off')}
               </Button>
             </div>
+            <div class="mt-3 border-t border-edge pt-3">
+              <div class="mb-2 text-[13px]">{t('control.motor_mode')}</div>
+              <div class="grid grid-cols-2 gap-2.5">
+                {(['quiet', 'normal'] as const).map(mode => (
+                  <Button
+                    key={mode}
+                    class="min-h-12"
+                    variant={v.motorMode === mode ? 'active' : 'default'}
+                    aria-pressed={v.motorMode === mode}
+                    disabled={!v.idle}
+                    onClick={async () => {
+                      const ok = await control(
+                        `motors:${mode}`,
+                        t(mode === 'quiet' ? 'control.motor_mode_quiet_confirm' : 'control.motor_mode_normal_confirm')
+                      )
+                      if (ok) setTimeout(refreshPrinter, 250)
+                    }}
+                  >
+                    <Icon n="motors" class="text-cyan" />
+                    {t(mode === 'quiet' ? 'control.motor_mode_quiet' : 'control.motor_mode_normal')}
+                  </Button>
+                ))}
+              </div>
+              <p class="mt-2 text-xs text-muted">{t('control.motor_mode_hint')}</p>
+              {v.motorMode === 'quiet' && (v.printing || v.paused) && (
+                <Warn>{t('control.motor_mode_print_warning')}</Warn>
+              )}
+            </div>
             <Notice icon="lock">
               <span>
                 {t('control.protected_actions')}

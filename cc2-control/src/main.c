@@ -39,6 +39,11 @@ static uds_client telemetry;
 static const char *plates_print_prepare(const mqtt_client *mqtt, char side, int saved_mesh, const char *measure,
                                         const char *nozzle, char *late);
 static void plates_print_arm(const char *late, char side);
+/* X/Y motor mode last requested through motors:quiet/normal. elegoo_printer
+ * reloads the configured mode when it restarts, so the request is only
+ * reported for the UDS connection it was made on. */
+static const char *motor_mode_requested;
+static unsigned long motor_mode_connection;
 static int z_offset_pending;
 static double z_offset_expected;
 static int z_offset_session;
@@ -2460,6 +2465,9 @@ static void printer_response(int fd, const mqtt_client *mqtt) {
             telemetry.report_sequence,telemetry.report_code,telemetry.report_level,
             telemetry.report_message,report_age<0?0:report_age);
     }
+    char motor_mode[16]="null";
+    if(motor_mode_requested&&telemetry.fd>=0&&telemetry.connections==motor_mode_connection)
+        snprintf(motor_mode,sizeof(motor_mode),"\"%s\"",motor_mode_requested);
     char viewer[sizeof(camera_viewer)+2];
     if(camera_viewer[0])snprintf(viewer,sizeof(viewer),"\"%s\"",camera_viewer);
     else snprintf(viewer,sizeof(viewer),"null");
@@ -2478,13 +2486,13 @@ static void printer_response(int fd, const mqtt_client *mqtt) {
         "\"z_offset\":{\"value\":%s,\"pending\":%s,\"timed_out\":%s,\"reference\":%s,\"adjustment\":%s},"
         "\"recovery\":{\"available\":%s,\"reboot_pending\":%s,\"error\":\"%s\"},"
         "\"hardware\":{\"camera\":%s,\"usb\":%s,\"light\":%d,\"filament_detection\":%s,\"filament_detected\":%s},"
-        "\"spools\":%s,\"printer_report\":%s,\"printer_error\":%s,\"camera_viewer\":%s}\n",
+        "\"spools\":%s,\"printer_report\":%s,\"printer_error\":%s,\"camera_viewer\":%s,\"motor_mode\":%s}\n",
         mqtt->connected?"true":"false",mqtt->messages,age,et,eg,bt,bg,ct,cf,hf,pf,
         mqtt->aux_fan,mqtt->box_fan,mqtt->machine_status,machine_status_name(mqtt->machine_status),mqtt->sub_status,mqtt->sub_status_reason,progress,
         mqtt->print_enabled?"true":"false",filename,state,uuid,current_layer,total_layers,duration,remaining,remaining_source,mqtt->total_duration,
         mqtt->x,mqtt->y,mqtt->z,mqtt->move_speed,mqtt->speed_mode,axes,speed_percent,flow_percent,live_velocity,zoffset,z_offset_pending?"true":"false",z_offset_timed_out?"true":"false",zreference,zadjustment,recovery_available()?"true":"false",reboot_pending?"true":"false",reboot_error,mqtt->camera?"true":"false",mqtt->u_disk?"true":"false",mqtt->led_status,
         mqtt->filament_detect_enabled?"true":"false",mqtt->filament_detected?"true":"false",spool_state,printer_report,
-        printer_error,viewer);
+        printer_error,viewer,motor_mode);
     if(length>0&&(size_t)length<sizeof(body))
         respond(fd,200,"OK","application/json; charset=utf-8",body,(size_t)length);
 }
@@ -3599,6 +3607,9 @@ static void control_response(int fd,console_state *console,mqtt_client *mqtt,con
         int n=snprintf(response,sizeof(response),"{\"accepted\":false,\"error\":\"%s\"}\n",escaped);
         respond(fd,409,"Conflict","application/json; charset=utf-8",response,(size_t)n);return;
     }
+    if(!strcmp(action,"motors:quiet")||!strcmp(action,"motors:normal")){
+        motor_mode_requested=action[7]=='q'?"quiet":"normal";motor_mode_connection=telemetry.connections;
+    }
     if(!strncmp(action,"canvas:material:",16)||!strcmp(action,"canvas:reset-all")){mqtt->canvas_material_read_at=time(NULL)+1;mqtt->canvas_watch_until=time(NULL)+15;}
     if(z_action){z_offset_reference=z_reference;z_offset_session=1;z_offset_expected=z_next;z_offset_pending=1;z_offset_timed_out=0;clock_gettime(CLOCK_MONOTONIC,&z_offset_started);}
     const char *ok="{\"accepted\":true}\n";
@@ -3618,6 +3629,24 @@ static void idle_motors_tick(const mqtt_client *mqtt,console_state *console){
     pthread_mutex_lock(&console->lock);s.console_busy=console->busy;pthread_mutex_unlock(&console->lock);
     if(control_idle_motors_due(&idle_motors,&s,recovery_clock())&&send_local_gcode_script("M84")!=0)
         idle_motors.holding=0; /* Not delivered: wait a full period before trying again. */
+}
+
+/* Switch the X/Y motors back to Normal (SpreadCycle, stock limits) once a print
+ * that ran in Quiet has ended; see control_motor_mode_restore_due(). */
+static int motor_mode_seen_print;
+static void motor_mode_tick(const mqtt_client *mqtt,console_state *console){
+    int quiet=motor_mode_requested&&!strcmp(motor_mode_requested,"quiet")&&
+        telemetry.fd>=0&&telemetry.connections==motor_mode_connection;
+    if(!quiet||!mqtt->have_machine_status){if(!quiet)motor_mode_seen_print=0;return;}
+    if(!control_motor_mode_restore_due(&motor_mode_seen_print,quiet,mqtt->machine_status,mqtt->print_state))return;
+    pthread_mutex_lock(&console->lock);int busy=console->busy;pthread_mutex_unlock(&console->lock);
+    char script[CONSOLE_COMMAND_MAX],reason[160];
+    if(busy||!control_build_script("motors:normal",mqtt,script,sizeof(script),reason,sizeof(reason))||
+       send_local_gcode_script(script)!=0){
+        motor_mode_seen_print=1; /* Not sent: try again on the next tick. */
+        return;
+    }
+    motor_mode_requested="normal";
 }
 
 #include "app_updates.h"
@@ -3969,6 +3998,7 @@ int main(int argc, char **argv) {
         if(telemetry.fd>=0&&FD_ISSET(telemetry.fd,&read_set))uds_process(&telemetry);
         uds_motion_light(&telemetry,&mqtt);
         idle_motors_tick(&mqtt,&console);
+        motor_mode_tick(&mqtt,&console);
         spools_tick(&mqtt);
         struct timespec now;clock_gettime(CLOCK_MONOTONIC,&now);
         for(int i=0;i<HTTP_PENDING_MAX;i++){

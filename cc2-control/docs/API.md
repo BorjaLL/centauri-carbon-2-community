@@ -256,6 +256,33 @@ Hotend calibration and PID persistence were validated on a physical CC2.
 No restart was observed after saving. Immediate application of the new PID
 coefficients has not been independently verified.
 
+## X/Y motor mode (StealthChop)
+
+`POST /api/control` accepts `motors:quiet` and `motors:normal` while the printer is
+idle with fresh telemetry; both are refused during a print. They change the X and Y
+TMC2209 drivers together (CoreXY) with the native `SET_TMC_FIELD`, which refuses a
+literal `VALUE=0`, so the zero writes use values whose masked field is 0
+(`en_spreadcycle` 2, `tpwmthrs` 1048576).
+
+StealthChop loses steps at high speed and acceleration, and a hybrid `tpwmthrs`
+threshold does not cap the speed. Quiet therefore runs `M400` and
+`SET_VELOCITY_LIMIT VELOCITY=80 ACCEL=2000` before any StealthChop write; Normal
+restores SpreadCycle on both steppers first and then
+`SET_VELOCITY_LIMIT VELOCITY=500 ACCEL=20000`, the stock `printer.cfg` limits
+(CC2 Control does not read the printer configuration). Both end with `DUMP_TMC`
+for X and Y, shown in the Console.
+
+`GET /api/printer` reports the last requested mode as `motor_mode` (`"quiet"`,
+`"normal"`, or `null` before any request and after the printer service reconnects,
+when the configured mode returns). It does not report the toolhead velocity or
+acceleration limits.
+
+Quiet belongs to one print. A slicer's `M204` or `SET_VELOCITY_LIMIT` lines raise
+the limits again during the print, so Quiet suits only G-code sliced at or below
+80 mm/s and 2000 mm/s²; the Control page warns while a print runs in Quiet. When a
+print (printing or paused) has run in Quiet and the printer is idle again, CC2
+Control sends the Normal script itself.
+
 ## Build-plate library
 
 CC2 Control keeps named plate surfaces in `bed-plates.json` (`--plates FILE`, next to the UI preferences):
