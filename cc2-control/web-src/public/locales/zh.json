@@ -868,8 +868,7 @@
   "common.next_page": "下一页",
   "common.page_of_total": "第 {page} 页，共 {pages} 页 · {total} 项",
   "settings.camera_persistent": "切换页面时保持实时视频",
-  "settings.camera_persistent_help": "启动实时视频后，切换页面时保持单一视频流。暂停、隐藏或关闭标签页会停止视频。视频开启时会使用摄像头资源。",
-  "settings.camera_persistent_active": "请使用右下角的实时摄像头面板。",
+  "settings.camera_persistent_help": "启动实时画面后，切换页面以及最小化或隐藏浏览器时仍保持同一视频流。暂停、禁用此选项或关闭页面会停止视频流。运行时会使用摄像头资源。",
   "files.space_available": "可用 {available}，总计 {total}",
   "files.space_unavailable": "存储空间信息不可用"
 }

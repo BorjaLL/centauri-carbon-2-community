@@ -1,4 +1,4 @@
-# CC2 Control 1.2.6 — combined test, V4.4 only
+# CC2 Control 1.2.7 — combined test, V4.4 only
 
 This updates CC2 Control only, leaving printer firmware, elegoo_printer and the
 callback library in place. It supports only Community Firmware V4.4 based on
@@ -25,7 +25,7 @@ Canvas telemetry continues to use MQTT.
 5. Wait for the full installer result. It creates a backup and checks the
    version, running executable and MQTT connection. Keep the printed backup
    directory and exact restore command.
-6. Reload the browser and confirm version 1.2.6. Restart once while idle and
+6. Reload the browser and confirm version 1.2.7. Restart once while idle and
    recheck automatic startup, connection and Canvas.
 
 Do not bypass a compatibility or printer-state refusal. If installation fails,
@@ -36,6 +36,9 @@ keep the first error and rollback outcome. Do not factory-reset for this trial.
 - Hungarian, advanced mesh and the previously working commands/quick actions.
 - Internal/USB capacity, the second Files/History page, filtering and selection.
 - Settings → Appearance: enable persistent live video, start it and change
+  pages. Use the normal Dashboard/Job card; no floating window is created.
+  Minimize the browser: video must continue. Pause, disabling the preference
+  or closing the page stops it; reload still requires a new manual start.
   pages. Disabling the option should restore the previous camera behaviour.
 - The reported OrcaSlicer file should show **55 °C bed**, **220 °C nozzle**
   and **21.2 g estimated filament**. This is separate from measured spool usage.

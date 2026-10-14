@@ -882,8 +882,7 @@
   "common.next_page": "Következő",
   "common.page_of_total": "{page}. oldal / {pages} · {total} elem",
   "settings.camera_persistent": "Élő kamera megtartása oldalváltáskor",
-  "settings.camera_persistent_help": "Az élőkép indítása után egyetlen adatfolyamot tart fenn navigálás közben. A szüneteltetés, a lap elrejtése vagy bezárása leállítja. Aktív állapotban kameraerőforrásokat használ.",
-  "settings.camera_persistent_active": "Használja a jobb alsó sarokban lévő kamerapanelt.",
+  "settings.camera_persistent_help": "Az élőkép elindítása után ugyanaz az adatfolyam fut az oldalak közötti váltáskor, illetve a böngésző kicsinyítése vagy elrejtése esetén is. A szüneteltetés, a beállítás kikapcsolása vagy az oldal bezárása leállítja. Aktív állapotban a kamera erőforrásait használja.",
   "files.space_available": "{available} szabad / {total}",
   "files.space_unavailable": "A szabad tárhely nem érhető el"
 }

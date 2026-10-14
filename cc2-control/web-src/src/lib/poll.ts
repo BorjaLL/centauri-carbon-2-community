@@ -8,7 +8,7 @@ import { useEffect } from 'preact/hooks'
 // - the next run is scheduled when the previous one has finished, never while it is still running;
 // - `hidden: true` keeps a source running in a hidden tab (OrcaSlicer's embedded WebView can report
 //   "hidden" while it is in fact being used).
-type Task = { fn: () => unknown; intervals: number[]; hidden: boolean; next: number; busy: boolean }
+type Task = { fn: () => unknown; intervals: number[]; hidden: number; next: number; busy: boolean }
 
 const tasks = new Map<() => unknown, Task>()
 let timer = 0
@@ -44,16 +44,17 @@ function tick() {
 export function poll(fn: () => unknown, every: number, opts: { hidden?: boolean } = {}) {
   let task = tasks.get(fn)
   if (!task) {
-    task = { fn, intervals: [], hidden: false, next: 0, busy: false }
+    task = { fn, intervals: [], hidden: 0, next: 0, busy: false }
     tasks.set(fn, task)
   }
   task.intervals.push(every)
-  task.hidden ||= Boolean(opts.hidden)
+  if (opts.hidden) task.hidden++
   task.next = Math.min(task.next, Date.now())
   schedule()
   const joined = task
   return () => {
     joined.intervals.splice(joined.intervals.indexOf(every), 1)
+    if (opts.hidden) joined.hidden--
     if (!joined.intervals.length) tasks.delete(fn)
     schedule()
   }

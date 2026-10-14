@@ -1,4 +1,4 @@
-# CC2 Control 1.2.6 — prova combinata, solo V4.4
+# CC2 Control 1.2.7 — prova combinata, solo V4.4
 
 Aggiorna esclusivamente CC2 Control. Non aggiorna il firmware della stampante,
 elegoo_printer o la libreria callback. Compatibile soltanto con Community
@@ -24,7 +24,7 @@ la telemetria Canvas continua a usare MQTT.
 5. L'installer crea il backup e verifica versione, binario in esecuzione e
    connessione MQTT. Attendi l'esito completo e conserva il percorso del backup
    e il comando di ripristino stampati a video.
-6. Ricarica il browser e verifica versione 1.2.6; riavvia una volta da inattiva
+6. Ricarica il browser e verifica versione 1.2.7; riavvia una volta da inattiva
    e ricontrolla connessione, Canvas e avvio automatico.
 
 Se l'installer rifiuta la compatibilità o lo stato della stampante, non saltare
@@ -36,6 +36,9 @@ Non ripristinare le impostazioni di fabbrica per questa prova.
 - Lingua ungherese e mesh avanzata; quick action e comandi già funzionanti.
 - Spazio interno/USB, seconda pagina di File e Cronologia, filtri e selezione.
 - Impostazioni → Aspetto: attiva il live persistente e avvialo; cambia pagina.
+  Il riquadro resta quello normale di Dashboard/Stampa, senza finestra flottante.
+  Minimizza il browser: il video deve continuare. Pausa, disattivazione del flag
+  o chiusura della pagina lo fermano; un reload richiede un nuovo avvio manuale.
   Disattivando l'opzione si deve recuperare il comportamento precedente.
 - Il file OrcaSlicer segnalato deve mostrare piatto **55 °C**, ugello **220 °C**
   e filamento stimato **21,2 g**. Non è il consumo reale del tracciamento bobine.

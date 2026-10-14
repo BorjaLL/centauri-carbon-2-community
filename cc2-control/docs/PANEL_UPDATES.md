@@ -8,7 +8,7 @@ File Manager and History show 15 items per page. Filtering and sorting reset the
 
 ## Live view
 
-Settings → Appearance stores camera_persistent on the printer, default false. When enabled, one small camera panel stays mounted across menu navigation. Live view still requires an explicit Start. Pause, disabling the option, hiding the browser tab, leaving the application and a confirmed viewer takeover stop the request. A reload restores the option but never automatically starts video. Persistent live view retains the resources of an active camera; it is not a RAM optimization.
+Settings → Appearance stores camera_persistent on the printer, default false. When enabled, the existing full-size camera card keeps the same image and stream across menu navigation, including a hidden tab or minimized browser. It appears in the normal Dashboard/Job camera position and is parked out of view on other pages; no floating window is created. Live view still requires an explicit Start. Pause, disabling the option, closing/leaving the page and a confirmed viewer takeover stop the request. A reload restores the option but never automatically starts video. Browser/OS process suspension or loss of network can still interrupt transmission. Persistent live view retains the resources of an active camera; it is not a RAM optimization.
 
 The normal per-page stream remains unchanged with the option disabled. The live panel and separate camera window retain the existing one-viewer ownership rule.
 

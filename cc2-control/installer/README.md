@@ -1,4 +1,4 @@
-# CC2 Control 1.2.6 test updater — V4.4 only
+# CC2 Control 1.2.7 test updater — V4.4 only
 
 Combined candidate for PR117–120. See `README-TEST.md` (English) or
 `README-TEST.it.md` (Italian) for scope and printer

@@ -882,8 +882,7 @@
   "common.next_page": "Następna",
   "common.page_of_total": "Strona {page} z {pages} · {total} elementów",
   "settings.camera_persistent": "Zachowaj podgląd kamery przy zmianie strony",
-  "settings.camera_persistent_help": "Po uruchomieniu podglądu zachowuje jeden strumień podczas nawigacji. Pauza oraz ukrycie lub zamknięcie karty zatrzymują go. Aktywny podgląd wykorzystuje zasoby kamery.",
-  "settings.camera_persistent_active": "Użyj panelu kamery w prawym dolnym rogu.",
+  "settings.camera_persistent_help": "Po uruchomieniu podglądu zachowuje ten sam strumień podczas zmiany stron oraz po zminimalizowaniu lub ukryciu przeglądarki. Pauza, wyłączenie tej opcji lub zamknięcie strony zatrzymuje strumień. Aktywny podgląd wykorzystuje zasoby kamery.",
   "files.space_available": "{available} dostępne z {total}",
   "files.space_unavailable": "Informacja o wolnym miejscu niedostępna"
 }

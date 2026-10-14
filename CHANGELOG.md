@@ -5,6 +5,12 @@ checksums remain attached to each GitHub release.
 
 ## Unreleased
 
+- Correct persistent live camera behaviour in the 1.2.7 V4.4 test candidate:
+  retain the normal camera card and the same video connection across page
+  changes and hidden/minimized browser states. Remove the floating player;
+  keep explicit Pause, disabling the preference, closing the page and viewer
+  handover. The default nonpersistent mode still pauses when hidden.
+
 - Prepare the application-only CC2 Control 1.2.6 V4.4 test candidate with PR117–120:
   Hungarian, advanced mesh, disk capacity, 15-item file/history pages, optional
   persistent camera, external-feed Canvas map reset and corrected Orca metadata.

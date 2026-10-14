@@ -1,4 +1,4 @@
-# CC2 Control 1.2.6 — combined V4.4 test candidate
+# CC2 Control 1.2.7 — combined V4.4 test candidate
 
 This is an application-only candidate for Community Firmware V4.4 based on
 ELEGOO 02.01.01.07. It does not install or replace printer firmware, the vendor
@@ -23,11 +23,11 @@ The ordinary installer preserves LAN credentials, preferences and saved data.
 ## Printer validation before merge
 
 Use the installation instructions in `docs/UPDATE_CC2.it.md` (or the English
-`docs/UPDATE_CC2.md`), with the 1.2.6 candidate ZIP. Do not reset printer or CC2
+`docs/UPDATE_CC2.md`), with the 1.2.7 candidate ZIP. Do not reset printer or CC2
 configuration for this test. The printer must be idle, both targets zero and
 both heaters at or below 50 °C. Keep the previous package and installer backup.
 
-Confirm version 1.2.6, connection and Canvas after installation and after a
+Confirm version 1.2.7, connection and Canvas after installation and after a
 reboot. Check Hungarian, advanced mesh and the existing quick actions. Check
 internal/USB capacity, the second file/history page and the persistent camera
 setting while changing pages; disabling it must restore the previous behaviour.

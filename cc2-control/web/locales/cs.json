@@ -882,8 +882,7 @@
   "common.next_page": "Další",
   "common.page_of_total": "Stránka {page} z {pages} · {total} položek",
   "settings.camera_persistent": "Zachovat živou kameru při změně stránky",
-  "settings.camera_persistent_help": "Po spuštění živého obrazu zachová jeden stream při procházení. Pozastavení, skrytí nebo zavření karty jej zastaví. Aktivní stream využívá prostředky kamery.",
-  "settings.camera_persistent_active": "Použijte panel kamery vpravo dole.",
+  "settings.camera_persistent_help": "Po spuštění živého náhledu zachová stejný stream při přepínání stránek i při minimalizovaném nebo skrytém prohlížeči. Pauza, vypnutí této možnosti nebo zavření stránky stream zastaví. Aktivní náhled využívá prostředky kamery.",
   "files.space_available": "{available} dostupných z {total}",
   "files.space_unavailable": "Údaje o volném místě nejsou dostupné"
 }
