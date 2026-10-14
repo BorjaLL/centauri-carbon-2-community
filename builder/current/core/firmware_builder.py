@@ -416,8 +416,8 @@ REACTOR_HELPER_SHA256='170851f47569d9f02072403ffda497e3135c1e01574e0a95a543a0f45
 
 def firmware_release_version():
  version=(BASE/'RELEASE_VERSION').read_text(encoding='utf-8').strip()
- if not re.fullmatch(r'4\.4\.\d+',version):
-  raise RuntimeError('Invalid firmware release version for the qualified 4.4 family')
+ if not re.fullmatch(re.escape(firmware_version())+r'\.\d+',version):
+  raise RuntimeError('Invalid firmware release version for the qualified compatibility family')
  return version
 
 def firmware_version():

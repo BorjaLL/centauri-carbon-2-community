@@ -14,7 +14,7 @@ SOURCE = Path(__file__).resolve().parents[1] / 'components/cc2-control/source/so
 with zipfile.ZipFile(SOURCE) as snapshot:
     FIRMWARE_VERSION = snapshot.read('FIRMWARE_VERSION').decode().strip()
 
-BUILDER_SHA256='3b168fb4834850fc6cbfba8d42ac1dd1159d71897fe98d18b293972902763a05'
+BUILDER_SHA256='e0892d8abbae4f79ae808a0fdacabf0848b86047d2ca9f0f91bee8119cfda2c6'
 
 def sha256(path):
     h = hashlib.sha256()
@@ -37,7 +37,7 @@ def build_arguments(root, mode, preflight=False, check_key=False, keep_work=Fals
     action = 'check_key' if check_key else ('preflight' if preflight else 'build')
     stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '_' + uuid.uuid4().hex[:8]
     release_version = (Path(__file__).resolve().parents[1] / 'RELEASE_VERSION').read_text().strip()
-    if not re.fullmatch(r'4\.4\.\d+', release_version):
+    if not re.fullmatch(re.escape(FIRMWARE_VERSION)+r'\.\d+', release_version):
         raise RuntimeError('Versione release firmware non valida')
     stem = 'CC2_V' + release_version.replace('.', '_') + '_' + mode.upper() + '_' + stamp
     if check_key:
