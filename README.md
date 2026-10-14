@@ -49,7 +49,25 @@ The exact R3 image passed its signed build and maintainer installation/connectio
 
 **Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
-## CC2 Control 1.2.10 — first complete application update for V4.4
+## CC2 Control 1.2.11 — stable update from the panel
+
+**[Download CC2 Control 1.2.11](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.11-V4.4)** · [English instructions](docs/UPDATE_CC2.md) · [Istruzioni in italiano](docs/UPDATE_CC2.it.md).
+
+**Community Firmware V4.4/V4.4.1 only; V4.3 and original firmware are unsupported.** All features and fixes from 1.2.10 are retained. This corrects Settings → Updates: descriptions of installed/older versions disappear, new signed release notes follow the selected app language, and unavailable translations are explicitly labelled as English.
+
+| Your installation | Update to 1.2.11 |
+| --- | --- |
+| V4.4.1, or an app with Settings → Updates | Select **Stable → Check for updates**. Enter the configured LAN code, **Download and verify**, then separately confirm **Install**. |
+| Original V4.4 app without the updater panel | Download and extract **CC2-Control-1.2.11-Multiplatform-Update.zip** on the computer; run the installer described in the English/Italian guide. |
+| Prefer local upload | Upload the release's **.cc2update** file in Settings → Updates. The installer ZIP is not accepted by the panel. |
+
+Use an idle, connected, cold printer with heater targets zero and live view paused. Checking availability needs no LAN code; download/upload and installation require it. Read the code from the display under **Settings → LAN only**: it is different from the SSH password. No factory reset or firmware reflash is needed. Updates are never installed unattended.
+
+**Validated:** all seven CI jobs passed; the maintainer accepted the signed candidate and authorized distribution. Exact source/payload checksums and signature were verified. [PR127](https://github.com/Neme77/centauri-carbon-2-community/pull/127) adds this UI correction; the included 1.2.10 PRs and original contributors remain credited below. Firmware, callback and MQTT Canvas are retained. This does not claim a new long-print test of 1.2.11.
+
+**Italiano:** con il pannello già installato vai in **Impostazioni → Aggiornamenti → Stabile → Controlla aggiornamenti**, inserisci il codice LAN e scegli **Scarica e verifica**, poi conferma **Installa**. La 1.2.11 conserva tutte le novità della 1.2.10 e corregge le note degli aggiornamenti. Solo V4.4/V4.4.1; non serve reinstallare il firmware.
+
+## Previous application update — CC2 Control 1.2.10
 
 **[Download CC2 Control 1.2.10](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.10-V4.4)** · [English installation guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
 
@@ -130,7 +148,7 @@ These are positive integration results, rather than a controlled measurement att
 | [SHA256SUMS.txt](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4/SHA256SUMS.txt) | Verify both release downloads. |
 | [Release notes and all assets](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) | Features, callback evidence, validation, installation and acknowledgements. |
 
-The complete firmware assets above retain CC2 Control 1.2.3 and their original checksums. After installing/configuring V4.4, use the separate **1.2.10 application update** above for the newest app features. V4.3 is unsupported. A factory reset is not required.
+The complete firmware assets above retain CC2 Control 1.2.3 and their original checksums. After installing/configuring V4.4, use the separate **1.2.11 application update** above for the newest app features. V4.3 is unsupported. A factory reset is not required.
 
 ## Original ELEGOO firmware
 

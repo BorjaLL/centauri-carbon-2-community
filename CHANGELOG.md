@@ -3,6 +3,17 @@
 This file records user-visible project changes. Signed artifacts and exact
 checksums remain attached to each GitHub release.
 
+## CC2 Control 1.2.11 — stable application update — 2026-10-14
+
+[Release](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.11-V4.4) · [English installation](docs/UPDATE_CC2.md) · [Italiano](docs/UPDATE_CC2.it.md).
+
+- Hide installed/older release descriptions in Settings → Updates.
+- Select localized descriptions from the signed catalog in all eight app languages without another catalog fetch; explicitly label English fallback.
+- Preserve all 1.2.10 features, contributor credits and saved configuration. Firmware/callback and MQTT Canvas are unchanged; only Community Firmware V4.4/V4.4.1 is supported.
+- Publish a signed stable catalog for panel-based discovery, download/verification and separately confirmed installation with the configured LAN code.
+
+[PR127](https://github.com/Neme77/centauri-carbon-2-community/pull/127): all seven CI jobs passed; the maintainer accepted the signed candidate and authorized stable distribution. Source/payload identity and Ed25519 signature verified. No new prolonged-print campaign is claimed. Signed package SHA-256: `2d08659473b4245bf6f43434857a143338af4342dfd6c40da19b8d26faa23074`.
+
 ## Community Firmware V4.4.1 — CC2 Control 1.2.10 — 2026-10-14
 
 [Complete firmware and public builder](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4.1) · [First installation](docs/FIRST_RUN.md) · [Italiano](docs/FIRST_RUN.it.md).
