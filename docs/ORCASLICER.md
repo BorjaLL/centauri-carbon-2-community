@@ -2,13 +2,17 @@
 
 [Italiano](ORCASLICER.it.md) · [First installation](FIRST_RUN.md) · [Homepage](../README.md)
 
-This guide uses the **CC2 Control connection** on Community Firmware V4.4 / CC2 Control 1.2.3. Complete [first setup](FIRST_RUN.md) and check **Printer connected** before configuring OrcaSlicer.
+This guide uses the **CC2 Control connection** on Community Firmware V4.4 / V4.4.1. Complete [first setup](FIRST_RUN.md) and check **Printer connected** before configuring OrcaSlicer.
 
 ## 1. Configure the printer connection
 
 Use your working **Centauri Carbon 2** printer profile with the correct nozzle and Canvas configuration. Open its physical-printer / network connection settings. Field positions and translations vary between OrcaSlicer versions; use a version that provides the **Moonraker printer agent** for filament synchronization.
 
 Example printer address: `192.168.1.50`. Replace it with your printer's actual IP.
+
+![OrcaSlicer physical-printer configuration: Octo/Klipper host type and Moonraker printer agent, shown in Italian](images/orcaslicer-connection.png)
+
+**In “Hostname, IP or URL”, the printer IP must be followed by `:8081`**, for example `192.168.1.103:8081` or `http://192.168.1.103:8081`. Replace `192.168.1.103` with your printer's IP and keep port **8081**. The screenshot's narrow field shows only the beginning of the port (`:8`): enter the full address ending in **`:8081`**.
 
 | Field | Value for CC2 Control |
 | --- | --- |
