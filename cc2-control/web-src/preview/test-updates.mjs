@@ -31,6 +31,11 @@ try {
     { version: '1.3.0', firmware: '4.4', channel: 'canvas-uds', url: 'https://github.com/Neme77/centauri-carbon-2-community/releases/download/control-1.3.0/Control.cc2update', size: 1500000, notes: 'Experimental fixture' },
   ] }
   let cache = { schema: 1, expires: 0, releases: [] }
+  await page.route('**/i18n/*.json', async r => {
+    const code = new URL(r.request().url()).pathname.match(/^\/i18n\/(en|it|fr|pl|cs|hu|ru|zh)\.json$/)?.[1]
+    assert(code, 'unexpected locale request')
+    return r.fulfill({ body: await readFile(path.join(root, `public/locales/${code}.json`), 'utf8'), contentType: 'application/json' })
+  })
   await page.route('**/api/preferences', r => {
     if (r.request().method() === 'PUT') preferenceLanguage = r.request().postDataJSON().language || preferenceLanguage
     return r.fulfill({ json: { language: preferenceLanguage, theme: 'dark' } })
