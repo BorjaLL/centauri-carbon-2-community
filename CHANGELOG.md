@@ -3,6 +3,19 @@
 This file records user-visible project changes. Signed artifacts and exact
 checksums remain attached to each GitHub release.
 
+## Community Firmware V4.4.1 — CC2 Control 1.2.10 — 2026-10-14
+
+[Complete firmware and public builder](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4.1) · [First installation](docs/FIRST_RUN.md) · [Italiano](docs/FIRST_RUN.it.md).
+
+- Combine the qualified CC2 Control 1.2.10 application and signed updater with the complete firmware: Settings → Updates works from first installation without a separate computer-assisted bootstrap.
+- Stage the verifier, HTTPS downloader, CA bundle, public key, runner and notices in immutable rootfs. Use the qualified ARM archiver and require the complete helper set.
+- Explicitly persist the advanced plate/nozzle library under `/opt/usr/cc2-control/bed-plates.json`.
+- Preserve ELEGOO base 02.01.01.07, native callback/firmware patches and application compatibility family 4.4. Complete firmware artifact numbering is 4.4.1.
+- Retain the application features and contributor credits listed below. Canvas uses MQTT; PR103/114 and full Canvas UDS remain excluded.
+- Explain separate LAN-code authorization for package preparation/installation, with first-installation and update guides in English and Italian.
+
+Integration [PR126](https://github.com/Neme77/centauri-carbon-2-community/pull/126): all seven CI jobs passed; the exact signed R3 artifact passed its WSL build and the maintainer confirmed the requested installation/connection/Canvas/profile-retention/restart trial. SHA-256: `61356c3a83be374988d6154d429c27c403985974663d3780b194164e774a22c1`. Earlier beta long-print reports apply to those tested builds, not a new long-duration test of this exact image.
+
 ## CC2 Control 1.2.10 — V4.4-only application update — 2026-10-14
 
 [Release and downloads](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.10-V4.4) · [English installation](docs/UPDATE_CC2.md) · [Italiano](docs/UPDATE_CC2.it.md).

@@ -14,7 +14,7 @@ Existing validated callback O0, light/display acknowledgement, authenticated LAN
 
 Run `Build-Release.cmd` or the qualified Linux build sequence. `build_release.py` runs builder/launcher tests, full CC2 host tests, ARM compilation and signing checks before `CANDIDATE BUILD PASS`. The generated Dual Trust ARM wrapper is reproduced from source and checked against the unchanged qualified payload hash; no generated vendor firmware, ARM runtime modules or private keys are included in Git.
 
-The preceding V4.4 firmware and CC2 Control 1.2.10 application were validated separately on the maintainer's printer. **This new combined V4.4.1 image still requires a complete signed WSL build and real-printer validation** of first boot, integrated updater, connection, Canvas, camera, restart and printing before publication. The preceding hardware results do not qualify an unbuilt image.
+The exact combined V4.4.1 R3 firmware passed a complete signed WSL build and the maintainer confirmed the requested installation/connection/Canvas/profile-retention/restart trial on 14 October 2026. All seven CI jobs passed on `bf4d2004130e6c5d0c8ec93b60b26d49165d2101`. Qualified installed artifact: `CC2_V4_4_1_STOCK_20261014_205610_dd82af94.zip.sig`, SHA-256 `61356c3a83be374988d6154d429c27c403985974663d3780b194164e774a22c1`. This is an initial combined-image trial, not a new long-duration print test. A newly rebuilt artifact still needs its own printer validation.
 
 # Current firmware builder
 

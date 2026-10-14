@@ -2,9 +2,9 @@
 
 [English](FIRST_RUN.md) · [OrcaSlicer e sync Canvas](ORCASLICER.it.md) · [Homepage](../README.md)
 
-La guida riguarda il Community Firmware **V4.4 con CC2 Control 1.2.3**, basato sul firmware ufficiale **CC2 02.01.01.07**. La 4.4 è stata pubblicata il 13 ottobre 2026. Scaricare firmware, builder sorgente e checksum dalla [release V4.4](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4).
+La guida riguarda il Community Firmware **V4.4.1 con CC2 Control 1.2.10**, basato sul firmware ufficiale **CC2 02.01.01.07**. La 4.4.1 è il rilascio completo del 14 ottobre 2026. Scaricare firmware, builder sorgente e checksum dalla [release V4.4.1](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4.1).
 
-**Compatibilità del solo CC2 Control:** questa release include l’applicazione nel firmware completo 4.4. Non installare separatamente il nuovo CC2 Control sulla 4.3; l’[update CC2 Control 1.2.5](UPDATE_CC2.it.md) è utilizzabile solo dopo aver installato e configurato Community Firmware V4.4.
+**Compatibilità del solo CC2 Control:** questa release include l’applicazione nel firmware completo 4.4. Non installare separatamente questo CC2 Control sulla 4.3 o sul firmware originale. Impostazioni → Aggiornamenti è già incluso nella 4.4.1; gli update applicativi successivi mantengono la famiglia compatibile V4.4. [Guida agli update](UPDATE_CC2.it.md).
 
 ## 1. Scegliere il file corretto
 
@@ -22,19 +22,19 @@ Usare i file della stessa release. La 4.4 utilizza la nuova base 02.01.01.07: bu
 Prima dell’installazione, verificare il checksum da PowerShell:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath '.\CC2_V4_4_STOCK_20261013_001035_414d6629.zip.sig'
+Get-FileHash -Algorithm SHA256 -LiteralPath '.\CC2_V4_4_1_STOCK_20261014_205610_dd82af94.zip.sig'
 ```
 
-Per il firmware V4.4 indicato sopra, lo SHA-256 atteso è `fa06d40104ba9d90df4ffd6c5183626995f2e6c823763c684cd823e8fe53a729`. Confrontarlo con [SHA256SUMS.txt](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4/SHA256SUMS.txt). Se non coincide, riscaricare il file e non installarlo.
+Per il firmware V4.4.1 indicato sopra, lo SHA-256 atteso è `61356c3a83be374988d6154d429c27c403985974663d3780b194164e774a22c1`. Confrontarlo con [SHA256SUMS.txt](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/SHA256SUMS.txt). Se non coincide, riscaricare il file e non installarlo.
 
 ## 2. Installare e attendere l'avvio
 
-1. Scaricare **`CC2_V4_4_STOCK_20261013_001035_414d6629.zip.sig`** dalla [release V4.4](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) e verificarne il checksum. Il pacchetto completo include la base firmware; lo ZIP del builder sorgente non è un file di installazione.
+1. Scaricare **`CC2_V4_4_1_STOCK_20261014_205610_dd82af94.zip.sig`** dalla [release V4.4.1](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4.1) e verificarne il checksum. Il pacchetto completo include la base firmware; lo ZIP del builder sorgente non è un file di installazione.
 2. A stampante inattiva, copiare il file firmato **`.zip.sig` integro nella cartella principale della chiavetta USB**, leggibile dalla stampante. Non estrarlo, non rinominarlo in `update.bin` e non copiare soltanto i file contenuti al suo interno.
 3. Inserire la chiavetta nella stampante. Sul display aprire **Impostazioni → Verifica aggiornamenti → Aggiornamento offline** e selezionare il pacchetto firmato. Le etichette possono variare con la lingua del display. Confermare l’installazione sulla stampante.
 4. Lasciare terminare l’installazione e il normale riavvio. Non interrompere l’alimentazione e lasciare inserita la chiavetta fino al completamento.
 5. Se necessario, ricollegare la stampante alla rete locale, leggere l’indirizzo IP nella schermata di rete e attendere l’avvio dei servizi prima di aprire CC2 Control.
-6. Dopo l’avvio verificare la base della stampante **02.01.01.07** e CC2 Control **1.2.3**. Il display mostra la versione della base vendor; **Community Firmware V4.4** è il nome del rilascio del progetto.
+6. Dopo l’avvio verificare la base della stampante **02.01.01.07** e CC2 Control **1.2.10**. Il display mostra la versione della base vendor; **Community Firmware V4.4.1** è il nome del rilascio del progetto.
 
 Il percorso USB è documentato nella [procedura OpenCentauri per CC2](https://docs.opencentauri.cc/software/updates-cc2/#updating-locally-via-usb).
 
@@ -60,7 +60,11 @@ Dopo una configurazione riuscita non serve un ulteriore spegnimento manuale. Una
 
 ## 5. Scegliere lingua e tema
 
-Aprire **Impostazioni → Aspetto**. Le lingue dell'interfaccia sono **inglese, italiano, francese, cinese semplificato, russo, polacco e ceco**. Temi: **Dark, Light, Dracula, Nord, Monokai e Solarized Light**. Le preferenze salvate sono condivise tra browser e pagina CC2 Control incorporata in OrcaSlicer.
+Aprire **Impostazioni → Aspetto**. Le lingue dell'interfaccia sono **inglese, italiano, francese, cinese semplificato, russo, polacco, ceco e ungherese**. Temi: **Dark, Light, Dracula, Nord, Monokai e Solarized Light**. Le preferenze salvate sono condivise tra browser e pagina CC2 Control incorporata in OrcaSlicer.
+
+## Aggiornamenti dal pannello
+
+La V4.4.1 include già **Impostazioni → Aggiornamenti**: non occorre un secondo pacchetto applicativo dal computer. Controllare la disponibilità non richiede il codice; scaricare/caricare e installare richiedono la conferma con il codice LAN della stampante, anche dopo la prima configurazione. È diverso dalla password SSH. [Perché serve e dove trovarlo](UPDATE_CC2.it.md#perché-viene-richiesto-il-codice-lan). Gli update richiedono sempre una conferma. Il pannello aggiorna solo CC2 Control; il firmware completo usa la procedura USB descritta sopra.
 
 ## Se la pagina non si apre
 
@@ -81,7 +85,7 @@ Il Community Firmware permette l’accesso SSH locale per la manutenzione:
 | Parametro | Valore predefinito |
 | --- | --- |
 | Utente | `root` |
-| Password | `MTY4ODE2` |
+| Password | La propria password SSH; [riferimento predefinito pubblicato](https://github.com/Neme77/centauri-carbon-2-community/blob/V4.4/docs/FIRST_RUN.it.md#riferimento-per-laccesso-ssh) |
 
 Da PowerShell o da un terminale eseguire `ssh root@IP-STAMPANTE`, sostituendo `IP-STAMPANTE` con l’indirizzo locale della stampante, e inserire la password quando richiesta. Durante la digitazione la password non viene mostrata. Se la password di root è stata cambiata, utilizzare quella personalizzata. È la password SSH, distinta dal codice LAN usato da CC2 Control. Questi riferimenti riguardano il Community Firmware; SSH non serve per la normale configurazione dal browser.
 

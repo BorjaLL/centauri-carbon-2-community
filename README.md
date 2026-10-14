@@ -21,7 +21,33 @@ Community firmware, local printer control and reproducible build tools for the *
 | --- | --- | --- |
 | First installation, printer IP and LAN access code | [First setup](docs/FIRST_RUN.md) | [Prima installazione](docs/FIRST_RUN.it.md) |
 | OrcaSlicer connection, upload and Canvas filament sync | [OrcaSlicer guide](docs/ORCASLICER.md) | [Guida OrcaSlicer](docs/ORCASLICER.it.md) |
-| All V4.4 improvements and retained features | [Changelog](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) | [Novità della release](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) |
+| Latest complete firmware and retained features | [Changelog](CHANGELOG.md#community-firmware-v441--cc2-control-1210--2026-10-14) | [Novità della release](CHANGELOG.md#community-firmware-v441--cc2-control-1210--2026-10-14) |
+
+## V4.4.1 — complete firmware with CC2 Control 1.2.10
+
+**[Download the complete V4.4.1 firmware](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4.1)** — released **14 October 2026**, on the qualified **ELEGOO CC2 02.01.01.07** base.
+
+**For new users: one firmware installation includes CC2 Control 1.2.10, its qualified fixes and the complete signed updater in Settings.** No second application package from the computer is needed. The native callback and firmware patches remain included; Canvas stays on MQTT. PR103/114 and full experimental Canvas UDS remain excluded.
+
+<p align="center">
+  <a href="https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/CC2_V4_4_1_STOCK_20261014_205610_dd82af94.zip.sig"><img alt="Download complete Firmware V4.4.1" src="https://img.shields.io/badge/Download-Firmware%20V4.4.1-00b8d9?style=for-the-badge"></a>
+  <a href="https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/CC2-Builder-V4.4.1-Source.zip"><img alt="Download V4.4.1 source builder" src="https://img.shields.io/badge/Builder-V4.4.1%20Source-f59e0b?style=for-the-badge"></a>
+  <a href="https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/SHA256SUMS.txt"><img alt="Download SHA-256 checksums" src="https://img.shields.io/badge/Verify-SHA--256-22c55e?style=for-the-badge"></a>
+</p>
+
+| Download | Purpose |
+| --- | --- |
+| [Complete signed V4.4.1 firmware](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/CC2_V4_4_1_STOCK_20261014_205610_dd82af94.zip.sig) | Printer USB/offline installation; includes compatible base, CC2 Control 1.2.10 and updater helpers. Keep the `.zip.sig` intact. |
+| [Public source builder](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/CC2-Builder-V4.4.1-Source.zip) | Source-only computer build kit; official vendor inputs, qualified tools and private signing/AES keys remain external. This ZIP is not printer firmware. |
+| [SHA256SUMS.txt](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4.1/SHA256SUMS.txt) | Checksums for these exact release assets. |
+
+[First installation in English](docs/FIRST_RUN.md) · [Prima installazione in italiano](docs/FIRST_RUN.it.md). Existing V4.4 users may instead install the application-only update below; a factory reset is not required. Keep the existing V4.4-compatible application channel: **4.4.1 is the complete firmware release, while 4.4 is its compatibility family**. The printer display retains base 02.01.01.07.
+
+**Application update authorization:** Check for updates needs no LAN code. Download/upload and Install require confirmation with the printer's configured LAN code, read on the display under **Settings → LAN only**, even when CC2 Control is already connected. This is different from the SSH password. [English explanation](docs/UPDATE_CC2.md#why-the-lan-code-is-required) · [Spiegazione italiana](docs/UPDATE_CC2.it.md#perché-viene-richiesto-il-codice-lan). Updates are never installed unattended; the panel updates CC2 Control, while complete firmware uses the USB procedure.
+
+The exact R3 image passed its signed build and maintainer installation/connection/Canvas/profile-retention/restart trial. All seven CI jobs passed. Earlier prolonged-print beta reports remain described below; they are not a new 40-hour test of this exact image. Integration: [PR126](https://github.com/Neme77/centauri-carbon-2-community/pull/126); application PRs and contributors are credited below.
+
+**Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
 ## CC2 Control 1.2.10 — first complete application update for V4.4
 
@@ -58,7 +84,7 @@ Community firmware, local printer control and reproducible build tools for the *
 
 Special thanks to **[pezso92](https://github.com/pezso92)** for Hungarian and **[beanbo](https://github.com/beanbo)** for the advanced mesh and Canvas fixes. We also thank **[Surfoo](https://github.com/Surfoo)** for the UI/localization/test foundations, **[efiten](https://github.com/efiten)** for Orca Canvas sync and **[Skcycos](https://github.com/Skcycos)** for Chinese. Original authorship is retained through integration PRs. Thank you to **DamiBFryta**, our first beta tester, and Barry Green, Michael Husbyn, Jiří Heider, James Morriss Hill, Brian Mcmillion and everyone offering time, printers and detailed feedback. [Full community credits](docs/CONTRIBUTORS.md).
 
-## V4.4 — now available
+## Previous complete firmware — V4.4
 
 **[Community Firmware V4.4](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) is officially available**, with CC2 Control 1.2.3 and official CC2 base 02.01.01.07. Released on **13 October 2026** with the tested complete firmware, public source builder and checksums.
 
@@ -89,7 +115,7 @@ These are positive integration results, rather than a controlled measurement att
 
 **Release packaging:** the V4.4 release supplies complete firmware and its builder. The new CC2 Control application is included in that compatible firmware; **installing it separately on V4.3 is not supported**. The separately released V4.4-only application updater above is now available. Future application updates are planned in two clearly identified variants: the current MQTT Canvas path and an experimental UDS Canvas path, each with explicit firmware compatibility and separate validation results.
 
-## Downloads — V4.4
+## Previous downloads — V4.4
 
 <p align="center">
   <a href="https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4/CC2_V4_4_STOCK_20261013_001035_414d6629.zip.sig"><img alt="Download complete Firmware V4.4" src="https://img.shields.io/badge/Download-Firmware%20V4.4-00b8d9?style=for-the-badge"></a>
