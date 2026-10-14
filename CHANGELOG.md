@@ -3,20 +3,22 @@
 This file records user-visible project changes. Signed artifacts and exact
 checksums remain attached to each GitHub release.
 
-## Unreleased
+## CC2 Control 1.2.10 — V4.4-only application update — 2026-10-14
 
-- Correct persistent live camera behaviour in the 1.2.7 V4.4 test candidate:
-  retain the normal camera card and the same video connection across page
-  changes and hidden/minimized browser states. Remove the floating player;
-  keep explicit Pause, disabling the preference, closing the page and viewer
-  handover. The default nonpersistent mode still pauses when hidden.
+[Release and downloads](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.10-V4.4) · [English installation](docs/UPDATE_CC2.md) · [Italiano](docs/UPDATE_CC2.it.md).
 
-- Prepare the application-only CC2 Control 1.2.6 V4.4 test candidate with PR117–120:
-  Hungarian, advanced mesh, disk capacity, 15-item file/history pages, optional
-  persistent camera, external-feed Canvas map reset and corrected Orca metadata.
-  Original PR119 commits and @beanbo's attribution are retained. PR103/114,
-  continuous Canvas UDS and the unfinished Settings updater are excluded.
-  Printer validation is required before merge; this is not a published release.
+- Integrate Hungarian by pezso92, advanced temperature/nozzle mesh and soaked calibration by beanbo, and the V4.4-only installer with preservation/backup checks.
+- Show available internal/mounted USB space and paginate Files/History at 15 items without extra page-driven printer requests.
+- Offer persistent camera in Settings → Appearance: one original stream across navigation and hidden/minimized pages; manual Start/Pause, disable, close and viewer handover remain effective.
+- Clear old Canvas mappings before external-feed starts and send calibrated multicolour mappings together (beanbo); keep Canvas telemetry on MQTT.
+- Correct Orca bed-temperature estimates and sum all filament tool masses; unknown estimates remain unavailable.
+- Add signed GitHub update discovery and bounded HTTPS download/verification in Settings, separate installation confirmation, signed local upload, actual firmware fingerprints and configuration-preserving installation.
+- Remove the empty file-analysis notification/close icon when the Canvas print dialog opens.
+- Retain all previous V4.4 controls, callback runtime and contributor attribution. PR103/114 and continuous Canvas UDS remain excluded.
+
+Merged scope: #104, #115/#116, #117, #118, #119, #120, #121 and #124. Original authors and integration details are listed on the homepage and in [community credits](docs/CONTRIBUTORS.md).
+
+Maintainer confirmed the complete application and camera trial, local signed upgrade, real-printer GitHub HTTPS checksum download, full online signed installation/restart/configuration retention, and the Canvas-dialog UI fix. Required automatic checks passed. Forced-failure rollback has host coverage, not a deliberately induced printer test. Published complete V4.4 firmware assets remain unchanged.
 
 ## CC2 Control 1.2.5 — application update for Community Firmware V4.4
 

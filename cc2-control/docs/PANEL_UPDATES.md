@@ -12,8 +12,11 @@ Settings → Appearance stores camera_persistent on the printer, default false. 
 
 The normal per-page stream remains unchanged with the option disabled. The live panel and separate camera window retain the existing one-viewer ownership rule.
 
-## Application update integration still to implement
+## Signed application updates under validation
 
-The web updater must stage payloads on persistent storage with bounded buffers, validate package authenticity and actual firmware compatibility, then hand the existing installer to an independent worker before stopping CC2 Control. Status must remain available after restart, with rollback evidence and a disk-space reserve. The HTTP upload must not execute arbitrary uploaded scripts. Firmware update integration requires verification of the original display update path separately.
-
-These changes are independent of the existing application update candidate. Printer validation is pending.
+Settings → Updates now prepares signed local or GitHub-distributed application
+packages. See [English instructions](APPLICATION_UPDATES.md) and
+[Italian instructions](APPLICATION_UPDATES.it.md). The standalone TLS helper
+does not depend on the printer's curl. The stable and experimental Canvas UDS
+channels remain separate. Printer qualification is pending; firmware updating
+through the original display path remains a separate future task.

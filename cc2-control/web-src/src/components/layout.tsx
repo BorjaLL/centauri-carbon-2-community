@@ -359,12 +359,15 @@ export const Toast = () => {
   const { text, n, tone } = toast.use()
   const [show, setShow] = useState(false)
   useEffect(() => {
-    if (!n) return
+    if (!n || !text) {
+      setShow(false)
+      return
+    }
     setShow(true)
     const id = setTimeout(() => setShow(false), tone === 'error' ? 7000 : 3600)
     return () => clearTimeout(id)
-  }, [n])
-  return show ? (
+  }, [n, text, tone])
+  return show && text ? (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       class={cn(

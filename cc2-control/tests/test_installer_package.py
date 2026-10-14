@@ -9,6 +9,12 @@ with tempfile.TemporaryDirectory() as tmp:
     (prepared/'cc2-control').write_bytes(binary)
     (prepared/'web/index.html').write_text('UI');(prepared/'web/locales/en.json').write_text('{}')
     source=base/'source.zip';source.write_bytes(b'test source');output=base/'updater.zip'
+    (prepared/'cc2-https-download').write_bytes((prepared/'cc2-control').read_bytes())
+    (prepared/'ca-bundle.pem').write_bytes((ROOT/'updater/ca-bundle.pem').read_bytes())
+    (prepared/'cc2-update-worker').write_bytes((prepared/'cc2-control').read_bytes())
+    (prepared/'update-runner.sh').write_bytes((ROOT/'scripts/update-runner.sh').read_bytes())
+    (prepared/'updater-trusted-key.json').write_bytes((ROOT/'updater/trusted-key.json').read_bytes())
+    (prepared/'THIRD_PARTY_NOTICES.txt').write_bytes((ROOT/'third-party/monocypher/LICENCE.md').read_bytes())
     pkg.package(prepared,ROOT/'scripts',source,output)
     with zipfile.ZipFile(output) as z:
         files={pathlib.Path(n).name:z.read(n) for n in z.namelist()}
@@ -22,7 +28,7 @@ with tempfile.TemporaryDirectory() as tmp:
         with tarfile.open(fileobj=io.BytesIO(files['cc2-control-payload.tar.gz']),mode='r:gz') as t:
             for m in t.getmembers():
                 p=stage/m.name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(t.extractfile(m).read());p.chmod(m.mode)
-                assert m.mode==(0o755 if m.name=='cc2-control' or m.name.endswith(('.sh','.init')) else 0o644)
+                assert m.mode==(0o755 if m.name in ('cc2-control','cc2-update-worker','cc2-https-download') or m.name.endswith(('.sh','.init')) else 0o644)
         for line in (stage/'SHA256SUMS').read_text().splitlines():
             digest,name=line.split('  ',1);assert hashlib.sha256((stage/name).read_bytes()).hexdigest()==digest
         target=fixture/'opt/usr/cc2-control';target.mkdir(parents=True);(target/'cc2-control').write_bytes(b'OLD')

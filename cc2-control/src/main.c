@@ -3598,6 +3598,9 @@ static void idle_motors_tick(const mqtt_client *mqtt,console_state *console){
         idle_motors.holding=0; /* Not delivered: wait a full period before trying again. */
 }
 
+#include "app_updates.h"
+#include "app_update_catalog.h"
+
 #define HTTP_PENDING_MAX 8
 typedef struct {
     int fd;
@@ -3611,7 +3614,8 @@ static int http_request_complete(const char *request,size_t used){
     if(!end){end=strstr(request,"\n\n");separator=2;}
     if(used==REQUEST_MAX)return 1;
     if(!end)return 0;
-    if(!strncmp(request,"POST /api/gcode-files/upload?",29)||
+    if(!strncmp(request,"POST /api/app-update/upload ",sizeof("POST /api/app-update/upload ")-1)||
+       !strncmp(request,"POST /api/gcode-files/upload?",29)||
        !strncmp(request,"POST /api/files/local ",22)||
        !strncmp(request,"POST /api/files/local?",22))return 1;
     size_t header=(size_t)(end-request)+separator;
@@ -3643,7 +3647,25 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
     if(!header_end){header_end=strstr(request,"\n\n");separator=2;}
     const char *body=header_end?header_end+separator:request+used;
     size_t body_len=header_end&&used>=(size_t)(body-request)?used-(size_t)(body-request):0;
-    if (strcmp(method,"POST")==0 && strcmp(path,"/api/files/local")==0) {
+    int emergency = !strcmp(method, "POST") && !strcmp(path, "/api/control") &&
+        body_len == strlen("system:emergency_stop") && !memcmp(body, "system:emergency_stop", body_len);
+    if (strcmp(method, "GET") && strcmp(method, "HEAD") && !emergency && app_update_active()) {
+        app_update_fail(fd, 409, "Application update is running; printer changes are paused");
+        return 0;
+    }
+    if (strcmp(method, "GET") == 0 && strcmp(path, "/api/app-update/status") == 0) {
+        app_update_status_response(fd, mqtt, console);
+    } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/app-update/upload") == 0) {
+        return header_end ? app_update_upload_start(fd, request, used, (size_t)(body-request), mqtt, console, NULL) : 0;
+    } else if (strcmp(method, "GET") == 0 && strcmp(path, "/api/app-update/catalog") == 0) {
+        app_catalog_get(fd);
+    } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/app-update/catalog") == 0) {
+        app_catalog_store(fd, body, body_len);
+    } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/app-update/download") == 0) {
+        return app_catalog_download(fd, request, body, body_len, mqtt, console);
+    } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/app-update/install") == 0) {
+        app_update_install_response(fd, request, body, body_len, mqtt, console);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/files/local")==0) {
         return header_end ? orca_upload_start(fd,request,used,(size_t)(body-request),mqtt):0;
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/gcode-files/upload")==0) {
         return header_end ? gcode_upload_start(fd,request,query,used,(size_t)(body-request),mqtt):0;
@@ -3809,6 +3831,11 @@ int main(int argc, char **argv) {
         else if (strcmp(argv[i], "--uds-socket") == 0 && i + 1 < argc) uds_path = argv[++i];
         else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) mqtt_config_path = argv[++i];
         else if (strcmp(argv[i], "--presets") == 0 && i + 1 < argc) material_presets_path = argv[++i];
+        else if (strcmp(argv[i], "--updates-root") == 0 && i + 1 < argc) app_update_root = argv[++i];
+        else if (strcmp(argv[i], "--update-verifier") == 0 && i + 1 < argc) app_update_verifier = argv[++i];
+        else if (strcmp(argv[i], "--update-downloader") == 0 && i + 1 < argc) app_update_downloader = argv[++i];
+        else if (strcmp(argv[i], "--update-ca") == 0 && i + 1 < argc) app_update_ca = argv[++i];
+        else if (strcmp(argv[i], "--update-runner") == 0 && i + 1 < argc) app_update_runner = argv[++i];
         else if (strcmp(argv[i], "--preferences") == 0 && i + 1 < argc) ui_preferences_path = argv[++i];
         else if (strcmp(argv[i], "--plates") == 0 && i + 1 < argc) plates_path = argv[++i];
         else if (strcmp(argv[i], "--spools") == 0 && i + 1 < argc) spools_path = argv[++i];

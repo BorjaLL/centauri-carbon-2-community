@@ -27,12 +27,14 @@ import { QUICK_DEFAULTS, saveQuickActions } from '@/lib/quick'
 import { ls } from '@/lib/store'
 import { usePoll } from '@/lib/poll'
 import { health, refreshHealth, refreshSetup } from '@/lib/state'
+import { Updates } from './Updates'
 
 const TABS = [
   [Link, 'settings.connection'],
   [Plug, 'settings.integrations'],
   [Palette, 'settings.appearance'],
   [Info, 'settings.about'],
+  [RefreshCw, 'updates.title'],
 ] as const
 const G = { size: 16, strokeWidth: 1 }
 const Dot = () => <i class="inline-block size-2 rounded-full bg-current align-middle" />
@@ -295,6 +297,7 @@ export const Settings = () => {
           {tab === 0 && <Connection />}
           {tab === 1 && <Integrations />}
           {tab === 2 && <Appearance />}
+          {tab === 4 && <Updates />}
           {tab === 3 && (
             <Card>
               <CardHead icon="info" title="settings.about" />

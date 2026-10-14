@@ -28,7 +28,11 @@ jobs:
       - name: Host build and tests (warnings are errors)
         run: make clean test CROSS= CC=gcc EXTRA_CFLAGS=-Werror
 
+      - name: Verified GitHub HTTPS download with the standalone helper
+        run: CC2_TEST_LIVE_HTTPS=1 python3 tests/test_https_live.py
+
       - name: ARM build (warnings are errors)
+        # A separate short-lived TLS helper replaces the printer's broken curl.
         run: |
           make clean all EXTRA_CFLAGS=-Werror
           file dist/cc2-control/cc2-control
@@ -45,6 +49,17 @@ jobs:
         with:
           name: cc2-control-v44-updater
           path: output/CC2-Control-*-Multiplatform-Update.zip*
+          if-no-files-found: error
+
+      - name: Build a version-only successor for the real panel-install trial
+        working-directory: .
+        run: python3 .github/scripts/build-next-app-trial.py --increments 2
+
+      - name: Save the unsigned panel-install trial for local maintainer signing
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: cc2-control-v44-panel-install-trial
+          path: output/panel-install-trial/*
           if-no-files-found: error
 
   web:
@@ -85,6 +100,9 @@ jobs:
 
       - name: Hungarian language selection, persistence and mobile layouts
         run: npm run test:hungarian
+
+      - name: Signed update panel confirmations and mobile layouts
+        run: npm run test:updates
 
       - name: Printing temperature interaction regression
         run: npm run test:print-temperatures

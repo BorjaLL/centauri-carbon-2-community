@@ -4,7 +4,7 @@
 
 Thank you to everyone who has contributed code, ideas, reviews, translations and printer time. Community Firmware V4.4 builds on work from across the project's history, not only the latest pull requests.
 
-The credits below follow original authorship. A feature may have been integrated through a maintainer PR after review or corrections; that does not replace the original contributor's credit. References were checked against the repository's pull requests on **13 October 2026**.
+The credits below follow original authorship. A feature may have been integrated through a maintainer PR after review or corrections; that does not replace the original contributor's credit. References were checked against the repository's pull requests on **14 October 2026**.
 
 ## Contributions included in the project and retained in V4.4
 
@@ -47,17 +47,30 @@ Thank you to **[@Skcycos](https://github.com/Skcycos)** for the **Simplified Chi
 
 **[@Neme77](https://github.com/Neme77)** maintains the project, develops and integrates firmware/control changes, coordinates printer-side validation and prepares the release artifacts. The latest integration includes the Control panel/camera updates ([#107](https://github.com/Neme77/centauri-carbon-2-community/pull/107)), Canvas reset ([#108](https://github.com/Neme77/centauri-carbon-2-community/pull/108)), Polish/Czech interface translations ([#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109)) and 4.4 firmware-base port ([#110](https://github.com/Neme77/centauri-carbon-2-community/pull/110)). Original contributor credit remains with the work listed above.
 
-## Work under review — not included in V4.4
+## Filament ejection under review — excluded from the application update
 
 We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection proposal, touchscreen/web integration and validation work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), following [#102](https://github.com/Neme77/centauri-carbon-2-community/pull/102).
 
-Thank you to **[@beanbo](https://github.com/beanbo)** for the continued temperature/nozzle mesh and soaked-calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104).
+The advanced temperature/nozzle mesh and soaked calibration by **[@beanbo](https://github.com/beanbo)** in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104) is now merged and included in the separate application update below. It remains absent from the original complete V4.4 firmware assets.
 
-The physical-ejection extension remains under review. Both are **excluded from the original complete V4.4 firmware**, while beanbo’s advanced mesh extension is included in the separate CC2 Control 1.2.5 application update. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
+Full filament ejection, including PR103/114, remains excluded. PR104 is included in the application update; original V4.4 firmware artifacts are unchanged. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
 
-## CC2 Control 1.2.5 application update
+## CC2 Control 1.2.10 application update
 
 Thank you to **[@pezso92](https://github.com/pezso92)** for the complete **Hungarian (Magyar)** translation in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115): 879 entries, matching source keys and dynamic placeholders. The maintainer’s packaging/test follow-up preserves the original translation commits and author credit. This translation is included in the V4.4-only application updater, while the original complete V4.4 firmware assets retain their original seven languages. The same updater includes beanbo’s advanced temperature/nozzle mesh and soaked calibration from #104, with his original authorship retained.
+
+| Merged PR | Included improvement | Original contribution / integration |
+| --- | --- | --- |
+| [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104) | Temperature/nozzle mesh measurements and soaked calibration | beanbo |
+| [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115), [#116](https://github.com/Neme77/centauri-carbon-2-community/pull/116) | Hungarian translation and packaging/browser integration | pezso92; Neme77 integration |
+| [#117](https://github.com/Neme77/centauri-carbon-2-community/pull/117) | V4.4-only application installer, compatibility checks, backup and restore | Neme77 |
+| [#118](https://github.com/Neme77/centauri-carbon-2-community/pull/118) | Available storage space and 15-item File Manager/History pages | Neme77 |
+| [#119](https://github.com/Neme77/centauri-carbon-2-community/pull/119) | External-feed Canvas table clear and complete calibrated multicolour mapping | beanbo |
+| [#120](https://github.com/Neme77/centauri-carbon-2-community/pull/120) | Correct Orca G-code bed temperatures and multi-tool filament estimates | Neme77, with beta-tester reports |
+| [#121](https://github.com/Neme77/centauri-carbon-2-community/pull/121) | Optional persistent camera across navigation and hidden/minimized pages | Neme77, retaining beanbo's viewer coordination |
+| [#124](https://github.com/Neme77/centauri-carbon-2-community/pull/124) | Signed GitHub updates in Settings and cleared Canvas-analysis notification | Neme77 |
+
+The 1.2.10 updater and Canvas-dialog follow-up were tested on the maintainer's V4.4 printer. Integration preserves original contributor commits and attribution.
 
 ## Beta testers
 
