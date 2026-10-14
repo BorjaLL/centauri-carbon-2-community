@@ -90,6 +90,17 @@ CHANGED=1
 cp "$STAGE/cc2-control" "$TARGET/cc2-control.new"
 chmod 755 "$TARGET/cc2-control.new"
 mv "$TARGET/cc2-control.new" "$TARGET/cc2-control"
+cp "$STAGE/cc2-update-worker" "$TARGET/cc2-update-worker.new"
+chmod 755 "$TARGET/cc2-update-worker.new"
+mv "$TARGET/cc2-update-worker.new" "$TARGET/cc2-update-worker"
+cp "$STAGE/cc2-https-download" "$TARGET/cc2-https-download"
+chmod 755 "$TARGET/cc2-https-download"
+cp "$STAGE/ca-bundle.pem" "$TARGET/ca-bundle.pem"
+cp "$STAGE/update-runner.sh" "$TARGET/update-runner.sh.new"
+chmod 755 "$TARGET/update-runner.sh.new"
+mv "$TARGET/update-runner.sh.new" "$TARGET/update-runner.sh"
+cp "$STAGE/updater-trusted-key.json" "$TARGET/updater-trusted-key.json"
+cp "$STAGE/THIRD_PARTY_NOTICES.txt" "$TARGET/THIRD_PARTY_NOTICES.txt"
 cp "$STAGE/start.sh" "$TARGET/start.sh"
 cp "$STAGE/launch.sh" "$TARGET/launch.sh"
 cp "$STAGE/cc2-control.init" "$INIT"
@@ -97,10 +108,10 @@ mkdir -p "$TARGET/web/locales"
 cp "$STAGE/web/index.html" "$TARGET/web/index.html"
 cp "$STAGE/web/locales/"*.json "$TARGET/web/locales/"
 cp "$STAGE/build-info.json" "$TARGET/build-info.json"
-chmod 755 "$TARGET/start.sh" "$TARGET/launch.sh" "$INIT"
+chmod 755 "$TARGET/update-runner.sh" "$TARGET/start.sh" "$TARGET/launch.sh" "$INIT"
 chmod 644 "$TARGET/web/index.html" "$TARGET/web/locales/"*.json "$TARGET/build-info.json"
 # Configuration, material presets, UI preferences, the plate library and the spool library are never replaced.
-for file in cc2-control start.sh launch.sh web/index.html build-info.json; do
+for file in cc2-control cc2-update-worker cc2-https-download ca-bundle.pem update-runner.sh updater-trusted-key.json THIRD_PARTY_NOTICES.txt start.sh launch.sh web/index.html build-info.json; do
     BEFORE=$(sha256sum "$STAGE/$file" | awk '{print $1}')
     AFTER=$(sha256sum "$TARGET/$file" | awk '{print $1}')
     [ "$BEFORE" = "$AFTER" ] || { echo "Installed checksum mismatch: $file" >&2; exit 1; }

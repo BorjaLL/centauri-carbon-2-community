@@ -5,6 +5,13 @@ checksums remain attached to each GitHub release.
 
 ## Unreleased
 
+- Prepare CC2 Control 1.2.8 application updates in Settings: signed GitHub
+  channel index, stable/experimental channel selection, compatible-version
+  checks, bounded flash downloads, signed local uploads and explicit install
+  confirmation. Preserve settings, validate the actual V4.4 firmware base,
+  back up and roll back on failed replacement checks. Use a short-lived HTTPS
+  helper independent of the printer's broken curl. Printer trial pending.
+
 - Correct persistent live camera behaviour in the 1.2.7 V4.4 test candidate:
   retain the normal camera card and the same video connection across page
   changes and hidden/minimized browser states. Remove the floating player;

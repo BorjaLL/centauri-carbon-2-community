@@ -24,6 +24,17 @@ def package(prepared, scripts, source, output):
         raise ValueError('Payload requires a 32-bit little-endian ARM ELF')
     binary_hash = hashlib.sha256(binary).hexdigest()
     files = {'cc2-control': binary}
+    worker = (prepared / 'cc2-update-worker').read_bytes()
+    if len(worker) < 20 or worker[:6] != b'\x7fELF\x01\x01' or struct.unpack_from('<H', worker, 18)[0] != 40:
+        raise ValueError('Update verifier requires a 32-bit little-endian ARM ELF')
+    files['cc2-update-worker'] = worker
+    downloader = (prepared / 'cc2-https-download').read_bytes()
+    if len(downloader) < 20 or downloader[:6] != b'\x7fELF\x01\x01' or struct.unpack_from('<H', downloader, 18)[0] != 40:
+        raise ValueError('HTTPS helper requires a 32-bit ARM executable')
+    files['cc2-https-download'] = downloader
+    files['ca-bundle.pem'] = (prepared / 'ca-bundle.pem').read_bytes()
+    for name in ('update-runner.sh', 'updater-trusted-key.json', 'THIRD_PARTY_NOTICES.txt'):
+        files[name] = (prepared / name).read_bytes()
     for name in ('start.sh', 'launch.sh', 'cc2-control.init'):
         data = (scripts / name).read_bytes().decode('utf-8-sig').replace('\r\n', '\n').replace('\r', '\n').encode()
         if not data.startswith(b'#!'): raise ValueError('Missing shebang: ' + name)
@@ -51,7 +62,7 @@ def package(prepared, scripts, source, output):
         with tarfile.open(fileobj=compressed, mode='w') as archive:
             for name, data in sorted(files.items()):
                 entry = tarfile.TarInfo(name); entry.size = len(data)
-                entry.mode = 0o755 if name == 'cc2-control' or name.endswith(('.sh', '.init')) else 0o644
+                entry.mode = 0o755 if name in ('cc2-control', 'cc2-update-worker', 'cc2-https-download') or name.endswith(('.sh', '.init')) else 0o644
                 entry.uid = entry.gid = 0; entry.mtime = 0
                 archive.addfile(entry, io.BytesIO(data))
     public = {name: (HERE / name).read_bytes() for name in

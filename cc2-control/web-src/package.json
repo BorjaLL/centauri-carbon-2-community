@@ -29,7 +29,8 @@
     "test:languages": "node preview/test-polish-czech.mjs",
     "test:hungarian": "node preview/test-hungarian.mjs",
     "test:materials": "node preview/test-material-presets.mjs",
-    "test:list-pages": "node preview/test-files-history-pages.mjs"
+    "test:list-pages": "node preview/test-files-history-pages.mjs",
+    "test:updates": "node preview/test-updates.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

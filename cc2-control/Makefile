@@ -17,6 +17,9 @@ endif
 BUILD := build
 DIST := dist/cc2-control
 TARGET := $(BUILD)/cc2-control
+UPDATE_WORKER := $(BUILD)/cc2-update-worker
+HTTPS_DOWNLOAD := $(BUILD)/cc2-https-download
+TLS := $(BUILD)/tls/mbedtls-3.6.7
 UDS_PROBE := $(BUILD)/cc2-uds-probe
 
 .PHONY: all clean dist uds-probe test web
@@ -26,8 +29,18 @@ all: dist
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(TARGET): src/main.c src/gcode_metadata.h src/gcode_download.h src/history.h src/plates.h src/spools.h src/recovery.h src/mqtt.c src/mqtt.h src/console.c src/console.h src/control.c src/control.h src/http_guard.h src/panda.c src/panda.h src/uds.c src/uds.h VERSION FIRMWARE_VERSION | $(BUILD)
+$(TARGET): src/app_update_catalog.h src/app_updates.h src/main.c src/gcode_metadata.h src/gcode_download.h src/history.h src/plates.h src/spools.h src/recovery.h src/mqtt.c src/mqtt.h src/console.c src/console.h src/control.c src/control.h src/http_guard.h src/panda.c src/panda.h src/uds.c src/uds.h VERSION FIRMWARE_VERSION | $(BUILD)
 	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections src/main.c src/mqtt.c src/console.c src/control.c src/panda.c src/uds.c -o $@ $(LDFLAGS) -lm
+
+$(UPDATE_WORKER): updater/verify.c updater/trusted-key.h updater/trusted-base.h third-party/monocypher/monocypher.c third-party/monocypher/monocypher.h third-party/monocypher/monocypher-ed25519.c third-party/monocypher/monocypher-ed25519.h VERSION FIRMWARE_VERSION | $(BUILD)
+	$(CC) $(CFLAGS) -Ithird-party/monocypher -Iupdater -ffunction-sections -fdata-sections updater/verify.c third-party/monocypher/monocypher.c third-party/monocypher/monocypher-ed25519.c -o $@ $(LDFLAGS)
+
+$(BUILD)/tls/.ready: updater/prepare-tls.py third-party/mbedtls-3.6.7.tar.bz2 | $(BUILD)
+	python3 updater/prepare-tls.py
+
+$(HTTPS_DOWNLOAD): updater/download.c $(BUILD)/tls/.ready
+	$(MAKE) -C $(TLS)/library CC=$(CC) AR=$(CROSS)ar CFLAGS="-Os -ffunction-sections -fdata-sections" static
+	$(CC) $(CFLAGS) -I$(TLS)/include updater/download.c $(TLS)/library/libmbedtls.a $(TLS)/library/libmbedx509.a $(TLS)/library/libmbedcrypto.a -o $@ $(LDFLAGS)
 
 $(UDS_PROBE): tools/uds_probe.c | $(BUILD)
 	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections $< -o $@ $(LDFLAGS)
@@ -39,9 +52,15 @@ uds-probe: $(UDS_PROBE)
 web:
 	cd web-src && npm ci && npm run build
 
-dist: $(TARGET)
+dist: $(TARGET) $(UPDATE_WORKER) $(HTTPS_DOWNLOAD)
 	mkdir -p $(DIST)/web/locales
 	cp $(TARGET) $(DIST)/cc2-control
+	cp $(UPDATE_WORKER) $(DIST)/cc2-update-worker
+	cp $(HTTPS_DOWNLOAD) $(DIST)/cc2-https-download
+	cp updater/ca-bundle.pem $(DIST)/ca-bundle.pem
+	cp scripts/update-runner.sh $(DIST)/update-runner.sh
+	cp updater/trusted-key.json $(DIST)/updater-trusted-key.json
+	cat third-party/monocypher/LICENCE.md third-party/mbedtls-3.6.7.tar.LICENSE third-party/HTTPS-NOTICE.md > $(DIST)/THIRD_PARTY_NOTICES.txt
 	cp web/index.html $(DIST)/web/index.html
 	cp web/locales/*.json $(DIST)/web/locales/
 	cp scripts/start.sh $(DIST)/start.sh
@@ -54,7 +73,7 @@ dist: $(TARGET)
 #   make clean test CROSS= CC=gcc
 # Tests that compile their own C harness receive the same extra and sanitizer
 # flags through CC2_TEST_CFLAGS.
-test: $(TARGET)
+test: $(TARGET) $(UPDATE_WORKER) $(HTTPS_DOWNLOAD)
 	@set -e; for t in tests/test_*.py; do echo "== $$t"; CC2_TEST_CFLAGS="$(EXTRA_CFLAGS) $(SANITIZE_FLAGS)" python3 $$t $(TARGET); done
 
 clean:

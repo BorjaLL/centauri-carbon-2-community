@@ -6,7 +6,7 @@ checks before merge. This is not an official release or an update from Settings.
 
 **Only Community Firmware V4.4 is supported.** The installer fingerprints the installed and running community printer executable and update daemon. V4.3, stock firmware and unknown fingerprints are refused before backup or service stop.
 
-Extract the entire ZIP on the computer. Windows: Install-Windows.cmd. Linux/macOS: sh ./install-cc2-control.sh PRINTER-IP. Requires local network access and OpenSSH. SSH username root, default password MTY4ODE2 (or your changed password); this is separate from the LAN access code.
+Extract the entire ZIP on the computer. Windows: Install-Windows.cmd. Linux/macOS: sh ./install-cc2-control.sh PRINTER-IP. Requires local network access and OpenSSH. SSH username root, default password YOUR-SSH-PASSWORD (or your changed password); this is separate from the LAN access code.
 
 Printer must be configured, connected, Idle and cold: nozzle/bed at most 50 °C, both targets zero. No print or calibration should be running. Configuration, materials, UI preferences, plates/nozzles and spools are retained. Backup and rollback are included. Health, running binary checksum, MQTT registration and snapshot are checked for up to 240 seconds.
 
