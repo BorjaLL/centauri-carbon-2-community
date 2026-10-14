@@ -287,7 +287,7 @@ export const Updates = () => {
         </Button>
       </details>
       <p class="mt-4">
-        {t('updates.status')}:{' '}
+        {t('updates.status')}{' '}
         {t(
           state?.phase === 'complete'
             ? 'updates.complete'
@@ -302,7 +302,7 @@ export const Updates = () => {
       </p>
       {state?.version && (
         <p>
-          {t('updates.selected')}: {state.version}
+          {t('updates.selected')} {state.version}
         </p>
       )}
       {state?.phase === 'complete' && (
