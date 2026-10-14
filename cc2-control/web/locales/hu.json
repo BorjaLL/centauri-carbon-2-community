@@ -913,5 +913,6 @@
   "updates.working": "Letöltés, ellenőrzés vagy telepítés…",
   "updates.idle": "Tétlen",
   "updates.selected": "Kiválasztott verzió",
-  "updates.reload": "CC2 Control újratöltése"
+  "updates.reload": "CC2 Control újratöltése",
+  "updates.notes_in_english": "Kiadási megjegyzések angolul: fordítás nem érhető el"
 }

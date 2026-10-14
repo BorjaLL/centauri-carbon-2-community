@@ -899,5 +899,6 @@
   "updates.working": "正在下载、验证或安装…",
   "updates.idle": "空闲",
   "updates.selected": "所选版本",
-  "updates.reload": "重新加载 CC2 Control"
+  "updates.reload": "重新加载 CC2 Control",
+  "updates.notes_in_english": "发行说明为英语：暂无翻译"
 }

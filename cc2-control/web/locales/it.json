@@ -913,5 +913,6 @@
   "updates.working": "Download, verifica o installazione in corso…",
   "updates.idle": "Inattivo",
   "updates.selected": "Versione selezionata",
-  "updates.reload": "Ricarica CC2 Control"
+  "updates.reload": "Ricarica CC2 Control",
+  "updates.notes_in_english": "Note della release in inglese: traduzione non disponibile"
 }
