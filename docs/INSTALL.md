@@ -12,7 +12,7 @@ The [English first-installation guide](FIRST_RUN.md) and [Italian guide](FIRST_R
 
 ## CC2 Control-only updates
 
-**V4.4 has no standalone CC2 Control updater.** The new application is included in the compatible complete firmware; do not install it separately on V4.3. Historical standalone updaters apply only to the firmware versions documented in their own release.
+**CC2 Control 1.2.5 is a separate updater exclusively for existing Community Firmware V4.4 installations.** Follow the [detailed update guide](UPDATE_CC2.md) ([Italiano](UPDATE_CC2.it.md)). Actual printer/daemon fingerprints are checked before modification; do not use it on V4.3 or original ELEGOO firmware. The original V4.4 firmware release retains its original assets; historical application updaters apply only to their documented bases.
 
 ## Original firmware and downgrade restriction
 

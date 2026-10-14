@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory(prefix="cc2-preferences-") as temporary:
         for _ in range(30):
             try:
                 with urllib.request.urlopen(endpoint, timeout=1) as response:
-                    assert json.load(response) == {"language": "", "theme": "dark", "quick_actions": ["home:ALL", "system:heaters_off", "system:fans_off", "system:motors_off"]}
+                    assert json.load(response) == {"language": "", "theme": "dark", "quick_actions": ["home:ALL", "system:heaters_off", "system:fans_off", "system:motors_off"], "camera_persistent": False}
                 break
             except OSError:
                 time.sleep(0.1)
@@ -55,19 +55,19 @@ with tempfile.TemporaryDirectory(prefix="cc2-preferences-") as temporary:
             headers={"X-CC2-Request": "1", "Content-Type": "application/json"})
         with urllib.request.urlopen(request, timeout=1) as response:
             assert json.load(response) == {"saved": True}
-        assert preferences.read_text(encoding="ascii") == '{"language":"it","theme":"dark","quick1":"home:ALL","quick2":"system:heaters_off","quick3":"system:fans_off","quick4":"system:motors_off"}\n'
+        assert preferences.read_text(encoding="ascii") == '{"language":"it","theme":"dark","quick1":"home:ALL","quick2":"system:heaters_off","quick3":"system:fans_off","quick4":"system:motors_off","camera_persistent":false}\n'
         assert preferences.stat().st_mode & 0o777 == 0o600
         with urllib.request.urlopen(endpoint, timeout=1) as response:
-            assert json.load(response) == {"language": "it", "theme": "dark", "quick_actions": ["home:ALL", "system:heaters_off", "system:fans_off", "system:motors_off"]}
+            assert json.load(response) == {"language": "it", "theme": "dark", "quick_actions": ["home:ALL", "system:heaters_off", "system:fans_off", "system:motors_off"], "camera_persistent": False}
 
         request = urllib.request.Request(
             endpoint, data=b'{"language":"it","theme":"light"}', method="PUT",
             headers={"X-CC2-Request": "1", "Content-Type": "application/json"})
         with urllib.request.urlopen(request, timeout=1) as response:
             assert json.load(response) == {"saved": True}
-        assert preferences.read_text(encoding="ascii") == '{"language":"it","theme":"light","quick1":"home:ALL","quick2":"system:heaters_off","quick3":"system:fans_off","quick4":"system:motors_off"}\n'
+        assert preferences.read_text(encoding="ascii") == '{"language":"it","theme":"light","quick1":"home:ALL","quick2":"system:heaters_off","quick3":"system:fans_off","quick4":"system:motors_off","camera_persistent":false}\n'
         with urllib.request.urlopen(endpoint, timeout=1) as response:
-            assert json.load(response) == {"language": "it", "theme": "light", "quick_actions": ["home:ALL", "system:heaters_off", "system:fans_off", "system:motors_off"]}
+            assert json.load(response) == {"language": "it", "theme": "light", "quick_actions": ["home:ALL", "system:heaters_off", "system:fans_off", "system:motors_off"], "camera_persistent": False}
 
         request = urllib.request.Request(
             endpoint, data=b'{"quick1":"page:files","quick2":"light:toggle","quick3":"home:Z","quick4":"page:canvas"}', method="PUT",
@@ -95,7 +95,7 @@ with tempfile.TemporaryDirectory(prefix="cc2-preferences-") as temporary:
         with urllib.request.urlopen(request, timeout=1) as response:
             assert json.load(response) == {"saved": True}
         with urllib.request.urlopen(endpoint, timeout=1) as response:
-            assert json.load(response) == {"language": "fr", "theme": "light", "quick_actions": ["page:files", "light:toggle", "home:Z", "page:canvas"]}
+            assert json.load(response) == {"language": "fr", "theme": "light", "quick_actions": ["page:files", "light:toggle", "home:Z", "page:canvas"], "camera_persistent": False}
 
         # Themes are identifiers too (the frontend owns the palettes): lowercase words joined by hyphens.
         for theme in ("dracula", "solarized-light"):
@@ -147,7 +147,36 @@ with tempfile.TemporaryDirectory(prefix="cc2-preferences-") as temporary:
             with urllib.request.urlopen(endpoint, timeout=1) as response:
                 assert json.load(response)["language"] == language
             assert json.loads(preferences.read_text(encoding="ascii"))["language"] == language
-        print("PASS: persistent UI language and theme API")
+        # Persist the camera option while preserving other preferences.
+        before = json.loads(preferences.read_text())
+        for enabled in (True, False, True):
+            update = urllib.request.Request(endpoint, data=json.dumps({"camera_persistent": enabled}).encode(), method="PUT",
+                headers={"X-CC2-Request": "1", "Content-Type": "application/json"})
+            with urllib.request.urlopen(update, timeout=1): pass
+            with urllib.request.urlopen(endpoint, timeout=1) as response:
+                assert json.load(response)["camera_persistent"] is enabled
+            saved = json.loads(preferences.read_text())
+            assert all(saved[k] == v for k, v in before.items() if k != "camera_persistent")
+        for invalid in ('"true"', '1', 'null', 'truex'):
+            update = urllib.request.Request(endpoint, data=('{"camera_persistent":' + invalid + '}').encode(), method="PUT",
+                headers={"X-CC2-Request": "1", "Content-Type": "application/json"})
+            try:
+                urllib.request.urlopen(update, timeout=1)
+                raise AssertionError("invalid camera option accepted")
+            except urllib.error.HTTPError as error:
+                assert error.code == 400
+        process.terminate(); process.wait(timeout=3)
+        process = subprocess.Popen([str(binary), "--port", str(port), "--panda-port", "0",
+            "--web-root", str(root), "--config", str(root / "missing.conf"), "--preferences", str(preferences)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(30):
+            try:
+                with urllib.request.urlopen(endpoint, timeout=1) as response:
+                    assert json.load(response)["camera_persistent"] is True
+                break
+            except OSError: time.sleep(0.1)
+        else: raise AssertionError("camera preference not restored after restart")
+        print("PASS: persistent UI language, theme and camera API")
     finally:
         process.terminate()
         process.wait(timeout=3)

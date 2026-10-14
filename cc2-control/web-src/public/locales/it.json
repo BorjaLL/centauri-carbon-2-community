@@ -605,7 +605,6 @@
   "history.the_printer_is_creating_the_video": "La stampante sta creando il video.",
   "history.previous_attempt_failed": "Il tentativo precedente non è riuscito",
   "history.no_time_lapse": "Nessun timelapse",
-  "history.show_more_n_of_total": "Mostra altri {n} su {total}",
   "print.enable_timelapse": "Abilita timelapse",
   "history.clear_history": "Cancella cronologia",
   "history.delete_entry": "Cancella voce",
@@ -877,5 +876,13 @@
   "control.invalid_fan_percent": "Inserisci un numero intero da 0 a 100.",
   "control.fan_enter_hint": "Scrivi un valore da 0 a 100 e premi Invio.",
   "canvas.reset_all": "Reimposta tutti i filamenti",
-  "canvas.reset_all_confirm": "Reimpostare i dati del materiale di tutti e quattro gli slot Canvas? Questa operazione cancella materiale, colore e temperature salvati. Non scarica il filamento."
+  "canvas.reset_all_confirm": "Reimpostare i dati del materiale di tutti e quattro gli slot Canvas? Questa operazione cancella materiale, colore e temperature salvati. Non scarica il filamento.",
+  "settings.camera_persistent": "Mantieni la camera live al cambio pagina",
+  "settings.camera_persistent_help": "Dopo aver avviato il live, mantiene lo stesso stream cambiando pagina e anche con il browser ridotto a icona o nascosto. Pausa, disattivare questa opzione o chiudere la pagina lo interrompe. Usa le risorse della camera mentre è attivo.",
+  "files.space_available": "{available} disponibili su {total}",
+  "files.space_unavailable": "Spazio di archiviazione non disponibile",
+  "common.pagination": "Paginazione",
+  "common.previous_page": "Precedente",
+  "common.next_page": "Successiva",
+  "common.page_of_total": "Pagina {page} di {pages} · {total} elementi"
 }

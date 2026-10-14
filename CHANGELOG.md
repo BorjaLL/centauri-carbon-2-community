@@ -5,9 +5,31 @@ checksums remain attached to each GitHub release.
 
 ## Unreleased
 
+- Correct persistent live camera behaviour in the 1.2.7 V4.4 test candidate:
+  retain the normal camera card and the same video connection across page
+  changes and hidden/minimized browser states. Remove the floating player;
+  keep explicit Pause, disabling the preference, closing the page and viewer
+  handover. The default nonpersistent mode still pauses when hidden.
+
+- Prepare the application-only CC2 Control 1.2.6 V4.4 test candidate with PR117–120:
+  Hungarian, advanced mesh, disk capacity, 15-item file/history pages, optional
+  persistent camera, external-feed Canvas map reset and corrected Orca metadata.
+  Original PR119 commits and @beanbo's attribution are retained. PR103/114,
+  continuous Canvas UDS and the unfinished Settings updater are excluded.
+  Printer validation is required before merge; this is not a published release.
+
+## CC2 Control 1.2.5 — application update for Community Firmware V4.4
+
+- First separate application update for V4.4: Hungarian by pezso92 and temperature/nozzle mesh storage with soaked calibration by beanbo.
+- Installer checks actual installed/running fingerprints before service stop and refuses V4.3, original firmware and unknown bases. Requires connected fresh Idle state and cold heaters with zero targets.
+- Retains credentials, materials, preferences, plates/nozzles and spools with backup/rollback. Verifies installed binary/UI/locales and reconnection. Canvas stays on MQTT and the firmware/callback runtime is retained.
+
+
 - Add the complete Hungarian interface (Magyar) by [@pezso92](https://github.com/pezso92), contributed in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115). Preserve all 879 entries/placeholders, include the locale in the pinned builder snapshot, and test selection, saved preference, hu-HU detection and mobile layouts. Published V4.4 artifacts remain unchanged.
 
 - Bed mesh calibration takes a bed temperature (40–110 °C, 60 by default), a soak time (10 minutes by default; the firmware itself probes as soon as the bed reads the temperature) and a nozzle, and can save the result to a build plate. It runs on CC2 Control, so the page may be closed, and can be stopped until the probing starts. A plate keeps one measurement per temperature and nozzle; a print started from CC2 Control uses the one nearest to the file's bed temperature (or the one chosen in the print dialog), loaded during the print start without a restart. A nozzle list adds each nozzle's Z correction to the plate's Z offset, so one mesh serves every nozzle; a measurement's temperature and nozzle can be corrected later.
+- Clear the printer's Canvas colour table before a print started on the external feed, as the touchscreen does. The table left by an earlier Canvas print made the printer switch Canvas to that print's channel, so a directly fed print (for example TPU with the Canvas cable unplugged) paused at layer 0 with error 1210 or 1220. The print does not start unless the printer acknowledges the clear.
+- Send the whole Canvas map of a multicolour print started with bed calibration in one colour-table command, as the printer's own start request does. Each command replaces the printer's table, so the earlier one-command-per-tool script left only the last tool mapped and the other colours were not switched.
 
 ## Community Firmware V4.4 / CC2 Control 1.2.3 — 2026-10-13
 

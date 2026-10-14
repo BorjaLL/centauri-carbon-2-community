@@ -9,6 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 FLAGS = ["-O2", "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-D_POSIX_C_SOURCE=200809L", "-pthread", *os.environ.get("CC2_TEST_CFLAGS", "").split()]
 BACKEND = [ROOT / "src/mqtt.c", ROOT / "src/console.c", ROOT / "src/control.c", ROOT / "src/panda.c", ROOT / "src/uds.c"]
 HARNESSES = {
+    "test_gcode_metadata.c": [],
     "test_object_query.c": BACKEND,
     "test_exclude_objects.c": BACKEND,
     # test_file_ops.c and test_orca_upload.c include src/main.c themselves.
@@ -19,6 +20,7 @@ HARNESSES = {
     "test_runtime_limits.c": BACKEND,
     "test_mqtt_limits.c": [],
     "test_calibrated_start.c": BACKEND,
+    "test_external_feed_start.c": BACKEND,
     "test_filament_metadata.c": BACKEND,
     "test_orca_upload.c": BACKEND,
     "test_mqtt_workload.c": [],

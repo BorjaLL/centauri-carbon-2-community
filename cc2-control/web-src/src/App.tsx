@@ -2,7 +2,7 @@ import { i18n } from '@/lib/i18n'
 import { menu, nav, printer } from '@/lib/state'
 import { PrintWatcher, PrinterReport, RefusalWatcher, Sidebar, TitleSync, Toast, Topbar } from '@/components/layout'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { CameraWindow } from '@/components/shared'
+import { CameraWindow, PersistentCamera } from '@/components/shared'
 import { SpoolWatcher } from '@/components/spool-ui'
 import { SetupDialog } from '@/pages/setup'
 import { PrintDialog } from '@/pages/print-dialog'
@@ -53,6 +53,7 @@ export const App = () => {
           <Page />
         </div>
       </main>
+      <PersistentCamera />
       <Toast />
       <SetupDialog />
       <PrintDialog />

@@ -23,6 +23,16 @@ Community firmware, local printer control and reproducible build tools for the *
 | OrcaSlicer connection, upload and Canvas filament sync | [OrcaSlicer guide](docs/ORCASLICER.md) | [Guida OrcaSlicer](docs/ORCASLICER.it.md) |
 | All V4.4 improvements and retained features | [Changelog](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) | [Novità della release](CHANGELOG.md#community-firmware-v44--cc2-control-123--2026-10-13) |
 
+## CC2 Control 1.2.5 — application update, V4.4 only
+
+**[Download the application updater](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.5-V4.4)** · [Detailed English instructions](docs/UPDATE_CC2.md) · [Istruzioni dettagliate in italiano](docs/UPDATE_CC2.it.md).
+
+Adds **Hungarian (Magyar)** by **[pezso92](https://github.com/pezso92)** and **advanced temperature/nozzle meshes with soaked calibration** by **[beanbo](https://github.com/beanbo)**. This update provides eight interface languages and includes the merged mesh improvements.
+
+**Install exclusively on an existing Community Firmware V4.4 installation. V4.3 and original ELEGOO firmware are unsupported and refused by actual installed/running-component fingerprint checks.** Extract the application ZIP on the computer and run the Windows or Linux/macOS SSH installer while the printer is configured, connected, Idle and cold. This is not a firmware USB package.
+
+LAN credentials, materials, preferences, plates/nozzles and spools are retained, with backup and restore. Canvas stays on MQTT and the existing callback runtime remains in place. The complete V4.4 firmware downloads below retain their original versions and checksums.
+
 ## V4.4 — now available
 
 **[Community Firmware V4.4](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) is officially available**, with CC2 Control 1.2.3 and official CC2 base 02.01.01.07. Released on **13 October 2026** with the tested complete firmware, public source builder and checksums.
@@ -52,7 +62,7 @@ The **callback patch is a central part of this work**: it addresses retained ref
 
 These are positive integration results, rather than a controlled measurement attributing every memory change to the callback patch. The runtime targets reactor retention; camera buffers, caches and other vendor allocations have separate lifecycles. [Read the callback mechanism and validation evidence](docs/CALLBACK_RUNTIME.md).
 
-**Release packaging:** the V4.4 release supplies complete firmware and its builder. The new CC2 Control application is included in that compatible firmware; **installing it separately on V4.3 is not supported**. A standalone application updater is deferred. Future application updates are planned in two clearly identified variants: the current MQTT Canvas path and an experimental UDS Canvas path, each with explicit firmware compatibility and separate validation results.
+**Release packaging:** the V4.4 release supplies complete firmware and its builder. The new CC2 Control application is included in that compatible firmware; **installing it separately on V4.3 is not supported**. The separate CC2 Control 1.2.5 updater is available exclusively for an existing V4.4 community installation; see the detailed update guide above. Future application updates are planned in two clearly identified variants: the current MQTT Canvas path and an experimental UDS Canvas path, each with explicit firmware compatibility and separate validation results.
 
 ## Downloads — V4.4
 
@@ -69,7 +79,7 @@ These are positive integration results, rather than a controlled measurement att
 | [SHA256SUMS.txt](https://github.com/Neme77/centauri-carbon-2-community/releases/download/V4.4/SHA256SUMS.txt) | Verify both release downloads. |
 | [Release notes and all assets](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4) | Features, callback evidence, validation, installation and acknowledgements. |
 
-**There is no standalone CC2 Control updater for V4.4 in this release.** Do not install the new application separately on V4.3. For V4.4, use the complete signed firmware above. A factory reset is not required.
+**The original complete-firmware V4.4 release does not contain a standalone updater; the separate CC2 Control 1.2.5 application release is linked above.** Do not install the new application separately on V4.3. For V4.4, use the complete signed firmware above. A factory reset is not required.
 
 ## Original ELEGOO firmware
 
@@ -127,11 +137,11 @@ Our sincere thanks to the contributors whose code, ideas, translations and valid
 | **[@efiten](https://github.com/efiten)** | Original OrcaSlicer/Canvas filament-sync implementation proposal, analysis and printer-side validation: [#8](https://github.com/Neme77/centauri-carbon-2-community/pull/8), integrated through [#12](https://github.com/Neme77/centauri-carbon-2-community/pull/12). |
 | **[@Skcycos](https://github.com/Skcycos)** | Simplified Chinese interface translation: [#26](https://github.com/Neme77/centauri-carbon-2-community/pull/26). |
 
-**Upcoming CC2 Control translation:** thanks to **[@pezso92](https://github.com/pezso92)** for the complete Hungarian interface (**Magyar**), all 879 source entries and preserved placeholders in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115). Maintainer integration retains his original commits and adds builder packaging and language tests. Hungarian is for the next update; the published V4.4 firmware still ships seven languages.
+**CC2 Control 1.2.5 translation:** thanks to **[@pezso92](https://github.com/pezso92)** for the complete Hungarian interface (**Magyar**), all 879 source entries and preserved placeholders in [#115](https://github.com/Neme77/centauri-carbon-2-community/pull/115). Maintainer integration retains his original commits and adds builder packaging and language tests. Hungarian is included in the separate V4.4-only application update; the original complete V4.4 firmware still ships seven languages.
 
 Special recognition to **Surfoo** for reshaping the interface and its development foundations, and to **beanbo** for the extensive additions to everyday printing and printer integration. Thank you to every contributor for the care, time and follow-through behind these improvements.
 
-We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), and **beanbo** for the further mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104). These two extensions remain under review and **are not included in V4.4**; acknowledging the contribution does not announce its release.
+We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), and **beanbo** for the further mesh/calibration work in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104). The physical-ejection extension remains under review. The advanced mesh extension is included in the separate CC2 Control 1.2.5 updater; neither changes the original complete V4.4 firmware assets.
 
 **[@Neme77](https://github.com/Neme77)** maintains the project, develops and integrates the firmware/control fixes, coordinates hardware validation and prepares release artifacts. The recent integration includes the Control/Canvas changes, Polish/Czech translations and new firmware-base port ([#107](https://github.com/Neme77/centauri-carbon-2-community/pull/107), [#108](https://github.com/Neme77/centauri-carbon-2-community/pull/108), [#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109), [#110](https://github.com/Neme77/centauri-carbon-2-community/pull/110)).
 

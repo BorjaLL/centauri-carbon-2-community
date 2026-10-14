@@ -22,6 +22,8 @@ code = [*root.glob("src/*"), *root.glob("installer/*"), *root.glob("scripts/*"),
         *root.glob("firmware-integration/**/*.sh"),
         *repo.glob("builder/current/*.py"), *repo.glob("builder/current/*.ps1"), *repo.glob("builder/current/core/*.py"),
         *repo.glob("builder/current/components/cc2-control/runtime/*")]
+# Documentation may describe release compatibility; executable sources keep central versions.
+code = [p for p in code if p.suffix.lower() != '.md']
 copies = [str(p.relative_to(repo)) for p in code if p.is_file() and version in p.read_text(encoding="utf-8", errors="ignore")]
 assert not copies, f"version {version} is written outside VERSION in: {copies}"
 # A release written as 4.2 or v4.2, but not as part of 1.4.2 or 4.2.1.

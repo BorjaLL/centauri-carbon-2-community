@@ -56,6 +56,11 @@ def check_newest_files_listed(binary):
                     time.sleep(0.1)
             else:
                 raise AssertionError("server did not expose /api/gcode-files")
+            space = payload["internal"]["space"]
+            disk = os.statvfs(internal)
+            assert space["total_bytes"] == disk.f_frsize * disk.f_blocks
+            assert 0 <= space["available_bytes"] <= space["free_bytes"] <= space["total_bytes"]
+            assert payload["usb"]["space"] is None
             listing = payload["internal"]
             assert listing["truncated"] is True
             assert listing["count"] == 128 and listing["total"] == 200
@@ -94,9 +99,15 @@ def main():
             encoding="ascii",
         )
         (internal / "metadata.gcode").write_text(
+            "; bed_temperature_gcode = M190 S60\n"
+            "; bed_temperature_formula = 190\n"
             "; nozzle_temperature = 6211\n"
             "; first_layer_temperature = 215\n"
-            "; bed_temperature = 60\n",
+            "; bed_temperature = 55\n"
+            "; first_layer_bed_temperature = 60\n"
+            "; filament used [g] = 0, 0, 0, 0\n"
+            "G1 X10 Y20\n"
+            "; filament used [g] = 0, 21.2, 3.1, 0\n",
             encoding="ascii",
         )
         (internal / "ignored.txt").write_text("not gcode\n", encoding="ascii")
@@ -129,6 +140,8 @@ def main():
                 raise AssertionError("server did not expose /api/gcode-files")
 
             assert payload["internal"]["available"] is True
+            assert payload["internal"]["space"]["total_bytes"] > 0
+            assert payload["usb"]["space"] is None, "plain USB directory must not report internal flash space"
             assert payload["internal"]["truncated"] is False
             assert payload["internal"]["count"] == payload["internal"]["total"] == 4
             assert payload["usb"]["available"] is True
@@ -167,6 +180,52 @@ def main():
                 metadata = json.load(response)
             assert metadata["nozzle_temperature"] == 215.0
             assert metadata["bed_temperature"] == 60.0
+            assert metadata["filament_grams"] == 24.3
+
+            # Missing mass is unknown, not a fabricated zero. File replacement
+            # at the same path must invalidate the bounded analysis cache.
+            (internal / "metadata.gcode").write_text(
+                "; bed_temperature_gcode = M190 S60\n; filament used [mm] = 1200\n",
+                encoding="ascii",
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                metadata = json.load(response)
+            assert metadata["bed_temperature"] is None
+            assert metadata["filament_grams"] is None
+            (internal / "metadata.gcode").write_text(
+                "; bed_temperature_gcode = M190 S190\n"
+                "M140 S0\nM140 S30\nM190 S60\n"
+                "; nozzle_temperature = 220\n; nozzle_temperature_initial_layer = 225\n",
+                encoding="ascii",
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                metadata = json.load(response)
+            assert metadata["bed_temperature"] == 60.0
+            assert metadata["nozzle_temperature"] == 225.0
+            # Reproduce the reporter's OrcaSlicer export: tool 0 is unused;
+            # a start-script comment contains M190 after a bed placeholder.
+            (internal / "metadata.gcode").write_text(
+                "M140 S55\nM190 S55 A\n"
+                "; filament used [g] = 0.00, 21.24\n"
+                "; total filament used [g] = 21.24\n"
+                "; bed_temperature_formula = by_highest_temp\n"
+                "; machine_start_gcode = M140 S[bed_temperature_initial_layer_single]\\nM190 S[bed_temperature_initial_layer_single] A\n"
+                "; nozzle_temperature = 220,220\n"
+                "; nozzle_temperature_initial_layer = 220,220\n"
+                "; first_layer_bed_temperature = 55\n"
+                "; first_layer_temperature = 220\n",
+                encoding="ascii",
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                metadata = json.load(response)
+            assert metadata["bed_temperature"] == 55.0
+            assert metadata["nozzle_temperature"] == 220.0
+            assert metadata["filament_grams"] == 21.24
+            (internal / "metadata.gcode").write_text(
+                "; filament used [g] = 0, 0\n", encoding="ascii"
+            )
+            with urllib.request.urlopen(metadata_request, timeout=1) as response:
+                assert json.load(response)["filament_grams"] == 0.0
 
             incomplete = urllib.request.Request(
                 f"http://127.0.0.1:{port}/api/gcode-files/print",

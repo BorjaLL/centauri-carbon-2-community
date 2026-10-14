@@ -605,7 +605,6 @@
   "history.the_printer_is_creating_the_video": "Drukarka tworzy film.",
   "history.previous_attempt_failed": "Poprzednia próba nie powiodła się",
   "history.no_time_lapse": "Brak filmu poklatkowego",
-  "history.show_more_n_of_total": "Pokaż kolejne {n} z {total}",
   "print.enable_timelapse": "Włącz film poklatkowy",
   "history.clear_history": "Wyczyść historię",
   "history.delete_entry": "Usuń wpis",
@@ -877,5 +876,13 @@
   "control.invalid_fan_percent": "Wpisz liczbę całkowitą od 0 do 100.",
   "control.fan_enter_hint": "Wpisz wartość od 0 do 100 i naciśnij Enter.",
   "canvas.reset_all": "Resetuj wszystkie filamenty",
-  "canvas.reset_all_confirm": "Zresetować dane materiału we wszystkich czterech slotach Canvas? Usunie to zapisany materiał, kolor i temperatury. Filament nie zostanie wyładowany."
+  "canvas.reset_all_confirm": "Zresetować dane materiału we wszystkich czterech slotach Canvas? Usunie to zapisany materiał, kolor i temperatury. Filament nie zostanie wyładowany.",
+  "common.pagination": "Strony",
+  "common.previous_page": "Poprzednia",
+  "common.next_page": "Następna",
+  "common.page_of_total": "Strona {page} z {pages} · {total} elementów",
+  "settings.camera_persistent": "Zachowaj podgląd kamery przy zmianie strony",
+  "settings.camera_persistent_help": "Po uruchomieniu podglądu zachowuje ten sam strumień podczas zmiany stron oraz po zminimalizowaniu lub ukryciu przeglądarki. Pauza, wyłączenie tej opcji lub zamknięcie strony zatrzymuje strumień. Aktywny podgląd wykorzystuje zasoby kamery.",
+  "files.space_available": "{available} dostępne z {total}",
+  "files.space_unavailable": "Informacja o wolnym miejscu niedostępna"
 }

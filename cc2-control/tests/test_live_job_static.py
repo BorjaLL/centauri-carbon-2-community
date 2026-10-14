@@ -39,7 +39,7 @@ assert 'number_in(o,n,"total_layer_count"' in mqtt
 assert 'number_in(o,n,"elapsed_time"' in mqtt
 assert 'number_in(o,n,"remaining_time"' in mqtt
 assert 'gcode_metadata_response' in main
-assert '"filament used [g]"' in main
+assert '"filament used [g]"' in (root / 'src/gcode_metadata.h').read_text(encoding='utf-8')
 assert 'first_run_restart_requested = 1' in main
 assert '\\"restarting\\":true' in main
 assert 'setup.saved_restarting_cc2_control_and' in ui

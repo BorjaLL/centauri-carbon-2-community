@@ -508,7 +508,7 @@ static void collect_gcode_files(const char *root, gcode_file_list *list) {
 }
 
 static void append_gcode_storage(json_builder *builder, const char *name,
-                                 const gcode_file_list *list) {
+                                 const gcode_file_list *list, const char *root) {
     json_builder_string(builder, name);
     json_builder_printf(builder, ":{\"available\":%s,\"truncated\":%s,\"count\":%lu,\"total\":%lu,\"files\":[",
                         list->available ? "true" : "false",
@@ -522,7 +522,19 @@ static void append_gcode_storage(json_builder *builder, const char *name,
         json_builder_printf(builder, ",\"size\":%lld,\"modified\":%lld}",
                             entry->size, entry->modified);
     }
-    json_builder_printf(builder, "]}");
+    json_builder_printf(builder, "]");
+    struct statvfs space;
+    struct stat st, parent;
+    char upper[PATH_MAX_LOCAL * 2];
+    int mounted = strcmp(name, "usb") != 0 ||
+        (snprintf(upper, sizeof(upper), "%s/..", root) < (int)sizeof(upper) &&
+         stat(root, &st) == 0 && stat(upper, &parent) == 0 && st.st_dev != parent.st_dev);
+    if (list->available && mounted && statvfs(root, &space) == 0) {
+        unsigned long long unit = space.f_frsize ? space.f_frsize : space.f_bsize;
+        json_builder_printf(builder, ",\"space\":{\"total_bytes\":%llu,\"available_bytes\":%llu,\"free_bytes\":%llu}",
+            unit * space.f_blocks, unit * space.f_bavail, unit * space.f_bfree);
+    } else json_builder_printf(builder, ",\"space\":null");
+    json_builder_printf(builder, "}");
 }
 
 static void gcode_files_response(int fd) {
@@ -542,9 +554,9 @@ static void gcode_files_response(int fd) {
     collect_gcode_files(gcode_usb_root, usb_files);
     json_builder builder = { body, 0, GCODE_JSON_CAP, 0 };
     json_builder_printf(&builder, "{");
-    append_gcode_storage(&builder, "internal", internal_files);
+    append_gcode_storage(&builder, "internal", internal_files, gcode_internal_root);
     json_builder_printf(&builder, ",");
-    append_gcode_storage(&builder, "usb", usb_files);
+    append_gcode_storage(&builder, "usb", usb_files, gcode_usb_root);
     json_builder_printf(&builder, "}\n");
     if (builder.failed) {
         const char *error = "{\"error\":\"File list is too large\"}\n";
@@ -1849,11 +1861,22 @@ static int build_calibrated_start_script(char *script, size_t cap, int force_ful
             "PRINT_SURFACE_SET PLANE=%d\n", print_layout == 'B' ? 1 : 0);
     }
     if (length > 0 && (size_t)length < cap) used = (size_t)length;
-    for (size_t index = 0; used && index < slot_count; ++index) {
-        length = snprintf(script + used, cap - used,
-            "CANVAS_SET_COLOR_TABLE T=%d ID=0 CHANNEL=%d\n", tools[index], trays[index]);
-        if (length <= 0 || (size_t)length >= cap - used) { used = 0; break; }
-        used += (size_t)length;
+    /* One command for the whole map, as the firmware's own method 1020 sends it
+     * (APIPrinter::set_print_tray_map): each CANVAS_SET_COLOR_TABLE replaces the
+     * whole table, so one command per tool would keep only the last tool. */
+    static const char *const map_keys[] = {"CANVAS_SET_COLOR_TABLE T=", " ID=", " CHANNEL="};
+    for (size_t key = 0; used && slot_count && key < 3; ++key) {
+        for (size_t index = 0; used && index < slot_count; ++index) {
+            length = snprintf(script + used, cap - used, "%s%d", index ? "," : map_keys[key],
+                              key == 0 ? tools[index] : key == 1 ? 0 : trays[index]);
+            if (length <= 0 || (size_t)length >= cap - used) used = 0;
+            else used += (size_t)length;
+        }
+    }
+    if (used && slot_count) {
+        length = snprintf(script + used, cap - used, "\n");
+        if (length <= 0 || (size_t)length >= cap - used) used = 0;
+        else used += (size_t)length;
     }
     if (used) {
         length = snprintf(script + used, cap - used,
@@ -1863,6 +1886,8 @@ static int build_calibrated_start_script(char *script, size_t cap, int force_ful
     }
     return used ? 0 : -1;
 }
+
+static int canvas_color_table_clear(void);
 
 static void gcode_start_response(int fd, mqtt_client *mqtt,
                                  const char *body, size_t body_len) {
@@ -2020,13 +2045,18 @@ static void gcode_start_response(int fd, mqtt_client *mqtt,
         snprintf(print_filename, sizeof(print_filename), "%s", filename);
     }
     int start_result = -1;
+    if (calibrated_start && (strchr(print_filename, '"') || strchr(print_filename, '\\'))) {
+        const char *error = "{\"accepted\":false,\"error\":\"Filename is incompatible with calibrated printing\"}\n";
+        respond(fd, 422, "Unprocessable Content", "application/json; charset=utf-8", error, strlen(error));
+        return;
+    }
+    if (!slot_count && canvas_color_table_clear() != 0) {
+        const char *error = "{\"accepted\":false,\"error\":\"Cannot clear the Canvas colour table for the external feed\"}\n";
+        respond(fd, 503, "Service Unavailable", "application/json; charset=utf-8", error, strlen(error));
+        return;
+    }
     if (calibrated_start) {
         char script[4096];
-        if (strchr(print_filename, '"') || strchr(print_filename, '\\')) {
-            const char *error = "{\"accepted\":false,\"error\":\"Filename is incompatible with calibrated printing\"}\n";
-            respond(fd, 422, "Unprocessable Content", "application/json; charset=utf-8", error, strlen(error));
-            return;
-        }
         if (mqtt_prepare_timelapse(mqtt,timelapse)==0 &&
             build_calibrated_start_script(script, sizeof(script), force_full_mesh,
                                           print_layout, print_media, print_filename,
@@ -2086,11 +2116,7 @@ static double number_after_marker(const char *line, const char *marker) {
     return end != match && value >= 0.0 ? value : -1.0;
 }
 
-static double bounded_number_after_marker(const char *line, const char *marker,
-                                          double maximum) {
-    double value = number_after_marker(line, marker);
-    return value >= 0.0 && value <= maximum ? value : -1.0;
-}
+#include "gcode_metadata.h"
 
 static long duration_after_marker(const char *line, const char *marker) {
     const char *cursor = find_case_insensitive(line, marker);
@@ -2130,9 +2156,21 @@ static void gcode_metadata_response(int fd, const char *body, size_t body_len) {
     }
     int layers = 0, maximum_layer = -1; long estimated = -1;
     double filament = -1.0, nozzle = -1.0, bed = -1.0;
+    double first_nozzle = -1.0, first_bed = -1.0;
+    double commanded_bed = -1.0, waited_bed = -1.0;
     while (fgets(line, sizeof(line), file)) {
         const char *comment=line;while(isspace((unsigned char)*comment))comment++;
-        if(*comment!=';')continue;
+        if(*comment!=';') {
+            if (waited_bed < 0) {
+                int wait = 0;
+                double value = gcode_metadata_bed_command(line, &wait);
+                if (value >= 0) {
+                    if (wait) waited_bed = value;
+                    else if (commanded_bed < 0) commanded_bed = value;
+                }
+            }
+            continue;
+        }
         static const char *layer_markers[] = {"total layer number", "total_layer_count", "total layers count", "total layers", "layer_count:"};
         for (size_t index = 0; index < sizeof(layer_markers)/sizeof(layer_markers[0]); ++index) {
             int value = positive_integer_after(line, layer_markers[index]); if (value > layers) layers = value;
@@ -2143,20 +2181,25 @@ static void gcode_metadata_response(int fd, const char *body, size_t body_len) {
             static const char *markers[] = {"estimated printing time", "estimated print time", "total print time"};
             for (size_t index = 0; index < sizeof(markers)/sizeof(markers[0]) && estimated < 0; ++index) estimated = duration_after_marker(line, markers[index]);
         }
-        if (filament < 0) {
-            static const char *markers[] = {"filament used [g]", "filament weight", "filament_used_g"};
-            for (size_t index = 0; index < sizeof(markers)/sizeof(markers[0]) && filament < 0; ++index) filament = number_after_marker(line, markers[index]);
-        }
+        /* Slicers may write an initial zero estimate before the final footer.
+         * Keep the latest valid total, summing every tool rather than tool 0. */
+        double grams = gcode_metadata_grams(line);
+        if (grams >= 0) filament = grams;
         if (nozzle < 0) {
-            nozzle = bounded_number_after_marker(line, "nozzle_temperature", 500.0);
-            if (nozzle < 0) nozzle = bounded_number_after_marker(line, "first_layer_temperature", 500.0);
+            nozzle = gcode_metadata_number(line, "nozzle_temperature", 500.0);
         }
         if (bed < 0) {
-            bed = bounded_number_after_marker(line, "bed_temperature", 200.0);
-            if (bed < 0) bed = bounded_number_after_marker(line, "first_layer_bed_temperature", 200.0);
+            bed = gcode_metadata_number(line, "bed_temperature", 200.0);
         }
+        if (first_nozzle < 0) first_nozzle = gcode_metadata_number(line, "first_layer_temperature", 500.0);
+        if (first_bed < 0) first_bed = gcode_metadata_number(line, "first_layer_bed_temperature", 200.0);
+        if (first_nozzle < 0) first_nozzle = gcode_metadata_number(line, "nozzle_temperature_initial_layer", 500.0);
+        if (first_bed < 0) first_bed = gcode_metadata_number(line, "bed_temperature_initial_layer", 200.0);
     }
     fclose(file);
+    if (first_nozzle >= 0) nozzle = first_nozzle;
+    if (first_bed >= 0) bed = first_bed;
+    if (bed < 0) bed = waited_bed >= 0 ? waited_bed : commanded_bed;
     if (!layers && maximum_layer >= 0) layers = maximum_layer + 1;
     char layer_value[32], time_value[32], filament_value[32], nozzle_value[32], bed_value[32], response[512];
     if (layers > 0) snprintf(layer_value, sizeof(layer_value), "%d", layers); else snprintf(layer_value, sizeof(layer_value), "null");
@@ -2804,6 +2847,30 @@ failed:
     return -1;
 }
 
+/* An empty slot map selects the external feed, but the printer keeps the colour
+ * table of the last Canvas print, even across reboots, and method 1020 leaves it
+ * unchanged. M6211 would then switch Canvas to that print's channel. Clear the
+ * table the way the touchscreen does, and start only after the printer has run
+ * the command: one request per print start, never a poll (docs/UDS_TELEMETRY.md). */
+static const char canvas_color_table_clear_request[] =
+    "{\"id\":205,\"method\":\"gcode/script\",\"params\":{\"script\":\"CANVAS_SET_COLOR_TABLE T= CHANNEL=\"}}\003";
+/* Tests replace the printer round trip. */
+static int (*canvas_color_table_uds)(const char *query, char **reply, size_t *length) = uds_query_json;
+
+static int canvas_color_table_clear(void) {
+    char *reply = NULL; size_t length = 0;
+    if (canvas_color_table_uds(canvas_color_table_clear_request, &reply, &length) != 0 || !reply) {
+        free(reply);
+        return -1;
+    }
+    const char *end = reply + length, *root = json_skip_space(reply, end);
+    const char *root_end = root < end && *root == '{' ? json_container_end(root, end) : NULL;
+    int acknowledged = root_end && json_member(root, root_end, "result") &&
+                       !json_member(root, root_end, "error");
+    free(reply);
+    return acknowledged ? 0 : -1;
+}
+
 static const char *exclude_object_payload(char *json, size_t length) {
     const char marker[] = "\"exclude_object\"";
     char *cursor = strstr(json, marker);
@@ -3267,12 +3334,35 @@ static const char *preferences_quick_action(int slot) {
     return actions[slot];
 }
 
+static int preferences_camera_value(const char *body) {
+    const char *value = strstr(body, "\"camera_persistent\":");
+    if (!value) return -1;
+    value += strlen("\"camera_persistent\":");
+    while (isspace((unsigned char)*value)) value++;
+    int enabled;
+    if (!strncmp(value, "true", 4)) { enabled = 1; value += 4; }
+    else if (!strncmp(value, "false", 5)) { enabled = 0; value += 5; }
+    else return -1;
+    while (isspace((unsigned char)*value)) value++;
+    return (*value == ',' || *value == '}') ? enabled : -1;
+}
+
+static int preferences_camera_persistent(void) {
+    FILE *file = fopen(ui_preferences_path, "rb");
+    if (!file) return 0;
+    char body[512];
+    size_t length = fread(body, 1, sizeof(body) - 1, file);
+    fclose(file); body[length] = 0;
+    return preferences_camera_value(body) == 1;
+}
+
 static void preferences_get_response(int fd) {
-    char body[256];
+    char body[384];
     int length = snprintf(body, sizeof(body),
-        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick_actions\":[\"%s\",\"%s\",\"%s\",\"%s\"]}\n",
+        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick_actions\":[\"%s\",\"%s\",\"%s\",\"%s\"],\"camera_persistent\":%s}\n",
         preferences_language(), preferences_theme(), preferences_quick_action(0),
-        preferences_quick_action(1), preferences_quick_action(2), preferences_quick_action(3));
+        preferences_quick_action(1), preferences_quick_action(2), preferences_quick_action(3),
+        preferences_camera_persistent() ? "true" : "false");
     respond(fd, 200, "OK", "application/json; charset=utf-8", body, (size_t)length);
 }
 
@@ -3288,6 +3378,8 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
         if (!isspace((unsigned char)body[index])) input[compact_len++] = body[index];
     }
     input[compact_len] = '\0';
+    int has_camera = strstr(input, "\"camera_persistent\":") != NULL;
+    int camera_enabled = has_camera ? preferences_camera_value(input) : preferences_camera_persistent();
     char language_code[9];
     int has_language = strstr(input, "\"language\":") != NULL;
     int valid_language = has_language &&
@@ -3310,8 +3402,8 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
                 !quick_action_valid(quick[slot])) valid_quick = 0;
         }
     }
-    if ((!has_language && !has_theme && !has_quick) || (has_language && !valid_language) ||
-        !valid_quick ||
+    if ((!has_language && !has_theme && !has_quick && !has_camera) || (has_language && !valid_language) ||
+        !valid_quick || camera_enabled < 0 ||
         (has_theme && !valid_theme)) {
         const char *error = "{\"saved\":false,\"error\":\"Unsupported UI preference\"}\n";
         respond(fd, 400, "Bad Request", "application/json; charset=utf-8", error, strlen(error));
@@ -3325,10 +3417,10 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
         respond(fd, 500, "Internal Server Error", "application/json; charset=utf-8", error, strlen(error));
         return;
     }
-    char canonical[256];
+    char canonical[384];
     int canonical_len = snprintf(canonical, sizeof(canonical),
-        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick1\":\"%s\",\"quick2\":\"%s\",\"quick3\":\"%s\",\"quick4\":\"%s\"}\n",
-        language, theme, quick[0], quick[1], quick[2], quick[3]);
+        "{\"language\":\"%s\",\"theme\":\"%s\",\"quick1\":\"%s\",\"quick2\":\"%s\",\"quick3\":\"%s\",\"quick4\":\"%s\",\"camera_persistent\":%s}\n",
+        language, theme, quick[0], quick[1], quick[2], quick[3], camera_enabled ? "true" : "false");
     FILE *file = fopen(temporary, "wb");
     int failed = !file;
     if (file) {

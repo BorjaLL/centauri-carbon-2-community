@@ -4,7 +4,7 @@
 
 This guide covers Community Firmware **V4.4 with CC2 Control 1.2.3**, built on the official **CC2 02.01.01.07** base. V4.4 was officially released on 13 October 2026. Download the firmware, source builder and checksums from the [V4.4 release](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/V4.4).
 
-**CC2 Control-only compatibility:** this release includes the application in the complete V4.4 firmware. Do not install this new CC2 Control separately on V4.3; a standalone application updater is deferred.
+**CC2 Control-only compatibility:** this release includes the application in the complete V4.4 firmware. Do not install this new CC2 Control separately on V4.3; the separate [CC2 Control 1.2.5 update](UPDATE_CC2.md) is available only after Community Firmware V4.4 is installed and configured.
 
 ## 1. Choose the installation file
 

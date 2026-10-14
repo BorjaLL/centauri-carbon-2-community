@@ -34,6 +34,8 @@ jobs:
         run: npm run test:recovery
       - name: Verify adaptive and saved mesh rendering
         run: npm run test:mesh
+      - name: Verify paginated lists and storage display
+        run: npm run test:list-pages
       - name: Verify camera streaming lifecycle
         run: npm run test:camera
       - name: Verify Polish and Czech language selection and layouts

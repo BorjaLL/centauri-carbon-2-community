@@ -37,6 +37,16 @@ jobs:
       - name: ARM binary smoke test under qemu
         run: CC2_TEST_RUNNER=qemu-arm python3 tests/test_smoke.py dist/cc2-control/cc2-control
 
+      - name: Package firmware-qualified application updater
+        run: python3 installer/package.py --prepared dist/cc2-control
+
+      - name: Save application updater candidate
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: cc2-control-v44-updater
+          path: output/CC2-Control-*-Multiplatform-Update.zip*
+          if-no-files-found: error
+
   web:
     name: Web UI (type-check, build, up to date)
     runs-on: ubuntu-26.04

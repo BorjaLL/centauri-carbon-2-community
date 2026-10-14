@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Card, CardHead, Page } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/field'
+import { Pagination, PAGE_SIZE, pageIndex } from '@/components/pagination'
 import { Row } from '@/components/shared'
 import { errText, notify, request } from '@/lib/api'
 import { t, tpl } from '@/lib/i18n'
@@ -38,6 +39,8 @@ const failure = (r: Response) =>
     .catch(() => `HTTP ${r.status}`)
 
 export const Files = () => {
+  const [space, setSpace] = useState<{ internal: any; usb: any }>({ internal: null, usb: null })
+  const [page, setPage] = useState(0)
   const [entries, setEntries] = useState<Entry[]>([])
   const [q, setQ] = useState(''),
     [loc, setLoc] = useState('all'),
@@ -63,6 +66,7 @@ export const Files = () => {
         if (group?.truncated)
           partial.push({ storage, n: files.length, total: Math.max(Number(group.total) || 0, files.length) })
       }
+      setSpace({ internal: data.internal?.space, usb: data.usb?.space })
       setEntries(next)
       setCut(partial)
       const available = new Set(next.map(key))
@@ -78,7 +82,8 @@ export const Files = () => {
     refresh()
   }, [])
 
-  const visible = entries
+  useEffect(() => setPage(0), [q, loc, sort])
+  const filtered = entries
     .filter(e => (loc === 'all' || e.storage === loc) && e.file.path.toLowerCase().includes(q.trim().toLowerCase()))
     .sort((a, b) =>
       sort === 'name'
@@ -87,6 +92,9 @@ export const Files = () => {
           ? Number(b.file.size || 0) - Number(a.file.size || 0)
           : Number(b.file.modified || 0) - Number(a.file.modified || 0)
     )
+  const currentPage = pageIndex(page, filtered.length)
+  useEffect(() => setPage(currentPage), [currentPage])
+  const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
   const toggle = (k: string, on: boolean) =>
     setChecked(s => {
       const n = new Set(s)
@@ -162,6 +170,21 @@ export const Files = () => {
     'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-edge px-3 py-2 cc2-md:grid-cols-[1.6fr_.55fr_.75fr_.75fr_1.25fr]'
   return (
     <Page title="common.files" sub="files.browse_protected_g_code_storage_on">
+      <div class="cc2-storage-space mb-3 grid gap-3 cc2-sm:grid-cols-2">
+        {(['internal', 'usb'] as const).map(storage => (
+          <Card key={storage}>
+            <b>{where(storage)}</b>
+            <p class="mt-1 text-sm text-muted">
+              {space[storage]
+                ? tpl('files.space_available', {
+                    available: fileSize(space[storage].available_bytes),
+                    total: fileSize(space[storage].total_bytes),
+                  })
+                : t(loaded ? 'files.space_unavailable' : 'files.loading_files')}
+            </p>
+          </Card>
+        ))}
+      </div>
       {/* Upload comes first so a long file list never pushes it out of reach: above the list in one column,
           above the details in two (the list spans both rows of the left column). */}
       <div class="grid grid-cols-[minmax(0,1fr)] gap-3.5 cc2-xl:grid-cols-[minmax(0,2.5fr)_minmax(330px,.95fr)] cc2-xl:grid-rows-[auto_1fr]">
@@ -294,6 +317,7 @@ export const Files = () => {
               <div class="p-4 text-muted">{t(loaded ? 'files.no_matching_g_code_files' : 'files.loading_files')}</div>
             )}
           </div>
+          <Pagination page={currentPage} total={filtered.length} onChange={setPage} />
           {cut.map(c => (
             <p key={c.storage} class="mt-2.5 text-muted">
               {tpl('files.showing_newest_n_of_total', { where: where(c.storage), n: c.n, total: c.total })}

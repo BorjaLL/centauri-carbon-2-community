@@ -605,7 +605,6 @@
   "history.the_printer_is_creating_the_video": "L’imprimante crée la vidéo.",
   "history.previous_attempt_failed": "La tentative précédente a échoué",
   "history.no_time_lapse": "Pas de timelapse",
-  "history.show_more_n_of_total": "Afficher {n} de plus sur {total}",
   "print.enable_timelapse": "Activer le timelapse",
   "history.clear_history": "Effacer l’historique",
   "history.delete_entry": "Supprimer cette entrée",
@@ -877,5 +876,13 @@
   "control.invalid_fan_percent": "Saisissez un nombre entier de 0 à 100.",
   "control.fan_enter_hint": "Saisissez une valeur de 0 à 100 et appuyez sur Entrée.",
   "canvas.reset_all": "Réinitialiser tous les filaments",
-  "canvas.reset_all_confirm": "Réinitialiser les données des quatre emplacements Canvas ? Cette opération efface le matériau, la couleur et les températures enregistrés. Elle ne décharge pas le filament."
+  "canvas.reset_all_confirm": "Réinitialiser les données des quatre emplacements Canvas ? Cette opération efface le matériau, la couleur et les températures enregistrés. Elle ne décharge pas le filament.",
+  "settings.camera_persistent": "Maintenir la caméra en direct entre les pages",
+  "settings.camera_persistent_help": "Après le démarrage du direct, conserve le même flux entre les pages et lorsque le navigateur est réduit ou masqué. Pause, désactiver cette option ou fermer la page arrête le flux. Utilise les ressources de la caméra pendant son activité.",
+  "files.space_available": "{available} disponibles sur {total}",
+  "files.space_unavailable": "Espace de stockage indisponible",
+  "common.pagination": "Pagination",
+  "common.previous_page": "Précédente",
+  "common.next_page": "Suivante",
+  "common.page_of_total": "Page {page} sur {pages} · {total} éléments"
 }

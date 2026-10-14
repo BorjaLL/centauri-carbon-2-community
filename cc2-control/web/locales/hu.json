@@ -647,7 +647,6 @@
   "history.the_printer_is_creating_the_video": "A nyomtató a videót készíti.",
   "history.previous_attempt_failed": "Az előző próbálkozás sikertelen volt",
   "history.no_time_lapse": "Nincs timelapse",
-  "history.show_more_n_of_total": "További {n} megjelenítése, összesen: {total}",
   "history.clear_history": "Előzmények törlése",
   "history.delete_entry": "Bejegyzés törlése",
   "history.delete_named": "Törlés: {name}",
@@ -877,5 +876,13 @@
   "spools.colour_brown": "Barna",
   "spools.colour_beige": "Bézs",
   "spools.no_suitable": "A készletben nincs ilyen filamentű tekercs. Válassz a teljes készletből, vagy adj hozzá új tekercset.",
-  "spools.chosen": "Kiválasztva: {name}"
+  "spools.chosen": "Kiválasztva: {name}",
+  "common.pagination": "Lapozás",
+  "common.previous_page": "Előző",
+  "common.next_page": "Következő",
+  "common.page_of_total": "{page}. oldal / {pages} · {total} elem",
+  "settings.camera_persistent": "Élő kamera megtartása oldalváltáskor",
+  "settings.camera_persistent_help": "Az élőkép elindítása után ugyanaz az adatfolyam fut az oldalak közötti váltáskor, illetve a böngésző kicsinyítése vagy elrejtése esetén is. A szüneteltetés, a beállítás kikapcsolása vagy az oldal bezárása leállítja. Aktív állapotban a kamera erőforrásait használja.",
+  "files.space_available": "{available} szabad / {total}",
+  "files.space_unavailable": "A szabad tárhely nem érhető el"
 }

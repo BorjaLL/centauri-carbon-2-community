@@ -1,12 +1,14 @@
 import type { ComponentChildren } from 'preact'
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
+import { createPortal } from 'preact/compat'
 import { cn } from '@/lib/utils'
 import { Dot } from '@/components/ui/badge'
 import { Card, CardHead } from '@/components/ui/card'
 import { Icon } from '@/components/icons'
-import { type Key, t } from '@/lib/i18n'
+import { cameraPreferences, type Key, t } from '@/lib/i18n'
 import { errText, notify, post, tpl } from '@/lib/api'
-import { usePoll } from '@/lib/poll'
+import { poll, usePoll } from '@/lib/poll'
+import { store } from '@/lib/store'
 import { camera, printer, refreshPrinter } from '@/lib/state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/field'
@@ -198,7 +200,38 @@ const CAMERA_RETRY_MS = [2500, 5000, 10000, 20000, 30000]
 const viewerId = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('')
 
+const cameraDock = store({ slot: null as HTMLElement | null, tall: false })
+let persistentHost: HTMLElement | null = null
+let cameraParking: HTMLElement | null = null
+
+const CameraDock = ({ tall = false }: { tall?: boolean }) => {
+  const slot = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const element = slot.current
+    if (!element) return
+    cameraDock.set({ slot: element, tall })
+    if (persistentHost) element.appendChild(persistentHost)
+    return () => {
+      // Park the existing DOM before this page is removed. Its image and
+      // request stay alive; changing a portal target would recreate them.
+      if (cameraDock.get().slot !== element) return
+      if (persistentHost && cameraParking) cameraParking.appendChild(persistentHost)
+      cameraDock.set({ slot: null })
+    }
+  }, [tall])
+  return <div ref={slot} class="cc2-camera-dock" />
+}
+
 export const CameraCard = ({ tall, standalone }: { tall?: boolean; standalone?: boolean }) => {
+  const persistent = cameraPreferences.use().persistent
+  if (persistent && !standalone) return <CameraDock tall={tall} />
+  return <CameraStream tall={tall} standalone={standalone} />
+}
+
+const CameraStream = ({ tall, standalone }: { tall?: boolean; standalone?: boolean }) => {
+  const persistent = cameraPreferences.use().persistent
+  const keepAlive = useRef(persistent)
+  keepAlive.current = persistent
   const [on, setOn] = useState(false)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -239,7 +272,7 @@ export const CameraCard = ({ tall, standalone }: { tall?: boolean; standalone?: 
   }
   const connect = () => {
     clearRetry()
-    if (!live.current || document.hidden) return
+    if (!live.current || (document.hidden && !keepAlive.current)) return
     release()
     setReady(false)
     setFailed(false)
@@ -248,7 +281,7 @@ export const CameraCard = ({ tall, standalone }: { tall?: boolean; standalone?: 
     setSrc(next)
   }
   const start = async () => {
-    if (document.hidden) return
+    if (document.hidden && !keepAlive.current) return
     const attempt = ++starts.current
     clearRetry()
     live.current = true
@@ -291,9 +324,14 @@ export const CameraCard = ({ tall, standalone }: { tall?: boolean; standalone?: 
     if (live.current && claimed.current && at >= claimed.current && owner && owner !== viewer.current)
       stop('common.camera_taken_over')
   }, [owner, at])
+  // Keep ownership checks alive while the persistent stream is backgrounded.
+  // Join the shared poller only while streaming; no extra camera session.
+  useEffect(() => {
+    if (persistent && on) return poll(refreshPrinter, 1500, { hidden: true })
+  }, [persistent, on])
   useEffect(() => {
     const hidden = () => {
-      if (document.hidden && live.current) stop('common.camera_paused_hidden')
+      if (document.hidden && live.current && !keepAlive.current) stop('common.camera_paused_hidden')
     }
     const leaving = () => {
       if (live.current) stop('common.camera_paused_hidden')
@@ -419,5 +457,33 @@ export const CameraWindow = () => {
     <main class="mx-auto max-w-[2000px] p-3 md:p-4">
       <CameraCard tall standalone />
     </main>
+  )
+}
+
+export const PersistentCamera = () => {
+  const persistent = cameraPreferences.use().persistent
+  return persistent ? <PersistentCameraHost /> : null
+}
+
+const PersistentCameraHost = () => {
+  const [host] = useState(() => document.createElement('div'))
+  const parking = useRef<HTMLDivElement>(null)
+  const { tall } = cameraDock.use()
+  useLayoutEffect(() => {
+    persistentHost = host
+    cameraParking = parking.current
+    host.className = 'cc2-persistent-camera'
+    ;(cameraDock.get().slot || cameraParking)?.appendChild(host)
+    return () => {
+      persistentHost = null
+      cameraParking = null
+      host.remove()
+    }
+  }, [host])
+  return (
+    <>
+      <div ref={parking} hidden class="cc2-camera-parking" />
+      {createPortal(<CameraStream tall={tall} />, host)}
+    </>
   )
 }
