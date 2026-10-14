@@ -4,11 +4,27 @@ import { Button } from '@/components/ui/button'
 import { PasswordInput, Select } from '@/components/ui/field'
 import { ask } from '@/lib/confirm'
 import { errText, notify, request } from '@/lib/api'
-import { t } from '@/lib/i18n'
+import { i18n, t } from '@/lib/i18n'
 import { usePoll } from '@/lib/poll'
 import { store, ls } from '@/lib/store'
 
-type Release = { version: string; firmware: string; channel: string; url: string; size: number; notes: string }
+type Release = {
+  version: string
+  firmware: string
+  channel: string
+  url: string
+  size: number
+  notes: string
+  notes_i18n?: Record<string, string>
+}
+
+export const releaseNotes = (release: Release, language: string) => {
+  for (const code of [language, 'en']) {
+    const text = release.notes_i18n?.[code]
+    if (typeof text === 'string' && text.trim() && text.length <= 2048) return { text, language: code }
+  }
+  return { text: release.notes, language: 'en' }
+}
 type Catalog = { schema: number; expires: number; releases: Release[] }
 type Status = {
   enabled: boolean
@@ -91,6 +107,7 @@ async function checkIndex() {
 export const Updates = () => {
   usePoll(refresh, 2000)
   const state = status.use().data
+  const language = i18n.use().lang
   const [channel, setChannel] = useState(ls.get('cc2-update-channel') === 'canvas-uds' ? 'canvas-uds' : 'stable')
   const [index, setIndex] = useState<Catalog | null>(null),
     [checking, setChecking] = useState(false)
@@ -102,6 +119,7 @@ export const Updates = () => {
     selection = useRef(0)
   const release = compatible(index, state?.firmware || '', channel)[0]
   const available = release && newer(release.version, state?.installed || '')
+  const notes = available ? releaseNotes(release, language) : null
   const busy = working || Boolean(state?.busy)
   const runCheck = async (force = true) => {
     setChecking(true)
@@ -219,7 +237,14 @@ export const Updates = () => {
               : t('updates.no_update')}
         </span>
       </div>
-      {release && <p class="whitespace-pre-wrap break-words text-muted">{release.notes}</p>}
+      {notes?.text && (
+        <div class="my-3 text-muted">
+          {notes.language !== language && <p class="mb-1 text-sm">{t('updates.notes_in_english')}</p>}
+          <p class="whitespace-pre-wrap break-words" lang={notes.language}>
+            {notes.text}
+          </p>
+        </div>
+      )}
       {!state?.enabled && <p class="my-3 text-amber">{t('updates.bootstrap')}</p>}
       <p class="my-3 text-sm text-muted">{t('updates.requirements')}</p>
       <label class="block max-w-md" htmlFor="update-lan-code">

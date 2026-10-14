@@ -3,6 +3,7 @@ import { createServer } from 'vite'
 import { chromium } from 'playwright'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { readFile } from 'node:fs/promises'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const server = await createServer({ root, configFile: path.join(root, 'vite.config.ts'), mode: 'demo', server: { port: 0, host: '127.0.0.1' } })
 let browser
@@ -12,14 +13,28 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
   const errors = []; page.on('pageerror', e => errors.push(e.message))
   let downloads = 0, installs = 0, checks = 0
+  let preferenceLanguage = 'en'
+  const localized = {
+    en: 'Stable fixture — retained settings',
+    it: 'Note italiane: impostazioni conservate',
+    fr: 'Notes françaises : paramètres conservés',
+    pl: 'Polskie informacje: ustawienia zachowane',
+    cs: 'České poznámky: nastavení zachováno',
+    hu: 'Magyar megjegyzések: beállítások megőrizve',
+    ru: 'Русские примечания: настройки сохранены',
+    zh: '中文发行说明：保留设置',
+  }
   const status = { enabled: true, ready: true, busy: false, installed: '1.2.8', firmware: '4.4', job: '', phase: 'none', version: '' }
   const index = { schema: 1, expires: Math.floor(Date.now()/1000)+86400, releases: [
-    { version: '1.2.9', firmware: '4.4', channel: 'stable', url: 'https://github.com/Neme77/centauri-carbon-2-community/releases/download/control-1.2.9/Control.cc2update', size: 1500000, notes: 'Stable fixture — retained settings' },
+    { version: '1.2.9', firmware: '4.4', channel: 'stable', url: 'https://github.com/Neme77/centauri-carbon-2-community/releases/download/control-1.2.9/Control.cc2update', size: 1500000, notes: localized.en, notes_i18n: { ...localized } },
     { version: '9.0.0', firmware: '4.3', channel: 'stable', url: 'https://github.com/Neme77/centauri-carbon-2-community/releases/download/control-9.0.0/Control.cc2update', size: 1500000, notes: 'WRONG FIRMWARE — must be hidden' },
     { version: '1.3.0', firmware: '4.4', channel: 'canvas-uds', url: 'https://github.com/Neme77/centauri-carbon-2-community/releases/download/control-1.3.0/Control.cc2update', size: 1500000, notes: 'Experimental fixture' },
   ] }
   let cache = { schema: 1, expires: 0, releases: [] }
-  await page.route('**/api/preferences', r => r.fulfill({ json: { language: 'en', theme: 'dark' } }))
+  await page.route('**/api/preferences', r => {
+    if (r.request().method() === 'PUT') preferenceLanguage = r.request().postDataJSON().language || preferenceLanguage
+    return r.fulfill({ json: { language: preferenceLanguage, theme: 'dark' } })
+  })
   await page.route('https://raw.githubusercontent.com/**/update-channel.cc2catalog', r => { checks++; return r.fulfill({ body: Buffer.from('signed-catalog-fixture'), contentType: 'application/octet-stream', headers: { 'Access-Control-Allow-Origin': '*' } }) })
   await page.route('**/api/app-update/status', r => r.fulfill({ json: status }))
   await page.route('**/api/app-update/catalog', r => {
@@ -63,6 +78,8 @@ try {
   await page.getByRole('button',{name:'Reload CC2 Control',exact:true}).waitFor()
   assert.equal(installs, 1)
   assert.equal(await page.getByLabel('LAN Access Code', { exact: true }).inputValue(), '')
+  await page.getByText('No newer compatible update published.', { exact: true }).waitFor()
+  assert.equal(await page.getByText(localized.en, { exact: true }).count(), 0, 'installed release notes must disappear')
   await page.getByLabel('Update channel', { exact: true }).selectOption('canvas-uds')
   await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click()
   assert.equal(await page.getByLabel('Update channel', { exact: true }).inputValue(), 'stable')
@@ -73,6 +90,36 @@ try {
     await page.setViewportSize({width,height:1000})
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'settings overflow '+width)
   }
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByLabel('Update channel', { exact: true }).selectOption('stable')
+  index.releases[0].version = '1.2.10'
+  index.releases[0].url = index.releases[0].url.replace('control-1.2.9', 'control-1.2.10')
+  await page.getByRole('button', { name: 'Check for updates', exact: true }).click()
+  await page.getByText(localized.en, { exact: true }).waitFor()
+  let previous = JSON.parse(await readFile(path.join(root, 'public/locales/en.json')))
+  for (const language of Object.keys(localized)) {
+    const dict = JSON.parse(await readFile(path.join(root, `public/locales/${language}.json`)))
+    await page.getByRole('tab', { name: previous['settings.appearance'], exact: true }).click()
+    await page.getByLabel(previous['settings.language'], { exact: true }).selectOption(language)
+    await page.getByRole('tab', { name: dict['updates.title'], exact: true }).click()
+    await page.getByText(localized[language], { exact: true }).waitFor()
+    if (language !== 'en') assert.equal(await page.getByText(localized.en, { exact: true }).count(), 0)
+    assert.equal(checks, 2, 'changing the UI language must not fetch another catalog')
+    previous = dict
+  }
+  index.releases[0].notes_i18n.zh = 42
+  await page.getByRole('button', { name: previous['updates.check'], exact: true }).click()
+  await page.getByText(localized.en, { exact: true }).waitFor()
+  await page.getByText(previous['updates.notes_in_english'], { exact: true }).waitFor()
+  delete index.releases[0].notes_i18n
+  await page.getByRole('button', { name: previous['updates.check'], exact: true }).click()
+  await page.getByText(localized.en, { exact: true }).waitFor()
+  await page.getByText(previous['updates.notes_in_english'], { exact: true }).waitFor()
+  index.releases[0].version = '1.2.8'
+  await page.getByRole('button', { name: previous['updates.check'], exact: true }).click()
+  await page.getByText(previous['updates.no_update'], { exact: true }).waitFor()
+  assert.equal(await page.getByText(localized.en, { exact: true }).count(), 0, 'older release notes must remain hidden')
+  assert.equal(await page.getByText(previous['updates.notes_in_english'], { exact: true }).count(), 0)
   assert.deepEqual(errors, [])
-  console.log('PASS: actual update controls, compatible channels, confirmations, auth failure, verify-before-install and mobile layout')
+  console.log('PASS: update controls, auth/confirmations, mobile layout, installed/older note hiding, 8-language selection and labelled legacy/malformed fallback')
 } finally { await browser?.close(); await server.close() }

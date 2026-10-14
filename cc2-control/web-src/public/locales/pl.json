@@ -913,5 +913,6 @@
   "updates.working": "Pobieranie, weryfikacja lub instalacja…",
   "updates.idle": "Bezczynna",
   "updates.selected": "Wybrana wersja",
-  "updates.reload": "Odśwież CC2 Control"
+  "updates.reload": "Odśwież CC2 Control",
+  "updates.notes_in_english": "Informacje o wydaniu po angielsku: tłumaczenie niedostępne"
 }

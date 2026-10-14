@@ -913,5 +913,6 @@
   "updates.working": "Stahování, ověřování nebo instalace…",
   "updates.idle": "Nečinná",
   "updates.selected": "Vybraná verze",
-  "updates.reload": "Znovu načíst CC2 Control"
+  "updates.reload": "Znovu načíst CC2 Control",
+  "updates.notes_in_english": "Poznámky k vydání v angličtině: překlad není dostupný"
 }

@@ -913,5 +913,6 @@
   "updates.working": "Téléchargement, vérification ou installation…",
   "updates.idle": "Inactif",
   "updates.selected": "Version sélectionnée",
-  "updates.reload": "Recharger CC2 Control"
+  "updates.reload": "Recharger CC2 Control",
+  "updates.notes_in_english": "Notes de version en anglais : traduction indisponible"
 }
