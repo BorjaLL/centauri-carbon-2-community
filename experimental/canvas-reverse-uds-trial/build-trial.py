@@ -24,6 +24,7 @@ def elf(path,kind):
 def main():
     if not COMPILER.is_file():
         raise RuntimeError('Existing builder ARM compiler not found: '+str(COMPILER))
+    subprocess.run(['python3',str(HERE/'test_install.py')],check=True,timeout=30)
     for name in ('install-trial.sh','rollback-trial.sh','check-trial.sh','launcher.original.sh','launcher.trial.sh'):
         subprocess.run(['sh','-n',str(HERE/name)],check=True)
     with tempfile.TemporaryDirectory(prefix='cc2-reverse-check-') as temp:

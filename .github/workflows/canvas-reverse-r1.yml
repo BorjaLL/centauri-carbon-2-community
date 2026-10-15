@@ -18,6 +18,8 @@ jobs:
           /tmp/test-canvas-guards
           gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread test_rpc.c -o /tmp/test-canvas-rpc -lm
           /tmp/test-canvas-rpc
+      - name: Staging and exact rollback on disposable fixtures
+        run: python3 test_install.py
       - name: Native module and inactive preload
         run: |
           gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -shared -fPIC reverse_trial.c -o /tmp/libcanvas-test.so
