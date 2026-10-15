@@ -101,6 +101,9 @@ jobs:
       - name: Hungarian language selection, persistence and mobile layouts
         run: npm run test:hungarian
 
+      - name: Spanish language selection, persistence and mobile layouts
+        run: npm run test:spanish
+
       - name: Signed update panel confirmations and mobile layouts
         run: npm run test:updates
 

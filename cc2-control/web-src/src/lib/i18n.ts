@@ -12,6 +12,7 @@ export const LANGUAGE_NAMES: Record<string, string> = {
   pl: 'Polski',
   cs: 'Čeština',
   hu: 'Magyar',
+  es: 'Español',
 }
 
 // The browser's first language we ship (fr-CA -> fr), else English.
