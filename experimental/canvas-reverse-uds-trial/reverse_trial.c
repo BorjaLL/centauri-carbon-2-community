@@ -12,9 +12,9 @@ static const unsigned char before[24]={0xc7,0x6b,0xb4,0xee,0x10,0xfa,0xf1,0xee,0
 static const unsigned char after[24]={0xc7,0x7b,0xb0,0xee,0xc7,0x6b,0xb4,0xee,0x10,0xfa,0xf1,0xee,0x01,0x30,0xa0,0xc3,0x00,0x30,0xa0,0xd3,0x00,0x00,0x53,0xe3};
 static void refuse(const char *reason) {
     static const char prefix[]="Canvas reverse trial refused: ";
-    (void)write(STDERR_FILENO,prefix,sizeof(prefix)-1);
-    (void)write(STDERR_FILENO,reason,strlen(reason));
-    (void)write(STDERR_FILENO,"\n",1);
+    if(write(STDERR_FILENO,prefix,sizeof(prefix)-1)<0)_exit(126);
+    if(write(STDERR_FILENO,reason,strlen(reason))<0)_exit(126);
+    if(write(STDERR_FILENO,"\n",1)<0)_exit(126);
     _exit(126);
 }
 __attribute__((constructor)) static void initialize(void) {
