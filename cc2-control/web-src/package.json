@@ -28,6 +28,7 @@
     "test:canvas-reset": "node preview/test-canvas-reset.mjs && node preview/test-canvas-presence.mjs",
     "test:languages": "node preview/test-polish-czech.mjs",
     "test:hungarian": "node preview/test-hungarian.mjs",
+    "test:spanish": "node preview/test-spanish.mjs",
     "test:materials": "node preview/test-material-presets.mjs",
     "test:list-pages": "node preview/test-files-history-pages.mjs",
     "test:updates": "node preview/test-updates.mjs"
