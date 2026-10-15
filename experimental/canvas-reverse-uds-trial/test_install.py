@@ -49,6 +49,8 @@ def main():
             (package/name).write_text(source)
         for name in ('launcher.original.sh','launcher.trial.sh'):(package/name).write_bytes((HERE/name).read_bytes())
         (package/'libcc2-canvas-reverse-trial.so').write_bytes(b'trial module fixture')
+        (package/'cc2-canvas-motion-probe').write_bytes(b'motion tool fixture; not executed')
+        (package/'check-trial.sh').write_text('#!/bin/sh\nexit 0\n')
         (package/'SHA256SUMS').write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n' for p in sorted(package.iterdir()) if p.name!='SHA256SUMS'))
 
         def run(name,success,extra=None):

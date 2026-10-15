@@ -13,6 +13,15 @@ fail() { echo "STOP: $*" >&2; exit 1; }
 cmp -s "$BASE/launcher.sh" "$HERE/launcher.original.sh" || fail 'Different runtime launcher'
 cmp -s "$BASE/SHA256SUMS" "$SOURCE/SHA256SUMS" || fail 'Runtime differs from installed firmware component'
 (cd "$BASE" && sha256sum -c SHA256SUMS) || fail 'Existing runtime verification failed'
+awk '
+BEGIN {
+    want["libcc2-canvas-reverse-trial.so"]=1; want["cc2-canvas-motion-probe"]=1;
+    want["install-trial.sh"]=1; want["rollback-trial.sh"]=1; want["check-trial.sh"]=1;
+    want["launcher.original.sh"]=1; want["launcher.trial.sh"]=1;
+}
+NF!=2 || length($1)!=64 || $1!~/^[0-9a-f]+$/ || !($2 in want) || seen[$2]++ {bad=1}
+END {for(name in want) if(!seen[name]) bad=1; exit bad}
+' "$HERE/SHA256SUMS" || fail 'Malformed, incomplete or unexpected trial manifest'
 (cd "$HERE" && sha256sum -c SHA256SUMS) || fail 'Trial package verification failed'
 mkdir "$BACKUP"
 cp "$BASE/launcher.sh" "$BACKUP/launcher.sh"
