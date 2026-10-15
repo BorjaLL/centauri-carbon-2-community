@@ -2,13 +2,17 @@
 
 [English](ORCASLICER.md) · [Prima installazione](FIRST_RUN.it.md) · [Homepage](../README.md)
 
-La guida usa la connessione tramite **CC2 Control** del Community Firmware V4.4 / CC2 Control 1.2.3. Completare la [prima configurazione](FIRST_RUN.it.md) e verificare **Stampante connessa** prima di configurare OrcaSlicer.
+La guida usa la connessione tramite **CC2 Control** del Community Firmware V4.4 / V4.4.1. Completare la [prima configurazione](FIRST_RUN.it.md) e verificare **Stampante connessa** prima di configurare OrcaSlicer.
 
 ## 1. Configurare la connessione della stampante
 
 Usare il proprio profilo funzionante **Centauri Carbon 2**, con ugello e configurazione Canvas corretti. Aprire le impostazioni della stampante fisica / connessione di rete. Posizione e traduzione dei campi cambiano tra versioni di OrcaSlicer; per il sync serve una versione che offra l'agente stampante **Moonraker**.
 
 IP di esempio: `192.168.1.50`. Sostituirlo con l'indirizzo reale della propria stampante.
+
+![Configurazione della stampante fisica in OrcaSlicer: tipo host Octo/Klipper e agente Moonraker](images/orcaslicer-connection.png)
+
+**Nel campo “Nome servizio, IP o URL”, l'indirizzo IP deve essere seguito da `:8081`**, ad esempio `192.168.1.103:8081` oppure `http://192.168.1.103:8081`. Sostituire `192.168.1.103` con l'IP della propria stampante, mantenendo la porta **8081**. Nello screenshot il campo è stretto e mostra solo l'inizio della porta (`:8`): inserire comunque l'indirizzo completo con **`:8081`**.
 
 | Campo | Valore per CC2 Control |
 | --- | --- |
