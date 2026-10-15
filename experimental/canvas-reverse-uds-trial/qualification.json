@@ -1,0 +1,16 @@
+{
+  "executable_sha256": "19712b5943b10bb8cb6aab9a4ed498ee962b28538b23c91b7ed003eb9e590745",
+  "launcher_sha256": "a260865964759898cf47ed8e30e20eb8981506c1a22ada32611b9911b36b47fc",
+  "site": 6234512,
+  "offset": 6168976,
+  "before": "c76bb4ee10faf1ee0130a0c30030a0d37330efe6000053e3",
+  "after": "c77bb0eec76bb4ee10faf1ee0130a0c30030a0d3000053e3",
+  "slot": 2,
+  "channel": 1,
+  "distance": -10,
+  "speed": 5,
+  "acceleration": 100,
+  "timeout_seconds": 3,
+  "physical_test": "pending",
+  "comparison_emulation_cases_passed": 144
+}

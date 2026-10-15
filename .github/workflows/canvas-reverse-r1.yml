@@ -1,0 +1,34 @@
+name: Canvas reverse R1 checks
+on:
+  push:
+    branches: [test/canvas-reverse-uds-r1]
+permissions:
+  contents: read
+jobs:
+  trial-checks:
+    runs-on: ubuntu-26.04
+    defaults:
+      run:
+        working-directory: experimental/canvas-reverse-uds-trial
+    steps:
+      - uses: actions/checkout@v7
+      - name: Guard logic and real socket regressions
+        run: |
+          gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror test_motion.c -o /tmp/test-canvas-guards -lm
+          /tmp/test-canvas-guards
+          gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread test_rpc.c -o /tmp/test-canvas-rpc -lm
+          /tmp/test-canvas-rpc
+      - name: Native module and inactive preload
+        run: |
+          gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -shared -fPIC reverse_trial.c -o /tmp/libcanvas-test.so
+          env -u CC2_CANVAS_REVERSE_TRIAL LD_PRELOAD=/tmp/libcanvas-test.so /bin/true
+      - name: Shell syntax and Python build syntax
+        run: |
+          for source in *.sh; do sh -n "$source"; done
+          python3 -m py_compile build-trial.py verify-comparison.py
+      - name: Install ARM compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: ARM object compilation with warnings as errors
+        run: |
+          arm-linux-gnueabihf-gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -c reverse_trial.c -o /tmp/canvas-reverse-arm.o
+          arm-linux-gnueabihf-gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -c motion_probe.c -o /tmp/canvas-motion-arm.o
