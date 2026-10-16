@@ -78,7 +78,7 @@ Spanish: **[asiersan](https://github.com/asiersan)**, original #130, integration
 
 ## Beta testers
 
-Special thanks to **DamiBFryta**, our very first beta tester, for being reliable, impartial and always available throughout development.
+Special thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**, our very first beta tester, for being reliable, impartial and always available throughout development.
 
 Our sincere thanks also go to **Barry Green**, **Michael Husbyn**, **[Jiří Heider](https://www.facebook.com/heiderakcze)**, **James Morriss Hill** and **Brian Mcmillion**, and to **all the other beta testers not named here**. By offering their time and their printers, running long printing sessions and providing patient, precise feedback, they helped identify issues and improve the stability of this release.
 
