@@ -907,12 +907,12 @@
   "updates.restarting": "A CC2 Control újraindul. Várd meg a művelet eredményét.",
   "updates.local_file": "Aláírt frissítőcsomag feltöltése a számítógépről",
   "updates.verify_file": "Helyi csomag ellenőrzése",
-  "updates.status": "Frissítés állapota",
+  "updates.status": "Frissítés állapota:",
   "updates.complete": "Befejezve",
   "updates.failed": "A művelet megszakadt vagy hibával végződött. Lehetséges, hogy a korábbi verzió visszaállt; ellenőrizd a frissítési naplót.",
   "updates.working": "Letöltés, ellenőrzés vagy telepítés folyamatban…",
   "updates.idle": "Tétlen",
-  "updates.selected": "Kiválasztott verzió",
+  "updates.selected": "Kiválasztott verzió:",
   "updates.reload": "CC2 Control újratöltése",
   "updates.notes_in_english": "Kiadási megjegyzések angolul (magyar fordítás nem érhető el)"
 }

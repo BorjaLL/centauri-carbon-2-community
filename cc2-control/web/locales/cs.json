@@ -907,12 +907,12 @@
   "updates.restarting": "CC2 Control se restartuje. Vyčkejte na výsledek.",
   "updates.local_file": "Nahrát podepsaný balíček z počítače",
   "updates.verify_file": "Ověřit místní balíček",
-  "updates.status": "Stav aktualizace",
+  "updates.status": "Stav aktualizace:",
   "updates.complete": "Dokončeno",
   "updates.failed": "Selhání nebo přerušení. Předchozí verze mohla být obnovena; zkontrolujte protokol.",
   "updates.working": "Stahování, ověřování nebo instalace…",
   "updates.idle": "Nečinná",
-  "updates.selected": "Vybraná verze",
+  "updates.selected": "Vybraná verze:",
   "updates.reload": "Znovu načíst CC2 Control",
   "updates.notes_in_english": "Poznámky k vydání v angličtině: překlad není dostupný"
 }

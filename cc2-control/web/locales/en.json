@@ -907,12 +907,12 @@
   "updates.restarting": "CC2 Control is restarting. Wait for the final result.",
   "updates.local_file": "Upload a signed package from your computer",
   "updates.verify_file": "Verify local package",
-  "updates.status": "Update status",
+  "updates.status": "Update status:",
   "updates.complete": "Complete",
   "updates.failed": "Failed or interrupted. Your previous installation may have been restored; check the update log.",
   "updates.working": "Downloading, verifying or installing…",
   "updates.idle": "Idle",
-  "updates.selected": "Selected version",
+  "updates.selected": "Selected version:",
   "updates.reload": "Reload CC2 Control",
   "updates.notes_in_english": "Release notes (English; translation unavailable)"
 }

@@ -907,12 +907,12 @@
   "updates.restarting": "CC2 Control se esta reiniciando. Espere el resultado final.",
   "updates.local_file": "Cargar un paquete firmado desde su ordenador",
   "updates.verify_file": "Verificar paquete local",
-  "updates.status": "Estado de la actualizacion",
+  "updates.status": "Estado de la actualizacion:",
   "updates.complete": "Completo",
   "updates.failed": "Fallido o interrumpido. Es posible que se haya restaurado su instalacion anterior; revise el registro de actualizacion.",
   "updates.working": "Descargando, verificando o instalando…",
   "updates.idle": "Inactivo",
-  "updates.selected": "Version seleccionada",
+  "updates.selected": "Version seleccionada:",
   "updates.reload": "Recargar CC2 Control",
   "updates.notes_in_english": "Notas de la versión (Inglés; traducción no disponible)"
 }
