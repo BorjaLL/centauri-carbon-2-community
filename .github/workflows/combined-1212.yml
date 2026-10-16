@@ -1,0 +1,53 @@
+name: Combined CC2 Control printer trial
+on:
+  push:
+    branches: [test/cc2-control-1.2.12-combined]
+permissions:
+  contents: read
+jobs:
+  qualify-and-package:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Apply reviewable application-only changes
+        run: |
+          git apply --check experimental/combined-1212/changes.patch
+          git apply experimental/combined-1212/changes.patch
+          git add -N cc2-control
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Check and rebuild UI
+        working-directory: cc2-control/web-src
+        run: npm ci && npm run check && npm run build
+      - name: Install browser
+        working-directory: cc2-control/web-src
+        run: npx playwright install --with-deps chromium
+      - name: Browser regressions for changed controls
+        working-directory: cc2-control/web-src
+        run: |
+          npm run test:control-interactions
+          npm run test:fans
+          npm run test:canvas-states
+          npm run test:canvas-reset
+          npm run test:object-layout
+          npm run test:mesh-side-labels
+          npm run test:job-objects
+          npm run test:updates
+      - name: Native tests
+        working-directory: cc2-control
+        run: make clean test CROSS= CC=gcc EXTRA_CFLAGS=-Werror
+      - name: ARM compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf qemu-user
+      - name: Build and smoke-test ARM application
+        working-directory: cc2-control
+        run: |
+          make clean all EXTRA_CFLAGS=-Werror
+          CC2_TEST_RUNNER=qemu-arm python3 tests/test_smoke.py dist/cc2-control/cc2-control
+      - name: Package exact tested sources and application
+        run: python3 experimental/combined-1212/package_trial.py
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: cc2-control-1.2.12-combined-trial
+          path: output/combined-1212/*
+          if-no-files-found: error
