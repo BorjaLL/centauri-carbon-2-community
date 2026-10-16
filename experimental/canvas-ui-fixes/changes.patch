@@ -601,6 +601,30 @@ index 0000000..e53db96
 +  await browser.close()
 +  await demo.cleanup()
 +}
+diff --git a/cc2-control/web-src/public/locales/cs.json b/cc2-control/web-src/public/locales/cs.json
+index 85c0880..57cc0b0 100644
+--- a/cc2-control/web-src/public/locales/cs.json
++++ b/cc2-control/web-src/public/locales/cs.json
+@@ -914,5 +914,18 @@
+   "updates.idle": "Nečinná",
+   "updates.selected": "Vybraná verze",
+   "updates.reload": "Znovu načíst CC2 Control",
+-  "updates.notes_in_english": "Poznámky k vydání v angličtině: překlad není dostupný"
++  "updates.notes_in_english": "Poznámky k vydání v angličtině: překlad není dostupný",
++  "canvas.slot_state": "Stav slotu",
++  "canvas.state_empty": "Prázdný",
++  "canvas.state_present": "Přítomen · vysunutý z tiskové hlavy",
++  "canvas.state_loaded": "Zavedený do tiskové hlavy",
++  "canvas.state_transition": "Změna stavu · čekání na potvrzení",
++  "canvas.state_unknown": "Stav není dostupný",
++  "canvas.reason_unavailable": "Čeká se na aktuální stav Canvas a tiskové hlavy.",
++  "canvas.reason_empty": "V tomto slotu není hlášen žádný filament.",
++  "canvas.reason_busy": "Dostupné pouze tehdy, když je tiskárna nečinná.",
++  "canvas.reason_head_occupied": "Před zavedením z jiného slotu vysuňte aktivní filament z tiskové hlavy.",
++  "canvas.reason_not_loaded": "Tento filament je přítomen v Canvas, ale není zavedený do tiskové hlavy.",
++  "canvas.reason_already_loaded": "Tento filament je již zavedený do tiskové hlavy.",
++  "canvas.reason_transition": "Čeká se na konzistentní stav filamentu a aktivního kanálu."
+ }
 diff --git a/cc2-control/web-src/public/locales/en.json b/cc2-control/web-src/public/locales/en.json
 index d6cca62..3b9fd52 100644
 --- a/cc2-control/web-src/public/locales/en.json
@@ -672,6 +696,30 @@ index e662e20..b4178bb 100644
 +  "canvas.reason_not_loaded": "Il filamento è presente nel Canvas ma non è caricato nella testina.",
 +  "canvas.reason_already_loaded": "Questo filamento è già caricato nella testina.",
 +  "canvas.reason_transition": "In attesa di dati coerenti su filamento e canale attivo."
+ }
+diff --git a/cc2-control/web-src/public/locales/pl.json b/cc2-control/web-src/public/locales/pl.json
+index e914f97..2cfd411 100644
+--- a/cc2-control/web-src/public/locales/pl.json
++++ b/cc2-control/web-src/public/locales/pl.json
+@@ -914,5 +914,18 @@
+   "updates.idle": "Bezczynna",
+   "updates.selected": "Wybrana wersja",
+   "updates.reload": "Odśwież CC2 Control",
+-  "updates.notes_in_english": "Informacje o wydaniu po angielsku: tłumaczenie niedostępne"
++  "updates.notes_in_english": "Informacje o wydaniu po angielsku: tłumaczenie niedostępne",
++  "canvas.slot_state": "Stan slotu",
++  "canvas.state_empty": "Pusty",
++  "canvas.state_present": "Obecny · wycofany z głowicy",
++  "canvas.state_loaded": "Załadowany do głowicy",
++  "canvas.state_transition": "Zmiana stanu · oczekiwanie na potwierdzenie",
++  "canvas.state_unknown": "Stan niedostępny",
++  "canvas.reason_unavailable": "Oczekiwanie na aktualny stan Canvas i głowicy.",
++  "canvas.reason_empty": "Nie wykryto filamentu w tym slocie.",
++  "canvas.reason_busy": "Dostępne tylko wtedy, gdy drukarka jest bezczynna.",
++  "canvas.reason_head_occupied": "Przed załadowaniem innego slotu wycofaj aktywny filament z głowicy.",
++  "canvas.reason_not_loaded": "Ten filament jest obecny w Canvas, ale nie jest załadowany do głowicy.",
++  "canvas.reason_already_loaded": "Ten filament jest już załadowany do głowicy.",
++  "canvas.reason_transition": "Oczekiwanie na spójny stan filamentu i aktywnego kanału."
  }
 diff --git a/cc2-control/web-src/src/components/shared.tsx b/cc2-control/web-src/src/components/shared.tsx
 index e8afad9..897d186 100644
