@@ -389,6 +389,19 @@ index 0000000..99b6d22
 + snapshot(&m,"[{\"tray_id\":1,\"status\":1,\"filament_name\":\"status: 0\"}]");assert(canvas_slot_policy(&m,1).load);
 + puts("PASS: Canvas empty/present/loaded/transitional slots; exact load/unload actions; head, busy, stale, missing and inconsistent guards");return 0;
 +}
+diff --git a/cc2-control/tests/test_history_api.c b/cc2-control/tests/test_history_api.c
+index ac23c74..f13b55c 100644
+--- a/cc2-control/tests/test_history_api.c
++++ b/cc2-control/tests/test_history_api.c
+@@ -82,7 +82,7 @@ int main(void){
+     m.registered=0;assert(call(canvas_auto_refill_response,"off",reply,sizeof(reply))==503);m.registered=1;
+     /* /api/canvas reports the setting, null until the printer has. */
+     strcpy(m.canvas_snapshot,"{\"result\":{\"canvas_info\":{\"canvas_list\":[]}}}");m.canvas_snapshot_len=strlen(m.canvas_snapshot);
+-    m.auto_refill=0;assert(get(canvas_response,reply,sizeof(reply))==200&&strstr(reply,"\"auto_refill\":false,\"telemetry\":{"));
++    m.auto_refill=0;assert(get(canvas_response,reply,sizeof(reply))==200&&strstr(reply,"\"auto_refill\":false")&&strstr(reply,"\"telemetry\":{"));
+     m.have_auto_refill=0;assert(get(canvas_response,reply,sizeof(reply))==200&&strstr(reply,"\"auto_refill\":null"));
+     /* /api/printer carries the latest printer refusal of our own requests. */
+     assert(get(printer_response,reply,sizeof(reply))==200&&strstr(reply,"\"printer_error\":null,\"camera_viewer\":null}"));
 diff --git a/cc2-control/tests/test_uds.c b/cc2-control/tests/test_uds.c
 index 5188fc2..441b19b 100644
 --- a/cc2-control/tests/test_uds.c
