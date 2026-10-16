@@ -1,0 +1,892 @@
+--- a/cc2-control/VERSION
++++ b/cc2-control/VERSION
+@@ -1 +1 @@
+-1.2.13
++1.2.14
+--- a/cc2-control/docs/API.md
++++ b/cc2-control/docs/API.md
+@@ -238,9 +238,19 @@
+ 
+ CC2 Control keeps named plate surfaces in `bed-plates.json` (`--plates FILE`, next to the UI preferences):
+ each one has a side, a Z offset of up to ±1 mm and the 11 × 11 meshes the printer measured on it, one per
+-bed temperature (40–110 °C) and nozzle, 20 in all. The file also lists up to 8 nozzles, each with a diameter
++bed temperature (30–110 °C) and nozzle, 20 in all. The file also lists up to 8 nozzles, each with a diameter
+ and a Z correction of up to ±0.5 mm, and which one is installed. A version 1 file (one mesh per plate) is
+ rewritten once as version 2 with each mesh as a 60 °C measurement, the temperature the firmware calibrates at.
++`POST /api/plates/create` accepts `side\nname\nz_offset` and registers a profile without
++reading or changing the printer mesh. It requires fresh idle telemetry and an unlocked library.
++Such profiles appear in the normal `/api/plates` list with `measure:""` and `measures:[]`,
++can receive the first calibration, and cannot be mounted before a measurement exists.
++The version-2 file stores them in a separate optional `uncalibrated` array so older
++apps can still read the calibrated plates. An older app may discard unfinished profiles on save.
++Calibration form selections survive page/tab navigation in the browser; while a job
++runs, its server-reported side, temperature, soak and destination are authoritative.
++Measurement timestamps are Unix seconds; the UI displays date, time, seconds and local timezone.
++
+ Printer facts this relies on, read from the V4.2 firmware and its logs:
+ 
+ - Every print loads the mesh of its side: Side A uses profile `default`, Side B `default1` (`G180 S7`).
+--- a/cc2-control/src/main.c
++++ b/cc2-control/src/main.c
+@@ -3754,6 +3754,8 @@
+         mesh_response(fd);
+     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/plates")==0) {
+         plates_get_response(fd);
++    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/plates/create")==0) {
++        plates_create_response(fd,mqtt,body,body_len);
+     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/plates/save")==0) {
+         plates_save_response(fd,mqtt,body,body_len);
+     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/plates/recapture")==0) {
+--- a/cc2-control/src/plates.h
++++ b/cc2-control/src/plates.h
+@@ -30,7 +30,7 @@
+ #define PLATE_GRID_MAX 15
+ #define PLATE_Z_LIMIT 1.0
+ #define PLATE_NOZZLE_Z_LIMIT 0.5
+-#define PLATE_TEMP_MIN 40
++#define PLATE_TEMP_MIN 30
+ #define PLATE_TEMP_MAX 110
+ #define PLATE_TEMP_V1 60 /* the firmware's calibration temperature, before temperatures were recorded */
+ #define PLATE_PROFILE_PREFIX "cc2_"
+@@ -721,10 +721,19 @@
+         plates_nozzle_json(&b, &plates.nozzles[i]);
+     }
+     json_builder_printf(&b, "],\"plates\":[");
++    int written = 0;
+     for (int i = 0; i < plates.count; ++i) {
+-        if (i) json_builder_printf(&b, ",");
++        if (!plates.plates[i].measure[0]) continue;
++        if (written++) json_builder_printf(&b, ",");
+         plates_plate_json(&b, &plates.plates[i]);
+         json_builder_printf(&b, "}");
++    }
++    /* Older apps keep reading calibrated plates; unfinished profiles are separate. */
++    json_builder_printf(&b, "],\"uncalibrated\":["); written = 0;
++    for (int i = 0; i < plates.count; ++i) {
++        if (plates.plates[i].measure[0]) continue;
++        if (written++) json_builder_printf(&b, ",");
++        plates_plate_json(&b, &plates.plates[i]); json_builder_printf(&b, "}");
+     }
+     json_builder_printf(&b, "],\"measures\":[");
+     for (int i = 0; i < plates.measure_count; ++i) {
+@@ -769,7 +778,7 @@
+         return 0;
+     p->side = text[0];
+     if (!plates_member_double(obj, end, "z_offset", &p->z) || fabs(p->z) > PLATE_Z_LIMIT + 1e-9) return 0;
+-    if (version >= 2) return plates_parse_id(obj, end, "measure", p->measure) && p->measure[0];
++    if (version >= 2) return plates_parse_id(obj, end, "measure", p->measure) && (version == 3 || p->measure[0]);
+     double measured;
+     memset(legacy, 0, sizeof(*legacy));
+     if (!plates_member_double(obj, end, "measured", &measured) || measured < 0) return 0;
+@@ -859,6 +868,11 @@
+     plates.measure_count++;
+     return 1;
+ }
++static int plates_load_uncalibrated(const char *obj, const char *end, void *context) {
++    (void)context;
++    int draft = 3;
++    return plates_load_plate(obj, end, &draft) && !plates.plates[plates.count - 1].measure[0];
++}
+ 
+ /* Every reference points at an entry of the right kind. */
+ static int plates_consistent(void) {
+@@ -866,8 +880,11 @@
+         const plate_measure *m = &plates.measures[i];
+         if (!plate_find(m->plate) || !plate_nozzle_ref(m->nozzle)) return 0;
+     }
+-    for (int i = 0; i < plates.count; ++i)
+-        if (!plate_base(&plates.plates[i])) return 0;
++    for (int i = 0; i < plates.count; ++i) {
++        const plate_entry *p = &plates.plates[i];
++        if (p->measure[0]) { if (!plate_base(p)) return 0; }
++        else if (plate_measure_count(p->id) || !strcmp(plates.current, p->id) || !strcmp(plates.pending, p->id)) return 0;
++    }
+     return (!plates.current[0] || plate_find(plates.current)) && (!plates.pending[0] || plate_find(plates.pending)) &&
+            plate_nozzle_ref(plates.nozzle);
+ }
+@@ -895,7 +912,9 @@
+             ok = plates_parse_id(root, root_end, "nozzle", plates.nozzle) &&
+                  plates_parse_list(root, root_end, "nozzles", plates_load_nozzle, NULL) &&
+                  plates_parse_list(root, root_end, "plates", plates_load_plate, &version) &&
+-                 plates_parse_list(root, root_end, "measures", plates_load_measure, NULL);
++                 plates_parse_list(root, root_end, "measures", plates_load_measure, NULL) &&
++                 (!json_member(root, root_end, "uncalibrated") ||
++                  plates_parse_list(root, root_end, "uncalibrated", plates_load_uncalibrated, NULL));
+         else {
+             ok = plates_parse_list(root, root_end, "plates", plates_load_plate, &version);
+             for (int i = 0; ok && i < plates.measure_count; ++i) {
+@@ -1110,6 +1129,27 @@
+ static int plates_reapply_z(const mqtt_client *mqtt) {
+     const plate_entry *p = plates.current[0] ? plate_find(plates.current) : NULL;
+     return p && !plates_printer_ready(mqtt) && !z_offset_pending && plates_apply_z(plate_z_now(p)) == 0;
++}
++
++/* Register a surface before its first calibration. No printer mesh is read or written. */
++static void plates_create_response(int fd, const mqtt_client *mqtt, const char *body, size_t length) {
++    char fields[3][PLATE_NAME_MAX + 1]; double z; const char *reason;
++    int count = plates_fields(body, length, fields, 3);
++    if (count != 3 || strlen(fields[0]) != 1 || (fields[0][0] != 'A' && fields[0][0] != 'B') ||
++        !plate_name_valid(fields[1]) || !plate_z_parse(fields[2], &z)) {
++        plates_fail(fd, 400, "Invalid plate"); return;
++    }
++    if (!plates_open(fd)) return;
++    if (plates.count >= PLATES_MAX) { plates_fail(fd, 409, "The plate library is full"); return; }
++    if (plates_name_taken(fields[1], NULL)) { plates_fail(fd, 409, "A plate with this name already exists"); return; }
++    if ((reason = plates_printer_ready(mqtt))) { plates_fail(fd, 409, reason); return; }
++    plates_begin();
++    plate_entry *p = &plates.plates[plates.count++];
++    memset(p, 0, sizeof(*p)); plates_new_id(p->id);
++    snprintf(p->name, sizeof(p->name), "%s", fields[1]); p->side = fields[0][0]; p->z = z;
++    if (!plates_commit(fd)) return;
++    char reply[96]; snprintf(reply, sizeof(reply), "{\"saved\":true,\"id\":\"%s\",\"measure\":\"\"}\n", p->id);
++    plates_reply(fd, 201, reply);
+ }
+ 
+ /* side \n name \n z [\n temp [\n nozzle]]: a new plate from the mesh the printer now
+--- a/cc2-control/tests/test_plates.c
++++ b/cc2-control/tests/test_plates.c
+@@ -117,6 +117,7 @@
+         case 10: plates_nozzle_save_response(pair[0], mqtt, body, length); break;
+         case 11: plates_nozzle_delete_response(pair[0], mqtt, body, length); break;
+         case 12: plates_nozzle_select_response(pair[0], mqtt, body, length); break;
++        case 13: plates_create_response(pair[0], mqtt, body, length); break;
+     }
+     close(pair[0]);
+     size_t used = 0; ssize_t n;
+@@ -180,7 +181,8 @@
+            !plate_z_parse("", &z) && !plate_z_parse(" 0.1", &z) && !plate_z_parse("0x1", &z));
+     int temp;
+     assert(plate_temp_parse("60", &temp) && temp == 60 && plate_temp_parse("110", &temp) && plate_temp_parse("40", &temp));
+-    assert(!plate_temp_parse("39", &temp) && !plate_temp_parse("111", &temp) && !plate_temp_parse("6", &temp) &&
++    assert(plate_temp_parse("30", &temp) && temp == 30);
++    assert(!plate_temp_parse("29", &temp) && !plate_temp_parse("111", &temp) && !plate_temp_parse("6", &temp) &&
+            !plate_temp_parse("60.5", &temp) && !plate_temp_parse("-60", &temp) && !plate_temp_parse("", &temp));
+ }
+ 
+@@ -713,7 +715,7 @@
+     assert(call(NOZZLE, &mqtt, "\n0.6 hardened\n0.6\n0") == 200);
+     char nozzle[17]; snprintf(nozzle, sizeof(nozzle), "%s", plates.nozzles[0].id);
+ 
+-    assert(calibrate(&mqtt, "A\n70\n61") == 400 && calibrate(&mqtt, "A\n30\n10") == 400 && calibrate(&mqtt, "C\n70\n10") == 400);
++    assert(calibrate(&mqtt, "A\n70\n61") == 400 && calibrate(&mqtt, "A\n29\n10") == 400 && calibrate(&mqtt, "C\n70\n10") == 400);
+     snprintf(body, sizeof(body), "B\n70\n10\n\n%s", plate);
+     assert(calibrate(&mqtt, body) == 409 && strstr(response, "other side"));
+     /* Unhomed: G28 first, then the bed heats; nothing probes before it holds the temperature for the soak. */
+@@ -838,6 +840,37 @@
+     unlink(path); rmdir(directory);
+ }
+ 
++static void test_empty_plate(void) {
++    mqtt_client mqtt = {0}; plate_mesh a = grid(0.6);
++    plates_cal.stage = CAL_IDLE;
++    write_autosave(&a, NULL); memory_a = a; memory_has_b = 0;
++    unlink(plates_path); new_process(); fresh(&mqtt);
++    size_t before_len; char *before = slurp(printer_autosave_path, &before_len);
++    uds_down = 1; profile_log[0] = console_log[0] = 0;
++    assert(call(13, &mqtt, "B\nPLA 30\n0") == 201);
++    assert(plates.count == 1 && plates.measure_count == 0 && !plates.plates[0].measure[0]);
++    char id[17]; snprintf(id, sizeof(id), "%s", plates.plates[0].id);
++    size_t after_len; char *after = slurp(printer_autosave_path, &after_len);
++    assert(before_len == after_len && !memcmp(before, after, before_len) && !profile_log[0] && !console_log[0]);
++    free(before); free(after);
++    new_process(); fresh(&mqtt); assert(plates_available && plates.count == 1 && !plate_base(&plates.plates[0]));
++    assert(call(MOUNT, &mqtt, id) == 404 && !plates.current[0] && !plates.pending[0]);
++    assert(call(13, &mqtt, "B\nPLA 30\n0") == 409);
++    mqtt.machine_status = 2; assert(call(13, &mqtt, "B\nBusy\n0") == 409); fresh(&mqtt);
++    assert(call(13, &mqtt, "C\nBad\n0") == 400 && call(13, &mqtt, "B\nBad\n2") == 400);
++    uds_down = 0;
++    char body[80]; snprintf(body, sizeof(body), "B\n30\n0\n\n%s", id);
++    console_log[0] = 0; assert(calibrate(&mqtt, body) == 202 && plates_cal.temp == 30 && !strcmp(plates_cal.plate, id));
++    cancel_calibration(&mqtt);
++    /* Attach the first real measurement to the previously empty profile. */
++    memory_b = grid(0.3); memory_has_b = 1; write_autosave(&a, &memory_b);
++    int status, profile, applied; plate_measure *measure = NULL;
++    assert(!plates_take_measure(&mqtt, id, 30, "", 0, &status, &measure, &profile, &applied));
++    assert(measure && measure->temp == 30 && plates_consistent());
++    new_process(); assert(plates_available && plate_base(&plates.plates[0]) && plates.measure_count == 1);
++    unlink(plates_path);
++}
++
+ static void test_background_transport(void) {
+     int pair[2];assert(!socketpair(AF_UNIX,SOCK_STREAM,0,pair));
+     plates_uds=uds_query_json;plates_background_close();
+@@ -880,6 +913,7 @@
+     test_http();
+     test_measures();
+     test_calibration_job();
++    test_empty_plate();
+     test_print_setup();
+     test_background_transport();
+     printf("PASS: plate library\n");
+--- a/cc2-control/web-src/package.json
++++ b/cc2-control/web-src/package.json
+@@ -35,7 +35,8 @@
+     "test:control-interactions": "node preview/test-control-interactions.mjs",
+     "test:canvas-states": "node preview/test-canvas-states.mjs",
+     "test:object-layout": "node preview/test-object-layout.mjs && node preview/test-object-selection.mjs",
+-    "test:mesh-side-labels": "node preview/test-mesh-side-labels.mjs"
++    "test:mesh-side-labels": "node preview/test-mesh-side-labels.mjs",
++    "test:plate-flow": "node preview/test-empty-plate-flow.mjs"
+   },
+   "devDependencies": {
+     "@biomejs/biome": "2.5.14",
+--- a/cc2-control/web-src/preview/plugin.ts
++++ b/cc2-control/web-src/preview/plugin.ts
+@@ -224,7 +224,7 @@
+       nozzles,
+       plates: plates.map(p => ({
+         ...p,
+-        in_printer: plateSlots[p.side] === plateBase(p).tilt,
++        in_printer: plateSlots[p.side] === plateBase(p)?.tilt,
+         measures: plateMeasures(p).map(({ plate, tilt, ...m }) => ({
+           ...m,
+           slot: plateSlots[p.side] === tilt,
+@@ -654,6 +654,7 @@
+           '/api/camera/claim',
+           '/api/history/timelapse',
+           '/api/plates/save',
++          '/api/plates/create',
+           '/api/plates/edit',
+           '/api/plates/delete',
+           '/api/plates/mount',
+@@ -773,6 +774,7 @@
+               const plate = plates.find(p => p.id === lines[0])
+               const idleOnly = [
+                 '/api/plates/save',
++                '/api/plates/create',
+                 '/api/plates/mount',
+                 '/api/plates/measure',
+                 '/api/plates/keep',
+@@ -865,6 +867,14 @@
+               if (path === '/api/plates/nozzle/select') {
+                 plateNozzle = lines[0] || ''
+                 return reply({ selected: true, applied: scene === 'idle' })
++              }
++              if (path === '/api/plates/create') {
++                const [side, name, z] = lines as ['A' | 'B', string, string]
++                if (plates.some(p => p.name === name))
++                  return reply({ error: 'A plate with this name already exists' }, 409)
++                const id = newId()
++                plates.push({ id, name, side, z_offset: Number(z), measure: '' })
++                return reply({ saved: true, id, measure: '' }, 201)
+               }
+               if (path === '/api/plates/save') {
+                 const [side, name, z, temp, nozzle] = lines as ['A' | 'B', string, string, string, string?]
+--- a/cc2-control/web-src/preview/test-bed-plates.mjs
++++ b/cc2-control/web-src/preview/test-bed-plates.mjs
+@@ -153,11 +153,12 @@
+   await row('Cool Plate', 65).getByText('0.6 hardened', { exact: true }).waitFor()
+ 
+   // A new plate from the Side B mesh, with its bed temperature and nozzle; a name the backend refuses never leaves the page.
+-  const form = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Save Printer Mesh as a Plate' }) })
++  const form = page.locator('section').filter({ has: page.getByRole('heading', { name: 'New plate profile' }) })
+   // Labels wrap their controls, so the names include the current values: address the controls directly.
+-  const side = form.locator('select').first(), name = form.locator('input').first()
++  const side = form.locator('select').first(), name = form.locator('input:not([type=checkbox])').first()
+   const [zInput, temp] = [form.locator('input[type=number]').nth(0), form.locator('input[type=number]').nth(1)]
+   await side.selectOption('B')
++  await form.getByRole('checkbox').check()
+   await name.fill('Bad "quote"')
+   const before = posts.length
+   await form.getByRole('button', { name: 'Save Plate', exact: true }).click()
+@@ -165,9 +166,9 @@
+   assert.equal(posts.length, before)
+   await name.fill('Glass')
+   await zInput.fill('0.005')
+-  await temp.fill('35')
++  await temp.fill('29')
+   await form.getByRole('button', { name: 'Save Plate', exact: true }).click()
+-  await toast('Use a whole bed temperature from 40 to 110 °C.')
++  await toast('Use a whole bed temperature from 30 to 110 °C.')
+   assert.equal(posts.length, before)
+   await temp.fill('70')
+   await form.getByRole('button', { name: 'Save Plate', exact: true }).click()
+--- /dev/null
++++ b/cc2-control/web-src/preview/test-empty-plate-flow.mjs
+@@ -0,0 +1,52 @@
++import assert from 'node:assert/strict'
++import path from 'node:path'
++import { fileURLToPath } from 'node:url'
++import { createServer } from 'vite'
++import { chromium } from 'playwright'
++const root=fileURLToPath(new URL('..',import.meta.url))
++process.env.CC2_BACKEND='http://127.0.0.1:1'
++const server=await createServer({root,configFile:path.join(root,'vite.config.ts'),mode:'demo',server:{port:0,host:'127.0.0.1'}})
++let browser
++try {
++ await server.listen();const origin=server.resolvedUrls.local[0].replace(/\/$/,'')
++ browser=await chromium.launch({headless:true,...(process.env.CC2_BROWSER_PATH?{executablePath:process.env.CC2_BROWSER_PATH}:{})})
++ const page=await browser.newPage({viewport:{width:1440,height:1000},timezoneId:'Europe/Rome'})
++ const errors=[],posts=[];page.on('pageerror',e=>errors.push(e.message))
++ page.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname.startsWith('/api/plates/'))posts.push([new URL(r.url()).pathname,r.postData()])})
++ await page.route('**/api/preferences',r=>r.fulfill({json:{language:'en',theme:'dark'}}))
++ await page.route('**/api/plates',async r=>{const response=await r.fetch();const data=await response.json();data.plates=data.plates.filter(p=>p.side==='A'||p.name==='PLA 30 B');if(data.calibration.result!=='saved')data.slots.B='empty';await r.fulfill({response,json:data})})
++ await page.goto(origin+'/#bed/plates')
++ await Promise.all([page.waitForEvent('load'),page.selectOption('#preview-scene','idle')])
++ const form=page.locator('section').filter({has:page.getByRole('heading',{name:'New plate profile',exact:true})})
++ await form.locator('select').first().selectOption('B')
++ await form.locator('input:not([type=checkbox])').first().fill('PLA 30 B')
++ assert(await form.getByRole('checkbox').isDisabled())
++ await form.getByRole('button',{name:'Save Plate',exact:true}).click()
++ await page.getByText('Plate profile created. Calibrate it before mounting.',{exact:true}).waitFor()
++ const card=page.locator('[data-plate]').filter({has:page.getByText('PLA 30 B',{exact:true})})
++ await card.waitFor();const id=await card.getAttribute('data-plate')
++ assert(await card.getByRole('button',{name:'Mount',exact:true}).isDisabled())
++ assert.deepEqual(posts.at(-1),['/api/plates/create','B\nPLA 30 B\n0.000'])
++ await card.getByRole('button',{name:'Calibrate this plate',exact:true}).click()
++ const field=text=>page.locator('label',{hasText:text}).locator('select,input')
++ const side=field('Calibration plate side'),temp=field('Bed temperature, °C'),soak=field('Soak, min'),target=field('Save the result to plate')
++ await side.waitFor();assert.equal(await side.inputValue(),'default1');assert.equal(await target.inputValue(),id)
++ await temp.fill('30');await soak.fill('2')
++ await page.getByRole('tab',{name:'Build Plates',exact:true}).click()
++ await page.getByRole('tab',{name:'Mesh & Saved Profiles',exact:true}).click()
++ assert.equal(await target.inputValue(),id);assert.equal(await temp.inputValue(),'30');assert.equal(await soak.inputValue(),'2')
++ await page.getByRole('button',{name:/Run Bed Mesh Calibration/}).click()
++ await page.getByRole('dialog').getByRole('button',{name:'Confirm',exact:true}).click()
++ await page.locator('[data-calibration]').waitFor()
++ await page.getByRole('tab',{name:'Build Plates',exact:true}).click()
++ await page.getByRole('tab',{name:'Mesh & Saved Profiles',exact:true}).click()
++ assert.equal(await target.inputValue(),id);assert.equal(await temp.inputValue(),'30');assert.equal(await soak.inputValue(),'2')
++ assert(await target.isDisabled())
++ assert.equal(posts.filter(([url])=>url==='/api/plates/calibrate').length,1)
++ for(let i=0;i<5;i++)await page.evaluate(()=>fetch('/__preview/calibration-step',{method:'POST'}))
++ await page.getByRole('tab',{name:'Build Plates',exact:true}).click()
++ await card.locator('[data-measure]').waitFor()
++ assert.match(await card.locator('[data-measure]').first().innerText(),/\d{1,2}:\d{2}:\d{2}/)
++ assert.deepEqual(errors,[])
++ console.log('PASS: empty Side B profile, guarded mounting, 30 C calibration target, tabs before/during calibration, one start and exact time')
++}finally{await browser?.close();await server.close()}
+--- a/cc2-control/web-src/preview/test-mesh-calibration.mjs
++++ b/cc2-control/web-src/preview/test-mesh-calibration.mjs
+@@ -59,7 +59,7 @@
+   await temperature.fill('120')
+   await soak.fill('10')
+   await run.click()
+-  await toast('Use a whole bed temperature from 40 to 110 °C.')
++  await toast('Use a whole bed temperature from 30 to 110 °C.')
+   assert.equal(await dialog.count(), 0)
+   assert.equal(plateCalls.length, 0)
+ 
+--- a/cc2-control/web-src/public/locales/cs.json
++++ b/cc2-control/web-src/public/locales/cs.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Tryska",
+   "common.bed_temperature_c": "Teplota podložky, °C",
+   "common.not_set": "Nenastaveno",
+-  "common.invalid_bed_temperature": "Zadejte teplotu podložky jako celé číslo od 40 do 110 °C.",
++  "common.invalid_bed_temperature": "Zadejte teplotu podložky jako celé číslo od 30 do 110 °C.",
+   "common.open_in_new_window": "Otevřít v novém okně",
+   "common.part_fan": "Ventilátor výtisku",
+   "common.position": "Pozice",
+@@ -657,8 +657,8 @@
+   "plates.add_live_adjustment": "Přidat živou úpravu ({delta} mm)",
+   "plates.mesh_differs": "Síť strany {side} v tiskárně již neodpovídá této desce, například po nové kalibraci.",
+   "plates.write_to_printer": "Zapsat desku do tiskárny",
+-  "plates.save_new": "Uložit síť tiskárny jako desku",
+-  "plates.save_hint": "Nejprve zkalibrujte síť podložky s nasazenou deskou. Síť, kterou tiskárna uchovává pro vybranou stranu, se uloží k desce jako její měření při zadané teplotě podložky.",
++  "plates.save_new": "Nový profil podložky",
++  "plates.save_hint": "Vytvořte profil pro každý povrch podložky. Můžete také importovat existující síť strany.",
+   "plates.side": "Strana",
+   "plates.z_offset_mm": "Offset Z, mm",
+   "plates.name_placeholder": "např. texturovaná PEI",
+@@ -929,5 +929,10 @@
+   "canvas.reason_already_loaded": "Tento filament je již zavedený do tiskové hlavy.",
+   "canvas.reason_transition": "Čeká se na konzistentní stav filamentu a aktivního kanálu.",
+   "job.object_position_order": "Řady zepředu dozadu (rozdíl Y středů do 2 mm), poté zleva doprava. Objekty bez souřadnic jsou na konci seznamu.",
+-  "job.object_position_unknown": "Poloha není dostupná"
++  "job.object_position_unknown": "Poloha není dostupná",
++  "plates.not_calibrated": "Zatím nekalibrováno. Spusťte kalibraci a uložte výsledek k této podložce.",
++  "plates.created_without_mesh": "Profil podložky vytvořen. Před nasazením ji kalibrujte.",
++  "plates.include_existing_mesh": "Zahrnout existující síť této strany",
++  "plates.empty_profile_hint": "Nejprve vytvořte profil, poté kalibrujte a vyberte jej jako cíl uložení.",
++  "plates.calibrate_plate": "Kalibrovat tuto podložku"
+ }
+--- a/cc2-control/web-src/public/locales/en.json
++++ b/cc2-control/web-src/public/locales/en.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Nozzle",
+   "common.bed_temperature_c": "Bed temperature, °C",
+   "common.not_set": "Not set",
+-  "common.invalid_bed_temperature": "Use a whole bed temperature from 40 to 110 °C.",
++  "common.invalid_bed_temperature": "Use a whole bed temperature from 30 to 110 °C.",
+   "common.open_in_new_window": "Open in new window",
+   "common.part_fan": "Part Fan",
+   "common.position": "Position",
+@@ -657,8 +657,8 @@
+   "plates.add_live_adjustment": "Add the live adjustment ({delta} mm)",
+   "plates.mesh_differs": "The printer's Side {side} mesh no longer matches this plate, for example after a new calibration.",
+   "plates.write_to_printer": "Write plate to printer",
+-  "plates.save_new": "Save Printer Mesh as a Plate",
+-  "plates.save_hint": "First run a bed mesh calibration with this plate mounted. The mesh the printer keeps for the chosen side is saved with the plate as its measurement at the given bed temperature.",
++  "plates.save_new": "New plate profile",
++  "plates.save_hint": "Create a named profile for each plate surface. Optionally import an existing side mesh.",
+   "plates.side": "Side",
+   "plates.z_offset_mm": "Z offset, mm",
+   "plates.name_placeholder": "e.g. Textured PEI",
+@@ -929,5 +929,10 @@
+   "canvas.reason_already_loaded": "This filament is already loaded in the head.",
+   "canvas.reason_transition": "Waiting for consistent filament and active-channel state.",
+   "job.object_position_order": "Rows from front to back (centers within 2 mm in Y), then left to right. Objects without coordinates are listed last.",
+-  "job.object_position_unknown": "Position unavailable"
++  "job.object_position_unknown": "Position unavailable",
++  "plates.not_calibrated": "Not calibrated yet. Run a calibration and save the result to this plate.",
++  "plates.created_without_mesh": "Plate profile created. Calibrate it before mounting.",
++  "plates.include_existing_mesh": "Include the existing mesh for this side",
++  "plates.empty_profile_hint": "Create the profile first, then calibrate and select it as the destination.",
++  "plates.calibrate_plate": "Calibrate this plate"
+ }
+--- a/cc2-control/web-src/public/locales/es.json
++++ b/cc2-control/web-src/public/locales/es.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Boquilla",
+   "common.bed_temperature_c": "Temperatura de cama, °C",
+   "common.not_set": "No establecido",
+-  "common.invalid_bed_temperature": "Use una temperatura de cama entera de 40 a 110 °C.",
++  "common.invalid_bed_temperature": "Use una temperatura de cama entera de 30 a 110 °C.",
+   "common.open_in_new_window": "Abrir en nueva ventana",
+   "common.part_fan": "Ventilador de Pieza",
+   "common.position": "Posicion",
+@@ -657,7 +657,7 @@
+   "plates.add_live_adjustment": "Añadir el ajuste en vivo ({delta} mm)",
+   "plates.mesh_differs": "La malla del Lado {side} de la impresora ya no coincide con esta placa, por ejemplo, despues de una nueva calibracion.",
+   "plates.write_to_printer": "Escribir placa en la impresora",
+-  "plates.save_new": "Guardar Malla de Impresora como Placa",
++  "plates.save_new": "Nuevo perfil de placa",
+   "plates.save_hint": "Primero ejecute una calibracion de malla de cama con esta placa montada. La malla que la impresora mantiene para el lado elegido se guarda con la placa como su medicion a la temperatura de cama dada.",
+   "plates.side": "Lado",
+   "plates.z_offset_mm": "Desplazamiento Z, mm",
+--- a/cc2-control/web-src/public/locales/fr.json
++++ b/cc2-control/web-src/public/locales/fr.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Buse",
+   "common.bed_temperature_c": "Température du plateau, °C",
+   "common.not_set": "Non défini",
+-  "common.invalid_bed_temperature": "Indiquez une température de plateau entière entre 40 et 110 °C.",
++  "common.invalid_bed_temperature": "Indiquez une température de plateau entière entre 30 et 110 °C.",
+   "common.open_in_new_window": "Ouvrir dans une nouvelle fenêtre",
+   "common.part_fan": "Ventilateur de pièce",
+   "common.position": "Position",
+@@ -657,8 +657,8 @@
+   "plates.add_live_adjustment": "Ajouter le réglage en direct ({delta} mm)",
+   "plates.mesh_differs": "Le maillage du côté {side} dans l’imprimante ne correspond plus à cette plaque, par exemple après une nouvelle calibration.",
+   "plates.write_to_printer": "Écrire la plaque dans l’imprimante",
+-  "plates.save_new": "Enregistrer le maillage comme plaque",
+-  "plates.save_hint": "Lancez d’abord une calibration du maillage avec cette plaque montée. Le maillage que l’imprimante garde pour le côté choisi est enregistré avec la plaque comme sa mesure à la température de plateau indiquée.",
++  "plates.save_new": "Nouveau profil de plateau",
++  "plates.save_hint": "Créez un profil par surface de plateau. Vous pouvez aussi importer un maillage de face existant.",
+   "plates.side": "Côté",
+   "plates.z_offset_mm": "Décalage Z, mm",
+   "plates.name_placeholder": "ex. PEI texturé",
+@@ -929,5 +929,10 @@
+   "canvas.reason_already_loaded": "Ce filament est déjà chargé dans la tête.",
+   "canvas.reason_transition": "En attente de données cohérentes sur le filament et le canal actif.",
+   "job.object_position_order": "Rangées de l’avant vers l’arrière (centres à moins de 2 mm en Y), puis de gauche à droite. Les objets sans coordonnées sont en fin de liste.",
+-  "job.object_position_unknown": "Position indisponible"
++  "job.object_position_unknown": "Position indisponible",
++  "plates.not_calibrated": "Pas encore calibré. Lancez un calibrage et enregistrez le résultat sur ce plateau.",
++  "plates.created_without_mesh": "Profil de plateau créé. Calibrez-le avant de le monter.",
++  "plates.include_existing_mesh": "Inclure le maillage existant de cette face",
++  "plates.empty_profile_hint": "Créez le profil, puis calibrez en le sélectionnant comme destination.",
++  "plates.calibrate_plate": "Calibrer ce plateau"
+ }
+--- a/cc2-control/web-src/public/locales/hu.json
++++ b/cc2-control/web-src/public/locales/hu.json
+@@ -193,7 +193,7 @@
+   "common.nozzle": "Fúvóka",
+   "common.bed_temperature_c": "Tárgyasztal hőmérséklete (°C)",
+   "common.not_set": "Nincs beállítva",
+-  "common.invalid_bed_temperature": "Adj meg 40 és 110 °C közötti egész tárgyasztal-hőmérsékletet.",
++  "common.invalid_bed_temperature": "Adj meg 30 és 110 °C közötti egész tárgyasztal-hőmérsékletet.",
+   "common.open_in_new_window": "Megnyitás új ablakban",
+   "common.part_fan": "Tárgyhűtő ventilátor",
+   "common.position": "Pozíció",
+@@ -673,7 +673,7 @@
+   "plates.add_live_adjustment": "Aktuális finomhangolás hozzáadása ({delta} mm)",
+   "plates.mesh_differs": "A nyomtató {side} oldalhoz tartozó magassághálója már nem egyezik ennek a lapnak a mentett adataival, például egy új kalibrálás után.",
+   "plates.write_to_printer": "Lapadatok írása a nyomtatóra",
+-  "plates.save_new": "A nyomtató magassághálójának mentése új lapként",
++  "plates.save_new": "Új tárgyasztalprofil",
+   "plates.save_hint": "Először végezz tárgyasztal-kalibrálást a felhelyezett lappal. A nyomtató által a kiválasztott oldalhoz megőrzött magassághálót a rendszer a beállított tárgyasztal-hőmérséklethez tartozó mérésként menti a laphoz.",
+   "plates.side": "Oldal",
+   "plates.z_offset_mm": "Z-eltolás (mm)",
+--- a/cc2-control/web-src/public/locales/it.json
++++ b/cc2-control/web-src/public/locales/it.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Ugello",
+   "common.bed_temperature_c": "Temperatura del piatto, °C",
+   "common.not_set": "Non impostato",
+-  "common.invalid_bed_temperature": "Usa una temperatura del piatto intera tra 40 e 110 °C.",
++  "common.invalid_bed_temperature": "Usa una temperatura del piatto intera tra 30 e 110 °C.",
+   "common.open_in_new_window": "Apri in una nuova finestra",
+   "common.part_fan": "Ventola pezzo",
+   "common.position": "Posizione",
+@@ -657,8 +657,8 @@
+   "plates.add_live_adjustment": "Aggiungi la regolazione live ({delta} mm)",
+   "plates.mesh_differs": "La mesh del lato {side} nella stampante non corrisponde più a questo piatto, ad esempio dopo una nuova calibrazione.",
+   "plates.write_to_printer": "Scrivi il piatto nella stampante",
+-  "plates.save_new": "Salva la mesh della stampante come piatto",
+-  "plates.save_hint": "Esegui prima una calibrazione della mesh con questo piatto montato. Con il piatto viene salvata, come sua misura alla temperatura indicata, la mesh che la stampante conserva per il lato scelto.",
++  "plates.save_new": "Nuovo profilo piatto",
++  "plates.save_hint": "Crea un profilo per ogni superficie del piatto. Puoi anche importare una mesh del lato già esistente.",
+   "plates.side": "Lato",
+   "plates.z_offset_mm": "Offset Z, mm",
+   "plates.name_placeholder": "es. PEI testurizzato",
+@@ -929,5 +929,10 @@
+   "canvas.reason_already_loaded": "Questo filamento è già caricato nella testina.",
+   "canvas.reason_transition": "In attesa di dati coerenti su filamento e canale attivo.",
+   "job.object_position_order": "File dal davanti al fondo (centri entro 2 mm in Y), poi da sinistra a destra. Gli oggetti senza coordinate sono in fondo alla lista.",
+-  "job.object_position_unknown": "Posizione non disponibile"
++  "job.object_position_unknown": "Posizione non disponibile",
++  "plates.not_calibrated": "Non ancora calibrato. Esegui una calibrazione e salva il risultato su questo piatto.",
++  "plates.created_without_mesh": "Profilo piatto creato. Calibralo prima di montarlo.",
++  "plates.include_existing_mesh": "Includi la mesh già presente per questo lato",
++  "plates.empty_profile_hint": "Crea prima il profilo, poi calibra selezionandolo come destinazione.",
++  "plates.calibrate_plate": "Calibra questo piatto"
+ }
+--- a/cc2-control/web-src/public/locales/pl.json
++++ b/cc2-control/web-src/public/locales/pl.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Dysza",
+   "common.bed_temperature_c": "Temperatura stołu, °C",
+   "common.not_set": "Nie ustawiono",
+-  "common.invalid_bed_temperature": "Podaj temperaturę stołu jako liczbę całkowitą od 40 do 110 °C.",
++  "common.invalid_bed_temperature": "Podaj temperaturę stołu jako liczbę całkowitą od 30 do 110 °C.",
+   "common.open_in_new_window": "Otwórz w nowym oknie",
+   "common.part_fan": "Wentylator wydruku",
+   "common.position": "Pozycja",
+@@ -657,8 +657,8 @@
+   "plates.add_live_adjustment": "Dodaj regulację na żywo ({delta} mm)",
+   "plates.mesh_differs": "Siatka strony {side} drukarki nie pasuje już do tej płyty, np. po nowej kalibracji.",
+   "plates.write_to_printer": "Zapisz płytę do drukarki",
+-  "plates.save_new": "Zapisz siatkę drukarki jako płytę",
+-  "plates.save_hint": "Najpierw skalibruj siatkę stołu z zamontowaną płytą. Siatka zachowana przez drukarkę dla wybranej strony zostanie zapisana z płytą jako jej pomiar w podanej temperaturze stołu.",
++  "plates.save_new": "Nowy profil płyty",
++  "plates.save_hint": "Utwórz profil dla każdej powierzchni płyty. Możesz też zaimportować istniejącą siatkę strony.",
+   "plates.side": "Strona",
+   "plates.z_offset_mm": "Offset Z, mm",
+   "plates.name_placeholder": "np. teksturowana PEI",
+@@ -929,5 +929,10 @@
+   "canvas.reason_already_loaded": "Ten filament jest już załadowany do głowicy.",
+   "canvas.reason_transition": "Oczekiwanie na spójny stan filamentu i aktywnego kanału.",
+   "job.object_position_order": "Rzędy od przodu do tyłu (różnica Y środków do 2 mm), następnie od lewej do prawej. Obiekty bez współrzędnych są na końcu listy.",
+-  "job.object_position_unknown": "Pozycja niedostępna"
++  "job.object_position_unknown": "Pozycja niedostępna",
++  "plates.not_calibrated": "Jeszcze nieskalibrowana. Uruchom kalibrację i zapisz wynik dla tej płyty.",
++  "plates.created_without_mesh": "Profil płyty utworzony. Skalibruj ją przed zamontowaniem.",
++  "plates.include_existing_mesh": "Dołącz istniejącą siatkę tej strony",
++  "plates.empty_profile_hint": "Najpierw utwórz profil, potem skalibruj i wybierz go jako miejsce zapisu.",
++  "plates.calibrate_plate": "Kalibruj tę płytę"
+ }
+--- a/cc2-control/web-src/public/locales/ru.json
++++ b/cc2-control/web-src/public/locales/ru.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "Сопло",
+   "common.bed_temperature_c": "Температура стола, °C",
+   "common.not_set": "Не указано",
+-  "common.invalid_bed_temperature": "Температура стола — целое число от 40 до 110 °C.",
++  "common.invalid_bed_temperature": "Температура стола — целое число от 30 до 110 °C.",
+   "common.open_in_new_window": "Открыть в новом окне",
+   "common.part_fan": "Обдув модели",
+   "common.position": "Позиция",
+@@ -657,7 +657,7 @@
+   "plates.add_live_adjustment": "Добавить подстройку на лету ({delta} мм)",
+   "plates.mesh_differs": "Сетка стороны {side} в принтере больше не совпадает с этим столом, например после новой калибровки.",
+   "plates.write_to_printer": "Записать стол в принтер",
+-  "plates.save_new": "Сохранить сетку принтера как стол",
++  "plates.save_new": "Новый профиль пластины",
+   "plates.save_hint": "Сначала выполните калибровку сетки с установленным столом. Сетка, которую принтер хранит для выбранной стороны, сохраняется со столом как его замер при указанной температуре стола.",
+   "plates.side": "Сторона",
+   "plates.z_offset_mm": "Z-offset, мм",
+--- a/cc2-control/web-src/public/locales/zh.json
++++ b/cc2-control/web-src/public/locales/zh.json
+@@ -183,7 +183,7 @@
+   "common.nozzle": "喷嘴",
+   "common.bed_temperature_c": "热床温度，°C",
+   "common.not_set": "未设置",
+-  "common.invalid_bed_temperature": "热床温度须为 40 至 110 °C 之间的整数。",
++  "common.invalid_bed_temperature": "热床温度须为 30 至 110 °C 之间的整数。",
+   "common.open_in_new_window": "在新窗口打开",
+   "common.part_fan": "模型风扇",
+   "common.position": "位置",
+@@ -657,7 +657,7 @@
+   "plates.add_live_adjustment": "加入实时调整（{delta} mm）",
+   "plates.mesh_differs": "打印机中 {side} 面的网格已与此打印板不一致，例如重新校准之后。",
+   "plates.write_to_printer": "将打印板写入打印机",
+-  "plates.save_new": "将打印机网格保存为打印板",
++  "plates.save_new": "新建打印板配置",
+   "plates.save_hint": "请先装上此打印板运行热床网格校准。打印机为所选面保存的网格会作为该打印板在所填热床温度下的测量一起保存。",
+   "plates.side": "面",
+   "plates.z_offset_mm": "Z 偏移，mm",
+--- a/cc2-control/web-src/src/lib/plates.ts
++++ b/cc2-control/web-src/src/lib/plates.ts
+@@ -88,6 +88,14 @@
+ 
+ // The Mesh tab can show a measurement instead of a printer profile: `measure:<id>`.
+ export const meshProfile = store({ profile: 'active' })
++// Keep the form across tabs/pages; a running job remains authoritative.
++export const calibrationForm = store({
++  side: '',
++  temp: '60',
++  soak: '10',
++  nozzle: null as string | null,
++  target: null as string | null,
++})
+ 
+ // The measurement a plate mounts with.
+ export const plateBase = (p: Plate) => p.measures.find(m => m.id === p.measure) || p.measures[0]
+@@ -147,7 +155,10 @@
+ export const zText = (z: number) => `${z > 0 ? '+' : z < 0 ? '−' : ''}${Math.abs(z).toFixed(3)}`
+ 
+ // Whole degrees the backend accepts for a measurement.
+-export const tempOk = (text: string) => /^\d{2,3}$/.test(text.trim()) && Number(text) >= 40 && Number(text) <= 110
++export const tempOk = (text: string) => /^\d{2,3}$/.test(text.trim()) && Number(text) >= 30 && Number(text) <= 110
++
++export const createPlate = (side: 'A' | 'B', name: string, z: number) =>
++  post('/api/plates/create', `${side}\n${name}\n${z.toFixed(3)}`)
+ 
+ export const savePlate = (side: 'A' | 'B', name: string, z: number, temp: number, nozzle: string) =>
+   post('/api/plates/save', `${side}\n${name}\n${z.toFixed(3)}\n${temp}\n${nozzle}`)
+--- a/cc2-control/web-src/src/pages/bed-plates.tsx
++++ b/cc2-control/web-src/src/pages/bed-plates.tsx
+@@ -29,6 +29,8 @@
+   refreshPlates,
+   saveNozzle,
+   savePlate,
++  createPlate,
++  calibrationForm,
+   selectNozzle,
+   tempOk,
+   unmountPlate,
+@@ -36,7 +38,18 @@
+ } from '@/lib/plates'
+ import { openPage, printer, view, zoffset } from '@/lib/state'
+ 
+-const savedOn = (s: number) => (s > 0 ? new Date(s * 1000).toLocaleDateString() : '—')
++const savedOn = (s: number) =>
++  s > 0
++    ? new Date(s * 1000).toLocaleString(undefined, {
++        year: 'numeric',
++        month: '2-digit',
++        day: '2-digit',
++        hour: '2-digit',
++        minute: '2-digit',
++        second: '2-digit',
++        timeZoneName: 'short',
++      })
++    : '—'
+ // The backend's limits: 1-64 UTF-8 bytes without quotes, backslashes, C0/C1 controls or the
+ // Unicode line separators; |z| <= 1 mm.
+ const forbidden = (c: number) => c < 32 || c === 34 || c === 92 || (c >= 127 && c <= 159) || c === 8232 || c === 8233
+@@ -153,7 +166,7 @@
+           <Input
+             class="w-24"
+             type="number"
+-            min="40"
++            min="30"
+             max="110"
+             step="1"
+             value={temp}
+@@ -280,6 +293,7 @@
+         {t('plates.z_offset')}: <b class="text-fg">{zText(p.z_offset)} mm</b>
+       </div>
+       <fieldset class="mt-2 grid min-w-0 gap-1.5" aria-label={t('plates.measures')}>
++        {!p.measures.length && <Notice>{t('plates.not_calibrated')}</Notice>}
+         {p.measures.map(m => (
+           <MeasureRow key={m.id} p={p} m={m} lib={lib} idle={idle} locked={locked} act={act} />
+         ))}
+@@ -293,7 +307,7 @@
+               <Input
+                 class="w-24"
+                 type="number"
+-                min="40"
++                min="30"
+                 max="110"
+                 step="1"
+                 value={temp}
+@@ -302,7 +316,7 @@
+             </label>
+             <Button
+               class="text-xs"
+-              disabled={locked || !idle}
++              disabled={locked || !idle || !base}
+               title={idleOnly}
+               onClick={() =>
+                 act(async () => {
+@@ -353,13 +367,28 @@
+             <Button
+               variant="primary"
+               class="text-xs"
+-              disabled={locked || !idle}
++              disabled={locked || !idle || !base}
+               title={idleOnly}
+               onClick={() => act(() => mount(p))}
+             >
+               {t('plates.mount')}
+             </Button>
+           )}
++          <Button
++            class="text-xs"
++            disabled={locked || !idle}
++            onClick={() => {
++              calibrationForm.set({
++                side: p.side === 'B' ? 'default1' : 'default',
++                target: p.id,
++                temp: String(base?.temp ?? 60),
++                nozzle: lib.nozzle,
++              })
++              openPage('bed')
++            }}
++          >
++            {t('plates.calibrate_plate')}
++          </Button>
+           <Button
+             class="text-xs"
+             disabled={locked}
+@@ -496,22 +525,34 @@
+   const [z, setZ] = useState('0.000')
+   const [temp, setTemp] = useState('60')
+   const [nozzle, setNozzle] = useState<string | null>(null)
++  const [capture, setCapture] = useState(false)
+   const missing = lib.slots[side] !== 'mesh'
++  const withMesh = capture && !missing
+   const chosen = nozzle ?? lib.nozzle
+   const save = () =>
+     act(async () => {
+       if (!nameOk(name.trim())) return notify(t('plates.invalid_name'), 'error')
+       if (!zOk(z)) return notify(t('plates.invalid_z'), 'error')
+-      if (!tempOk(temp)) return notify(t('common.invalid_bed_temperature'), 'error')
+-      await savePlate(side, name.trim(), Number(z), Number(temp), chosen)
++      if (withMesh && !tempOk(temp)) return notify(t('common.invalid_bed_temperature'), 'error')
++      if (withMesh) await savePlate(side, name.trim(), Number(z), Number(temp), chosen)
++      else await createPlate(side, name.trim(), Number(z))
+       setName('')
+       setZ('0.000')
+-      notify(t('plates.saved_toast'))
++      notify(t(withMesh ? 'plates.saved_toast' : 'plates.created_without_mesh'))
+     })
+   return (
+     <Card>
+       <CardHead icon="folder" title="plates.save_new" />
+       <p class="mb-3 text-xs text-muted">{t('plates.save_hint')}</p>
++      <label class="mb-3 flex items-center gap-2 text-xs">
++        <input
++          type="checkbox"
++          checked={withMesh}
++          disabled={missing || busy}
++          onChange={e => setCapture(e.currentTarget.checked)}
++        />
++        {t('plates.include_existing_mesh')}
++      </label>
+       <div class="grid gap-2 cc2-sm:grid-cols-[7rem_1fr_8rem] cc2-lg:grid-cols-[7rem_1fr_8rem_7rem_10rem_auto]">
+         <label class="grid gap-1 text-xs">
+           {t('plates.side')}
+@@ -535,17 +576,25 @@
+         </label>
+         <label class="grid gap-1 text-xs">
+           {t('common.bed_temperature_c')}
+-          <Input type="number" min="40" max="110" step="1" value={temp} onInput={e => setTemp(e.currentTarget.value)} />
++          <Input
++            type="number"
++            min="30"
++            max="110"
++            step="1"
++            value={temp}
++            disabled={!withMesh}
++            onInput={e => setTemp(e.currentTarget.value)}
++          />
+         </label>
+         <label class="grid gap-1 text-xs">
+           {t('common.nozzle')}
+-          <NozzleSelect lib={lib} value={chosen} onChange={setNozzle} />
++          <NozzleSelect lib={lib} value={chosen} disabled={!withMesh} onChange={setNozzle} />
+         </label>
+         <div class="flex items-end">
+           <Button
+             variant="primary"
+             wide
+-            disabled={busy || !idle || !lib.available || Boolean(lib.pending) || missing || !name.trim()}
++            disabled={busy || !idle || !lib.available || Boolean(lib.pending) || !name.trim()}
+             title={idle ? undefined : t('common.available_when_idle')}
+             onClick={save}
+           >
+@@ -553,7 +602,7 @@
+           </Button>
+         </div>
+       </div>
+-      {missing && <Notice>{t('print.this_build_plate_side_has_no')}</Notice>}
++      {!withMesh && <Notice>{t('plates.empty_profile_hint')}</Notice>}
+     </Card>
+   )
+ }
+--- a/cc2-control/web-src/src/pages/bed.tsx
++++ b/cc2-control/web-src/src/pages/bed.tsx
+@@ -20,6 +20,7 @@
+ import {
+   type Calibration,
+   calibrate,
++  calibrationForm,
+   findMeasure,
+   meshProfile,
+   nozzleName,
+@@ -56,7 +57,8 @@
+     if (!library) return
+     if (profile.startsWith('plate:')) {
+       const p = library.plates.find(x => `plate:${x.id}` === profile)
+-      setProfile(p ? `measure:${plateBase(p).id}` : 'active')
++      const base = p ? plateBase(p) : null
++      setProfile(base ? `measure:${base.id}` : 'active')
+     } else if (profile.startsWith('measure:') && !found) setProfile('active')
+   }, [library, profile, found])
+   const [view, setView] = useState<View>('3d')
+@@ -383,16 +385,36 @@
+ }
+ 
+ const MeshActions = ({ reload, note }: { reload: () => void; note: string }) => {
+-  const [side, setSide] = useState('')
+-  const [temp, setTemp] = useState('60')
+-  const [soak, setSoak] = useState('10')
+-  const [nozzle, setNozzle] = useState<string | null>(null)
+-  // The plate the result is saved to: null follows the mounted plate of that side, '' saves to none.
+-  const [target, setTarget] = useState<string | null>(null)
+   const [starting, setStarting] = useState(false)
+   const library = plates.use().data
+   const job = library?.calibration
+   const running = Boolean(job && job.stage !== 'off')
++  const draft = calibrationForm.use()
++  useEffect(() => {
++    if (running && job)
++      calibrationForm.set({
++        side: job.side === 'B' ? 'default1' : 'default',
++        temp: String(job.temp),
++        soak: String(job.soak / 60),
++        nozzle: job.nozzle,
++        target: job.plate,
++      })
++  }, [running, job?.side, job?.temp, job?.soak, job?.nozzle, job?.plate])
++  const { side, temp, soak, nozzle, target } =
++    running && job
++      ? {
++          side: job.side === 'B' ? 'default1' : 'default',
++          temp: String(job.temp),
++          soak: String(job.soak / 60),
++          nozzle: job.nozzle,
++          target: job.plate,
++        }
++      : draft
++  const setSide = (side: string) => calibrationForm.set({ side, target: null })
++  const setTemp = (temp: string) => calibrationForm.set({ temp })
++  const setSoak = (soak: string) => calibrationForm.set({ soak })
++  const setNozzle = (nozzle: string) => calibrationForm.set({ nozzle })
++  const setTarget = (target: string) => calibrationForm.set({ target })
+   // The calibration runs on the printer; the page only follows it, faster while it runs.
+   usePoll(refreshPlates, running ? 2000 : 30000)
+   const plateSide = side === 'default1' ? 'B' : side === 'default' ? 'A' : null
+@@ -465,7 +487,7 @@
+           {t('common.bed_temperature_c')}
+           <Input
+             type="number"
+-            min="40"
++            min="30"
+             max="110"
+             step="1"
+             value={temp}

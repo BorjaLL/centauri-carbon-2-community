@@ -1,7 +1,7 @@
 name: Combined CC2 Control printer trial
 on:
   push:
-    branches: [test/cc2-control-1.2.13-combined]
+    branches: [test/cc2-control-1.2.14-combined]
 permissions:
   contents: read
 jobs:
@@ -15,7 +15,14 @@ jobs:
           git apply experimental/combined-1212/changes.patch
           git apply --check experimental/combined-1212/object-coordinates-fix.patch
           git apply experimental/combined-1212/object-coordinates-fix.patch
+          git apply --check experimental/combined-1212/plate-workflow-fix.patch
+          git apply experimental/combined-1212/plate-workflow-fix.patch
           git add -N cc2-control
+      - name: Plate persistence and calibration guards
+        working-directory: cc2-control
+        run: |
+          gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -D_POSIX_C_SOURCE=200809L -pthread tests/test_plates.c src/mqtt.c src/console.c src/control.c src/panda.c src/uds.c -o /tmp/cc2-test-plates -lm
+          /tmp/cc2-test-plates
       - uses: actions/setup-node@v7
         with:
           node-version: 26
@@ -34,6 +41,9 @@ jobs:
           npm run test:canvas-reset
           npm run test:object-layout
           npm run test:mesh-side-labels
+          npm run test:plate-flow
+          npm run test:plates
+          npm run test:calibration
           npm run test:job-objects
           npm run test:updates
       - name: Native tests
@@ -50,6 +60,6 @@ jobs:
         run: python3 experimental/combined-1212/package_trial.py
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: cc2-control-1.2.13-combined-trial
-          path: output/combined-1213/*
+          name: cc2-control-1.2.14-combined-trial
+          path: output/combined-1214/*
           if-no-files-found: error
