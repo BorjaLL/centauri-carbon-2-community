@@ -17,6 +17,7 @@ typedef struct {
  char homed_axes[4];
  int have_homed_axes;
  int have_light, light;
+ int have_head_filament,head_filament;
  char filename[512];
  int have_filename;
  /* print_stats.state: printing, paused, complete, cancelled, error or standby. */

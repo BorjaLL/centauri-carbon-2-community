@@ -131,7 +131,7 @@ const MaterialDialog = ({ slot, onClose }: { slot: number; onClose: () => void }
 }
 
 export const Canvas = () => {
-  const { model, autoRefill, slot, optimistic, checked } = canvas.use()
+  const { model, controls, autoRefill, slot, optimistic, checked } = canvas.use()
   const library = spools.use().data
   const tracking = Boolean(library?.available && library.enabled)
   const [dialog, setDialog] = useState(false)
@@ -161,6 +161,24 @@ export const Canvas = () => {
   useEffect(() => (dialog ? undefined : poll(refreshCanvas, 2000)), [dialog])
   usePoll(refreshSpools, 10000)
   const ok = Boolean(model?.connected)
+  const selected = controls.find(c => c.slot === slot)
+  const stateLabels = {
+    empty: 'canvas.state_empty',
+    present: 'canvas.state_present',
+    loaded: 'canvas.state_loaded',
+    transition: 'canvas.state_transition',
+    unknown: 'canvas.state_unknown',
+  } as const
+  const reasons: Record<string, Key> = {
+    unavailable: 'canvas.reason_unavailable',
+    empty: 'canvas.reason_empty',
+    busy: 'canvas.reason_busy',
+    head_occupied: 'canvas.reason_head_occupied',
+    not_loaded: 'canvas.reason_not_loaded',
+    already_loaded: 'canvas.reason_already_loaded',
+    transition: 'canvas.reason_transition',
+  }
+  const reason = (key?: string) => t(reasons[key || ''] || 'canvas.reason_unavailable')
   const sync = async () => {
     try {
       await post('/api/canvas/refresh')
@@ -194,6 +212,7 @@ export const Canvas = () => {
     const spool = held ? findSpool(library, held.spool) : null
     return {
       i,
+      state: controls.find(c => c.slot === i)?.state || 'unknown',
       present: Number(tray?.status) > 0,
       colour:
         Number(tray?.status) > 0 && raw !== undefined && raw !== null && raw !== '' ? canvasColour(raw, i) : '#334553',
@@ -208,12 +227,13 @@ export const Canvas = () => {
       spool,
     }
   })
-  const ctl: [typeof ArrowBigUp, Key, () => void, string][] = [
+  const ctl: [typeof ArrowBigUp, Key, () => void, boolean, string][] = [
     [
       ArrowBigUp,
       'canvas.load',
       () => control(`canvas:load:${slot}`, tpl('canvas.load_filament_from_canvas_slot', { slot: slot + 1 })) as any,
-      '',
+      Boolean(selected?.load && idle),
+      reason(idle ? selected?.reason_load : 'busy'),
     ],
     [
       ArrowBigDown,
@@ -225,10 +245,11 @@ export const Canvas = () => {
             slot: slot + 1,
           })
         ) as any,
-      '',
+      Boolean(selected?.unload && idle),
+      reason(idle ? selected?.reason_unload : 'busy'),
     ],
-    [Palette, 'canvas.select_material', () => setDialog(true), ''],
-    [RefreshCw, 'canvas.sync', sync, ''],
+    [Palette, 'canvas.select_material', () => setDialog(true), idle, reason('busy')],
+    [RefreshCw, 'canvas.sync', sync, true, ''],
   ]
   return (
     <Page title="common.canvas" sub="canvas.material_system_overview_and">
@@ -278,6 +299,7 @@ export const Canvas = () => {
             {slots.map(s => (
               <Card
                 key={s.i}
+                data-canvas-slot={s.i}
                 class={cn(
                   'flex min-h-72 flex-col',
                   ok && 'cursor-pointer',
@@ -292,6 +314,7 @@ export const Canvas = () => {
                   style={{ borderColor: s.colour, boxShadow: s.present ? `0 0 18px ${s.colour}66` : 'none' }}
                 />
                 <div class="mt-auto">
+                  <Row label="canvas.slot_state" value={t(stateLabels[s.state])} />
                   <Row label="canvas.material" value={s.material} />
                   <Row label="canvas.color" value={s.raw || '—'} />
                   {s.held && (
@@ -353,8 +376,15 @@ export const Canvas = () => {
           <Card>
             <CardHead icon="settings" title={ok ? 'canvas.canvas_controls' : 'canvas.controls_unavailable'} />
             <div class="grid gap-2">
-              {ctl.map(([Glyph, label, fn]) => (
-                <Button key={label} class="justify-between" disabled={!ok} onClick={fn}>
+              {ctl.map(([Glyph, label, fn, allowed, why]) => (
+                <Button
+                  key={label}
+                  data-canvas-action={label}
+                  class="justify-between"
+                  disabled={!ok || !allowed}
+                  title={!ok ? reason('unavailable') : !allowed ? why : undefined}
+                  onClick={fn}
+                >
                   <span class="flex items-center gap-2">
                     <Glyph {...I} />
                     {t(label)}
@@ -365,6 +395,15 @@ export const Canvas = () => {
                 </Button>
               ))}
             </div>
+            {(!selected?.load || !selected?.unload || !idle) && (
+              <p class="mt-2 text-xs text-muted" data-canvas-action-reason>
+                {!idle
+                  ? reason('busy')
+                  : !selected?.load
+                    ? reason(selected?.reason_load)
+                    : reason(selected?.reason_unload)}
+              </p>
+            )}
             <Button wide class="mt-3" disabled={!ok || !idle || resetBusy} onClick={resetAll}>
               <BrushCleaning {...I} />
               {t('canvas.reset_all')}

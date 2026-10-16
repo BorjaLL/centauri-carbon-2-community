@@ -130,6 +130,15 @@ int main(void){
  length+=snprintf(big+length,sizeof(big)-(size_t)length,"\"]}}}}");
  assert(uds_message(&c,big,(size_t)length)&&!c.have_excluded_objects&&uds_exclude_status(&c,live,sizeof(live))<0);
  uds_close(&c);assert(!c.have_current_object);close(pair[1]);
+ /* Head state is independent of slot presence; stale/malformed values cannot authorize Canvas. */
+ assert(!socketpair(AF_UNIX,SOCK_STREAM,0,pair));uds_init(&c);c.fd=pair[0];
+ message(&c,"{\"id\":11,\"result\":{\"eventtime\":1,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":false},\"canvas_dev\":{\"active_cid\":-1},\"print_stats\":{\"state\":\"standby\"}}}}");
+ uds_motion_light(&c,&view);assert(view.canvas_direct_known&&!view.canvas_head_loaded&&view.canvas_direct_active==-1&&view.canvas_direct_idle);
+ message(&c,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":2,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":true},\"canvas_dev\":{\"active_cid\":1}}}}");
+ uds_motion_light(&c,&view);assert(view.canvas_direct_known&&view.canvas_head_loaded&&view.canvas_direct_active==1);
+ message(&c,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":3,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":null}}}}");
+ uds_motion_light(&c,&view);assert(!view.canvas_direct_known);
+ uds_close(&c);uds_motion_light(&c,&view);assert(!view.canvas_direct_known);close(pair[1]);
  puts("PASS UDS initial/delta merge, ordering, scaling, job matching, stale fallback, fragmented frames, silence-only probes and exclude_object state");
  return 0;
 }

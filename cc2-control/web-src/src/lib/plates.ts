@@ -88,6 +88,14 @@ export async function refreshPlates() {
 
 // The Mesh tab can show a measurement instead of a printer profile: `measure:<id>`.
 export const meshProfile = store({ profile: 'active' })
+// Keep the form across tabs/pages; a running job remains authoritative.
+export const calibrationForm = store({
+  side: '',
+  temp: '60',
+  soak: '10',
+  nozzle: null as string | null,
+  target: null as string | null,
+})
 
 // The measurement a plate mounts with.
 export const plateBase = (p: Plate) => p.measures.find(m => m.id === p.measure) || p.measures[0]
@@ -147,7 +155,10 @@ export const meshRange = (mesh: PlateMesh) => {
 export const zText = (z: number) => `${z > 0 ? '+' : z < 0 ? '−' : ''}${Math.abs(z).toFixed(3)}`
 
 // Whole degrees the backend accepts for a measurement.
-export const tempOk = (text: string) => /^\d{2,3}$/.test(text.trim()) && Number(text) >= 40 && Number(text) <= 110
+export const tempOk = (text: string) => /^\d{2,3}$/.test(text.trim()) && Number(text) >= 30 && Number(text) <= 110
+
+export const createPlate = (side: 'A' | 'B', name: string, z: number) =>
+  post('/api/plates/create', `${side}\n${name}\n${z.toFixed(3)}`)
 
 export const savePlate = (side: 'A' | 'B', name: string, z: number, temp: number, nozzle: string) =>
   post('/api/plates/save', `${side}\n${name}\n${z.toFixed(3)}\n${temp}\n${nozzle}`)

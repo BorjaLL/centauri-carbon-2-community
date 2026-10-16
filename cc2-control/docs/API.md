@@ -238,9 +238,19 @@ coefficients has not been independently verified.
 
 CC2 Control keeps named plate surfaces in `bed-plates.json` (`--plates FILE`, next to the UI preferences):
 each one has a side, a Z offset of up to ±1 mm and the 11 × 11 meshes the printer measured on it, one per
-bed temperature (40–110 °C) and nozzle, 20 in all. The file also lists up to 8 nozzles, each with a diameter
+bed temperature (30–110 °C) and nozzle, 20 in all. The file also lists up to 8 nozzles, each with a diameter
 and a Z correction of up to ±0.5 mm, and which one is installed. A version 1 file (one mesh per plate) is
 rewritten once as version 2 with each mesh as a 60 °C measurement, the temperature the firmware calibrates at.
+`POST /api/plates/create` accepts `side\nname\nz_offset` and registers a profile without
+reading or changing the printer mesh. It requires fresh idle telemetry and an unlocked library.
+Such profiles appear in the normal `/api/plates` list with `measure:""` and `measures:[]`,
+can receive the first calibration, and cannot be mounted before a measurement exists.
+The version-2 file stores them in a separate optional `uncalibrated` array so older
+apps can still read the calibrated plates. An older app may discard unfinished profiles on save.
+Calibration form selections survive page/tab navigation in the browser; while a job
+runs, its server-reported side, temperature, soak and destination are authoritative.
+Measurement timestamps are Unix seconds; the UI displays date, time, seconds and local timezone.
+
 Printer facts this relies on, read from the V4.2 firmware and its logs:
 
 - Every print loads the mesh of its side: Side A uses profile `default`, Side B `default1` (`G180 S7`).

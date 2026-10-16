@@ -224,7 +224,7 @@ export function previewPlugin(): Plugin {
       nozzles,
       plates: plates.map(p => ({
         ...p,
-        in_printer: plateSlots[p.side] === plateBase(p).tilt,
+        in_printer: plateSlots[p.side] === plateBase(p)?.tilt,
         measures: plateMeasures(p).map(({ plate, tilt, ...m }) => ({
           ...m,
           slot: plateSlots[p.side] === tilt,
@@ -654,6 +654,7 @@ export function previewPlugin(): Plugin {
           '/api/camera/claim',
           '/api/history/timelapse',
           '/api/plates/save',
+          '/api/plates/create',
           '/api/plates/edit',
           '/api/plates/delete',
           '/api/plates/mount',
@@ -773,6 +774,7 @@ export function previewPlugin(): Plugin {
               const plate = plates.find(p => p.id === lines[0])
               const idleOnly = [
                 '/api/plates/save',
+                '/api/plates/create',
                 '/api/plates/mount',
                 '/api/plates/measure',
                 '/api/plates/keep',
@@ -865,6 +867,14 @@ export function previewPlugin(): Plugin {
               if (path === '/api/plates/nozzle/select') {
                 plateNozzle = lines[0] || ''
                 return reply({ selected: true, applied: scene === 'idle' })
+              }
+              if (path === '/api/plates/create') {
+                const [side, name, z] = lines as ['A' | 'B', string, string]
+                if (plates.some(p => p.name === name))
+                  return reply({ error: 'A plate with this name already exists' }, 409)
+                const id = newId()
+                plates.push({ id, name, side, z_offset: Number(z), measure: '' })
+                return reply({ saved: true, id, measure: '' }, 201)
               }
               if (path === '/api/plates/save') {
                 const [side, name, z, temp, nozzle] = lines as ['A' | 'B', string, string, string, string?]

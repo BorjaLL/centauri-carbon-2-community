@@ -59,7 +59,7 @@ try {
   await temperature.fill('120')
   await soak.fill('10')
   await run.click()
-  await toast('Use a whole bed temperature from 40 to 110 °C.')
+  await toast('Use a whole bed temperature from 30 to 110 °C.')
   assert.equal(await dialog.count(), 0)
   assert.equal(plateCalls.length, 0)
 

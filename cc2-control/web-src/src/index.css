@@ -255,6 +255,7 @@ input[type=range], input[type=checkbox], input[type=radio], progress { accent-co
 }
 
 /* Control preview: numeric fan targets and matched desktop card edges. */
+.cc2-camera-dock, .cc2-persistent-camera { display: contents; }
 .cc2-fan-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto; align-items: center; gap: 12px; }
 .cc2-fan-row > input[type="range"] { min-width: 0; width: 100%; }
 .cc2-fan-value input { padding-inline: 4px; }

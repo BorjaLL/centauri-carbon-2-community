@@ -11,7 +11,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-static const char subscription[] = "{\"id\":11,\"method\":\"objects/subscribe\",\"params\":{\"objects\":{\"extruder\":[\"temperature\",\"target\"],\"heater_bed\":[\"temperature\",\"target\"],\"gcode_move\":[\"speed_factor\",\"extrude_factor\",\"homing_origin\"],\"motion_report\":[\"live_velocity\"],\"toolhead\":[\"homed_axes\"],\"output_pin led_pin\":[\"value\"],\"print_stats\":[\"filename\",\"state\",\"info\",\"print_duration\",\"total_duration\",\"filament_used\"],\"canvas_dev\":[\"active_cid\"],\"bed_mesh\":[\"profile_name\"],\"virtual_sdcard\":[\"progress\"],\"exclude_object\":[\"excluded_objects\",\"current_object\"],\"fan\":[\"speed\",\"rpm\"],\"fan_generic fan1\":[\"speed\",\"rpm\"],\"controller_fan board_cooling_fan\":[\"speed\",\"rpm\"],\"heater_fan heatbreak_cooling_fan\":[\"speed\",\"rpm\"]},\"response_template\":{\"method\":\"cc2_status\"}}}\003"
+static const char subscription[] = "{\"id\":11,\"method\":\"objects/subscribe\",\"params\":{\"objects\":{\"extruder\":[\"temperature\",\"target\"],\"heater_bed\":[\"temperature\",\"target\"],\"gcode_move\":[\"speed_factor\",\"extrude_factor\",\"homing_origin\"],\"motion_report\":[\"live_velocity\"],\"toolhead\":[\"homed_axes\"],\"filament_switch_sensor filament_sensor\":[\"filament_detected\"],\"output_pin led_pin\":[\"value\"],\"print_stats\":[\"filename\",\"state\",\"info\",\"print_duration\",\"total_duration\",\"filament_used\"],\"canvas_dev\":[\"active_cid\"],\"bed_mesh\":[\"profile_name\"],\"virtual_sdcard\":[\"progress\"],\"exclude_object\":[\"excluded_objects\",\"current_object\"],\"fan\":[\"speed\",\"rpm\"],\"fan_generic fan1\":[\"speed\",\"rpm\"],\"controller_fan board_cooling_fan\":[\"speed\",\"rpm\"],\"heater_fan heatbreak_cooling_fan\":[\"speed\",\"rpm\"]},\"response_template\":{\"method\":\"cc2_status\"}}}\003"
  "{\"id\":13,\"method\":\"gcode/subscribe_report\",\"params\":{\"response_template\":{\"method\":\"cc2_report\"}}}\003";
 static const char heartbeat[]="{\"id\":12,\"method\":\"info\",\"params\":{}}\003";
 static double elapsed(struct timespec a,struct timespec b){return (double)(a.tv_sec-b.tv_sec)+(a.tv_nsec-b.tv_nsec)/1e9;}
@@ -231,6 +231,18 @@ int uds_message(uds_client *c,const char *json,size_t length){
   c->have_homed_axes=valid;
   if(valid){memcpy(c->homed_axes,axes+1,count);c->homed_axes[count]=0;}
  }
+ const char *fe;const char *filament=json_member_object(status,se,"filament_switch_sensor filament_sensor",'{',&fe);
+ if(filament&&(!older||!c->have_head_filament)){
+  const char *value=json_member(filament,fe,"filament_detected");
+  if(value){
+   const char *after=NULL;int loaded=0;
+   if(fe-value>=4&&!memcmp(value,"true",4)){after=value+4;loaded=1;}
+   else if(fe-value>=5&&!memcmp(value,"false",5))after=value+5;
+   if(after)after=json_skip_space(after,fe);
+   c->have_head_filament=after&&after<fe&&(*after==','||*after=='}');
+   if(c->have_head_filament)c->head_filament=loaded;
+  }
+ }
  const char *le;const char *lamp=json_member_object(status,se,"output_pin led_pin",'{',&le);
  double lamp_value;
  if(lamp&&(!older||!c->have_light)&&numeric(lamp,le,"value",&lamp_value)&&
@@ -293,7 +305,7 @@ void uds_close(uds_client *c){
  if(c->fd>=0)close(c->fd);
  c->fd=-1;c->ready=0;c->present=0;c->used=c->sent=0;c->have_filename=c->have_print_state=c->have_mesh_profile=0;
  c->have_excluded_objects=c->have_current_object=0;
- c->have_homed_axes=c->have_light=0;
+ c->have_homed_axes=c->have_light=c->have_head_filament=0;
 }
 static void uds_disconnect(uds_client *c,const char *reason,int error){
  c->disconnects++;c->last_disconnect=reason;c->last_errno=error;uds_close(c);
@@ -365,6 +377,13 @@ void uds_motion_light(const uds_client *c,mqtt_client *v){
  v->homed_axes[0]=0;
  if(uds_fresh(c)&&c->have_homed_axes)strcpy(v->homed_axes,c->homed_axes);
  if(uds_fresh(c)&&c->have_light)v->led_status=c->light;
+ double channel=-2;
+ v->canvas_direct_known=uds_fresh(c)&&c->have_head_filament&&c->have_print_state
+  &&uds_value(c,U_CANVAS_CHANNEL,&channel)&&channel>=-1&&channel<=3&&channel==floor(channel);
+ if(v->canvas_direct_known){
+  v->canvas_direct_active=(int)channel;v->canvas_head_loaded=c->head_filament;
+  v->canvas_direct_idle=!strcmp(c->print_state,"standby")||!strcmp(c->print_state,"complete")||!strcmp(c->print_state,"cancelled");
+ }else v->canvas_direct_idle=0;
 }
 void uds_overlay(const uds_client *c,mqtt_client *v){
  double n;

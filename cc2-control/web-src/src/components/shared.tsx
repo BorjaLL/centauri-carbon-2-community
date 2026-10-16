@@ -58,6 +58,8 @@ export const FanSlider = ({
   const [busy, setBusy] = useState(false)
   const editing = useRef(false)
   const dragging = useRef(false)
+  const range = useRef<HTMLInputElement>(null)
+  const pendingRange = useRef(false)
   const sending = useRef(false)
   const latest = useRef(pct)
   latest.current = pct
@@ -84,10 +86,25 @@ export const FanSlider = ({
       setBusy(false)
     }
   }
+  useEffect(() => {
+    const element = range.current
+    if (!element) return
+    // Preact compat maps JSX onChange to input for ranges. Listen to the
+    // native change event so a mouse drag commits only when released.
+    const changed = () => {
+      if (!pendingRange.current) return
+      pendingRange.current = false
+      dragging.current = false
+      void commit(Math.round(+element.value))
+    }
+    element.addEventListener('change', changed)
+    return () => element.removeEventListener('change', changed)
+  }, [commit])
   return (
     <div class="cc2-fan-row text-[13px]">
       <span>{t(label)}</span>
       <input
+        ref={range}
         type="range"
         min="0"
         max="100"
@@ -96,14 +113,27 @@ export const FanSlider = ({
         aria-label={t(label)}
         onInput={e => {
           dragging.current = true
+          pendingRange.current = true
           const next = Math.round(+e.currentTarget.value)
           setV(next)
           setDraft(String(next))
         }}
-        onChange={e => {
+        onPointerDown={() => {
+          dragging.current = true
+        }}
+        onPointerUp={() => {
+          if (!pendingRange.current) dragging.current = false
+        }}
+        onPointerCancel={() => {
           dragging.current = false
-          const next = Math.round(+e.currentTarget.value)
-          void commit(next)
+          pendingRange.current = false
+          restore()
+        }}
+        onBlur={() => {
+          if (!dragging.current) return
+          dragging.current = false
+          pendingRange.current = false
+          restore()
         }}
       />
       <form

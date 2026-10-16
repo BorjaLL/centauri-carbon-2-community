@@ -1,4 +1,5 @@
 #include "control.h"
+#include "canvas_state.h"
 
 #include <ctype.h>
 #include <math.h>
@@ -190,12 +191,20 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
         if(printing(m))return reject(reason,reason_cap,"Canvas loading is blocked while printing");
         if(!m->have_machine_status||m->machine_status!=1)return reject(reason,reason_cap,"Canvas loading requires the printer to be idle");
         if(slot<0||slot>3)return reject(reason,reason_cap,"Canvas slot must be 1..4");
+        int end=0;
+        if(sscanf(action,"canvas:load:%d%n",&slot,&end)!=1||action[end])return reject(reason,reason_cap,"Invalid Canvas action");
+        canvas_slot_view view=canvas_slot_policy(m,slot);
+        if(!view.load)return reject(reason,reason_cap,canvas_reason_name(view.reason_load));
         snprintf(script,cap,"CANVAS_LOAD_FILAMENT CHANNEL=%d",slot);return 1;
     }
     if(sscanf(action,"canvas:unload:%d",&slot)==1){
         if(printing(m))return reject(reason,reason_cap,"Canvas unloading is blocked while printing");
         if(!m->have_machine_status||m->machine_status!=1)return reject(reason,reason_cap,"Canvas unloading requires the printer to be idle");
         if(slot<0||slot>3)return reject(reason,reason_cap,"Canvas slot must be 1..4");
+        int end=0;
+        if(sscanf(action,"canvas:unload:%d%n",&slot,&end)!=1||action[end])return reject(reason,reason_cap,"Invalid Canvas action");
+        canvas_slot_view view=canvas_slot_policy(m,slot);
+        if(!view.unload)return reject(reason,reason_cap,canvas_reason_name(view.reason_unload));
         snprintf(script,cap,"CANVAS_UNLOAD_FILAMENT CHANNEL=%d",slot);return 1;
     }
     /* Stock display reset_multi_filament_set resets the four channels by

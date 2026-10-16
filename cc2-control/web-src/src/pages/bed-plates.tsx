@@ -29,6 +29,8 @@ import {
   refreshPlates,
   saveNozzle,
   savePlate,
+  createPlate,
+  calibrationForm,
   selectNozzle,
   tempOk,
   unmountPlate,
@@ -36,7 +38,18 @@ import {
 } from '@/lib/plates'
 import { openPage, printer, view, zoffset } from '@/lib/state'
 
-const savedOn = (s: number) => (s > 0 ? new Date(s * 1000).toLocaleDateString() : '—')
+const savedOn = (s: number) =>
+  s > 0
+    ? new Date(s * 1000).toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short',
+      })
+    : '—'
 // The backend's limits: 1-64 UTF-8 bytes without quotes, backslashes, C0/C1 controls or the
 // Unicode line separators; |z| <= 1 mm.
 const forbidden = (c: number) => c < 32 || c === 34 || c === 92 || (c >= 127 && c <= 159) || c === 8232 || c === 8233
@@ -153,7 +166,7 @@ const MeasureRow = ({
           <Input
             class="w-24"
             type="number"
-            min="40"
+            min="30"
             max="110"
             step="1"
             value={temp}
@@ -280,6 +293,7 @@ const PlateCard = ({
         {t('plates.z_offset')}: <b class="text-fg">{zText(p.z_offset)} mm</b>
       </div>
       <fieldset class="mt-2 grid min-w-0 gap-1.5" aria-label={t('plates.measures')}>
+        {!p.measures.length && <Notice>{t('plates.not_calibrated')}</Notice>}
         {p.measures.map(m => (
           <MeasureRow key={m.id} p={p} m={m} lib={lib} idle={idle} locked={locked} act={act} />
         ))}
@@ -293,7 +307,7 @@ const PlateCard = ({
               <Input
                 class="w-24"
                 type="number"
-                min="40"
+                min="30"
                 max="110"
                 step="1"
                 value={temp}
@@ -302,7 +316,7 @@ const PlateCard = ({
             </label>
             <Button
               class="text-xs"
-              disabled={locked || !idle}
+              disabled={locked || !idle || !base}
               title={idleOnly}
               onClick={() =>
                 act(async () => {
@@ -353,13 +367,28 @@ const PlateCard = ({
             <Button
               variant="primary"
               class="text-xs"
-              disabled={locked || !idle}
+              disabled={locked || !idle || !base}
               title={idleOnly}
               onClick={() => act(() => mount(p))}
             >
               {t('plates.mount')}
             </Button>
           )}
+          <Button
+            class="text-xs"
+            disabled={locked || !idle}
+            onClick={() => {
+              calibrationForm.set({
+                side: p.side === 'B' ? 'default1' : 'default',
+                target: p.id,
+                temp: String(base?.temp ?? 60),
+                nozzle: lib.nozzle,
+              })
+              openPage('bed')
+            }}
+          >
+            {t('plates.calibrate_plate')}
+          </Button>
           <Button
             class="text-xs"
             disabled={locked}
@@ -496,22 +525,34 @@ const SaveForm = ({ lib, idle, busy, act }: { lib: PlateLibrary; idle: boolean; 
   const [z, setZ] = useState('0.000')
   const [temp, setTemp] = useState('60')
   const [nozzle, setNozzle] = useState<string | null>(null)
+  const [capture, setCapture] = useState(false)
   const missing = lib.slots[side] !== 'mesh'
+  const withMesh = capture && !missing
   const chosen = nozzle ?? lib.nozzle
   const save = () =>
     act(async () => {
       if (!nameOk(name.trim())) return notify(t('plates.invalid_name'), 'error')
       if (!zOk(z)) return notify(t('plates.invalid_z'), 'error')
-      if (!tempOk(temp)) return notify(t('common.invalid_bed_temperature'), 'error')
-      await savePlate(side, name.trim(), Number(z), Number(temp), chosen)
+      if (withMesh && !tempOk(temp)) return notify(t('common.invalid_bed_temperature'), 'error')
+      if (withMesh) await savePlate(side, name.trim(), Number(z), Number(temp), chosen)
+      else await createPlate(side, name.trim(), Number(z))
       setName('')
       setZ('0.000')
-      notify(t('plates.saved_toast'))
+      notify(t(withMesh ? 'plates.saved_toast' : 'plates.created_without_mesh'))
     })
   return (
     <Card>
       <CardHead icon="folder" title="plates.save_new" />
       <p class="mb-3 text-xs text-muted">{t('plates.save_hint')}</p>
+      <label class="mb-3 flex items-center gap-2 text-xs">
+        <input
+          type="checkbox"
+          checked={withMesh}
+          disabled={missing || busy}
+          onChange={e => setCapture(e.currentTarget.checked)}
+        />
+        {t('plates.include_existing_mesh')}
+      </label>
       <div class="grid gap-2 cc2-sm:grid-cols-[7rem_1fr_8rem] cc2-lg:grid-cols-[7rem_1fr_8rem_7rem_10rem_auto]">
         <label class="grid gap-1 text-xs">
           {t('plates.side')}
@@ -535,17 +576,25 @@ const SaveForm = ({ lib, idle, busy, act }: { lib: PlateLibrary; idle: boolean; 
         </label>
         <label class="grid gap-1 text-xs">
           {t('common.bed_temperature_c')}
-          <Input type="number" min="40" max="110" step="1" value={temp} onInput={e => setTemp(e.currentTarget.value)} />
+          <Input
+            type="number"
+            min="30"
+            max="110"
+            step="1"
+            value={temp}
+            disabled={!withMesh}
+            onInput={e => setTemp(e.currentTarget.value)}
+          />
         </label>
         <label class="grid gap-1 text-xs">
           {t('common.nozzle')}
-          <NozzleSelect lib={lib} value={chosen} onChange={setNozzle} />
+          <NozzleSelect lib={lib} value={chosen} disabled={!withMesh} onChange={setNozzle} />
         </label>
         <div class="flex items-end">
           <Button
             variant="primary"
             wide
-            disabled={busy || !idle || !lib.available || Boolean(lib.pending) || missing || !name.trim()}
+            disabled={busy || !idle || !lib.available || Boolean(lib.pending) || !name.trim()}
             title={idle ? undefined : t('common.available_when_idle')}
             onClick={save}
           >
@@ -553,7 +602,7 @@ const SaveForm = ({ lib, idle, busy, act }: { lib: PlateLibrary; idle: boolean; 
           </Button>
         </div>
       </div>
-      {missing && <Notice>{t('print.this_build_plate_side_has_no')}</Notice>}
+      {!withMesh && <Notice>{t('plates.empty_profile_hint')}</Notice>}
     </Card>
   )
 }

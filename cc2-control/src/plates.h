@@ -30,7 +30,7 @@
 #define PLATE_GRID_MAX 15
 #define PLATE_Z_LIMIT 1.0
 #define PLATE_NOZZLE_Z_LIMIT 0.5
-#define PLATE_TEMP_MIN 40
+#define PLATE_TEMP_MIN 30
 #define PLATE_TEMP_MAX 110
 #define PLATE_TEMP_V1 60 /* the firmware's calibration temperature, before temperatures were recorded */
 #define PLATE_PROFILE_PREFIX "cc2_"
@@ -721,10 +721,19 @@ static int plates_save(void) {
         plates_nozzle_json(&b, &plates.nozzles[i]);
     }
     json_builder_printf(&b, "],\"plates\":[");
+    int written = 0;
     for (int i = 0; i < plates.count; ++i) {
-        if (i) json_builder_printf(&b, ",");
+        if (!plates.plates[i].measure[0]) continue;
+        if (written++) json_builder_printf(&b, ",");
         plates_plate_json(&b, &plates.plates[i]);
         json_builder_printf(&b, "}");
+    }
+    /* Older apps keep reading calibrated plates; unfinished profiles are separate. */
+    json_builder_printf(&b, "],\"uncalibrated\":["); written = 0;
+    for (int i = 0; i < plates.count; ++i) {
+        if (plates.plates[i].measure[0]) continue;
+        if (written++) json_builder_printf(&b, ",");
+        plates_plate_json(&b, &plates.plates[i]); json_builder_printf(&b, "}");
     }
     json_builder_printf(&b, "],\"measures\":[");
     for (int i = 0; i < plates.measure_count; ++i) {
@@ -769,7 +778,7 @@ static int plates_parse_plate(const char *obj, const char *end, int version, pla
         return 0;
     p->side = text[0];
     if (!plates_member_double(obj, end, "z_offset", &p->z) || fabs(p->z) > PLATE_Z_LIMIT + 1e-9) return 0;
-    if (version >= 2) return plates_parse_id(obj, end, "measure", p->measure) && p->measure[0];
+    if (version >= 2) return plates_parse_id(obj, end, "measure", p->measure) && (version == 3 || p->measure[0]);
     double measured;
     memset(legacy, 0, sizeof(*legacy));
     if (!plates_member_double(obj, end, "measured", &measured) || measured < 0) return 0;
@@ -859,6 +868,11 @@ static int plates_load_measure(const char *obj, const char *end, void *context) 
     plates.measure_count++;
     return 1;
 }
+static int plates_load_uncalibrated(const char *obj, const char *end, void *context) {
+    (void)context;
+    int draft = 3;
+    return plates_load_plate(obj, end, &draft) && !plates.plates[plates.count - 1].measure[0];
+}
 
 /* Every reference points at an entry of the right kind. */
 static int plates_consistent(void) {
@@ -866,8 +880,11 @@ static int plates_consistent(void) {
         const plate_measure *m = &plates.measures[i];
         if (!plate_find(m->plate) || !plate_nozzle_ref(m->nozzle)) return 0;
     }
-    for (int i = 0; i < plates.count; ++i)
-        if (!plate_base(&plates.plates[i])) return 0;
+    for (int i = 0; i < plates.count; ++i) {
+        const plate_entry *p = &plates.plates[i];
+        if (p->measure[0]) { if (!plate_base(p)) return 0; }
+        else if (plate_measure_count(p->id) || !strcmp(plates.current, p->id) || !strcmp(plates.pending, p->id)) return 0;
+    }
     return (!plates.current[0] || plate_find(plates.current)) && (!plates.pending[0] || plate_find(plates.pending)) &&
            plate_nozzle_ref(plates.nozzle);
 }
@@ -895,7 +912,9 @@ static void plates_load(void) {
             ok = plates_parse_id(root, root_end, "nozzle", plates.nozzle) &&
                  plates_parse_list(root, root_end, "nozzles", plates_load_nozzle, NULL) &&
                  plates_parse_list(root, root_end, "plates", plates_load_plate, &version) &&
-                 plates_parse_list(root, root_end, "measures", plates_load_measure, NULL);
+                 plates_parse_list(root, root_end, "measures", plates_load_measure, NULL) &&
+                 (!json_member(root, root_end, "uncalibrated") ||
+                  plates_parse_list(root, root_end, "uncalibrated", plates_load_uncalibrated, NULL));
         else {
             ok = plates_parse_list(root, root_end, "plates", plates_load_plate, &version);
             for (int i = 0; ok && i < plates.measure_count; ++i) {
@@ -1110,6 +1129,27 @@ static int plates_name_taken(const char *name, const plate_entry *except) {
 static int plates_reapply_z(const mqtt_client *mqtt) {
     const plate_entry *p = plates.current[0] ? plate_find(plates.current) : NULL;
     return p && !plates_printer_ready(mqtt) && !z_offset_pending && plates_apply_z(plate_z_now(p)) == 0;
+}
+
+/* Register a surface before its first calibration. No printer mesh is read or written. */
+static void plates_create_response(int fd, const mqtt_client *mqtt, const char *body, size_t length) {
+    char fields[3][PLATE_NAME_MAX + 1]; double z; const char *reason;
+    int count = plates_fields(body, length, fields, 3);
+    if (count != 3 || strlen(fields[0]) != 1 || (fields[0][0] != 'A' && fields[0][0] != 'B') ||
+        !plate_name_valid(fields[1]) || !plate_z_parse(fields[2], &z)) {
+        plates_fail(fd, 400, "Invalid plate"); return;
+    }
+    if (!plates_open(fd)) return;
+    if (plates.count >= PLATES_MAX) { plates_fail(fd, 409, "The plate library is full"); return; }
+    if (plates_name_taken(fields[1], NULL)) { plates_fail(fd, 409, "A plate with this name already exists"); return; }
+    if ((reason = plates_printer_ready(mqtt))) { plates_fail(fd, 409, reason); return; }
+    plates_begin();
+    plate_entry *p = &plates.plates[plates.count++];
+    memset(p, 0, sizeof(*p)); plates_new_id(p->id);
+    snprintf(p->name, sizeof(p->name), "%s", fields[1]); p->side = fields[0][0]; p->z = z;
+    if (!plates_commit(fd)) return;
+    char reply[96]; snprintf(reply, sizeof(reply), "{\"saved\":true,\"id\":\"%s\",\"measure\":\"\"}\n", p->id);
+    plates_reply(fd, 201, reply);
 }
 
 /* side \n name \n z [\n temp [\n nozzle]]: a new plate from the mesh the printer now

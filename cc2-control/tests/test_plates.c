@@ -117,6 +117,7 @@ static int call(int handler, const mqtt_client *mqtt, const char *body) {
         case 10: plates_nozzle_save_response(pair[0], mqtt, body, length); break;
         case 11: plates_nozzle_delete_response(pair[0], mqtt, body, length); break;
         case 12: plates_nozzle_select_response(pair[0], mqtt, body, length); break;
+        case 13: plates_create_response(pair[0], mqtt, body, length); break;
     }
     close(pair[0]);
     size_t used = 0; ssize_t n;
@@ -180,7 +181,8 @@ static void test_names_and_numbers(void) {
            !plate_z_parse("", &z) && !plate_z_parse(" 0.1", &z) && !plate_z_parse("0x1", &z));
     int temp;
     assert(plate_temp_parse("60", &temp) && temp == 60 && plate_temp_parse("110", &temp) && plate_temp_parse("40", &temp));
-    assert(!plate_temp_parse("39", &temp) && !plate_temp_parse("111", &temp) && !plate_temp_parse("6", &temp) &&
+    assert(plate_temp_parse("30", &temp) && temp == 30);
+    assert(!plate_temp_parse("29", &temp) && !plate_temp_parse("111", &temp) && !plate_temp_parse("6", &temp) &&
            !plate_temp_parse("60.5", &temp) && !plate_temp_parse("-60", &temp) && !plate_temp_parse("", &temp));
 }
 
@@ -713,7 +715,7 @@ static void test_calibration_job(void) {
     assert(call(NOZZLE, &mqtt, "\n0.6 hardened\n0.6\n0") == 200);
     char nozzle[17]; snprintf(nozzle, sizeof(nozzle), "%s", plates.nozzles[0].id);
 
-    assert(calibrate(&mqtt, "A\n70\n61") == 400 && calibrate(&mqtt, "A\n30\n10") == 400 && calibrate(&mqtt, "C\n70\n10") == 400);
+    assert(calibrate(&mqtt, "A\n70\n61") == 400 && calibrate(&mqtt, "A\n29\n10") == 400 && calibrate(&mqtt, "C\n70\n10") == 400);
     snprintf(body, sizeof(body), "B\n70\n10\n\n%s", plate);
     assert(calibrate(&mqtt, body) == 409 && strstr(response, "other side"));
     /* Unhomed: G28 first, then the bed heats; nothing probes before it holds the temperature for the soak. */
@@ -838,6 +840,37 @@ static void test_print_setup(void) {
     unlink(path); rmdir(directory);
 }
 
+static void test_empty_plate(void) {
+    mqtt_client mqtt = {0}; plate_mesh a = grid(0.6);
+    plates_cal.stage = CAL_IDLE;
+    write_autosave(&a, NULL); memory_a = a; memory_has_b = 0;
+    unlink(plates_path); new_process(); fresh(&mqtt);
+    size_t before_len; char *before = slurp(printer_autosave_path, &before_len);
+    uds_down = 1; profile_log[0] = console_log[0] = 0;
+    assert(call(13, &mqtt, "B\nPLA 30\n0") == 201);
+    assert(plates.count == 1 && plates.measure_count == 0 && !plates.plates[0].measure[0]);
+    char id[17]; snprintf(id, sizeof(id), "%s", plates.plates[0].id);
+    size_t after_len; char *after = slurp(printer_autosave_path, &after_len);
+    assert(before_len == after_len && !memcmp(before, after, before_len) && !profile_log[0] && !console_log[0]);
+    free(before); free(after);
+    new_process(); fresh(&mqtt); assert(plates_available && plates.count == 1 && !plate_base(&plates.plates[0]));
+    assert(call(MOUNT, &mqtt, id) == 404 && !plates.current[0] && !plates.pending[0]);
+    assert(call(13, &mqtt, "B\nPLA 30\n0") == 409);
+    mqtt.machine_status = 2; assert(call(13, &mqtt, "B\nBusy\n0") == 409); fresh(&mqtt);
+    assert(call(13, &mqtt, "C\nBad\n0") == 400 && call(13, &mqtt, "B\nBad\n2") == 400);
+    uds_down = 0;
+    char body[80]; snprintf(body, sizeof(body), "B\n30\n0\n\n%s", id);
+    console_log[0] = 0; assert(calibrate(&mqtt, body) == 202 && plates_cal.temp == 30 && !strcmp(plates_cal.plate, id));
+    cancel_calibration(&mqtt);
+    /* Attach the first real measurement to the previously empty profile. */
+    memory_b = grid(0.3); memory_has_b = 1; write_autosave(&a, &memory_b);
+    int status, profile, applied; plate_measure *measure = NULL;
+    assert(!plates_take_measure(&mqtt, id, 30, "", 0, &status, &measure, &profile, &applied));
+    assert(measure && measure->temp == 30 && plates_consistent());
+    new_process(); assert(plates_available && plate_base(&plates.plates[0]) && plates.measure_count == 1);
+    unlink(plates_path);
+}
+
 static void test_background_transport(void) {
     int pair[2];assert(!socketpair(AF_UNIX,SOCK_STREAM,0,pair));
     plates_uds=uds_query_json;plates_background_close();
@@ -880,6 +913,7 @@ int main(void) {
     test_http();
     test_measures();
     test_calibration_job();
+    test_empty_plate();
     test_print_setup();
     test_background_transport();
     printf("PASS: plate library\n");
