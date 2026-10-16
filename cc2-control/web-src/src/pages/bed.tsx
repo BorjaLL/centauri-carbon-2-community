@@ -20,6 +20,7 @@ import { type BedTab, printer, nav, openPage, refreshConsole, screwText } from '
 import {
   type Calibration,
   calibrate,
+  calibrationForm,
   findMeasure,
   meshProfile,
   nozzleName,
@@ -39,6 +40,10 @@ const PROFILES: [string, Key][] = [
   ['default1', 'bed.side_b_default1'],
   ['ADAPTIVE', 'bed.adaptive_mesh_adaptive'],
 ]
+const profileLabel = (name: string) => {
+  const known = PROFILES.find(([id]) => id === name)
+  return known ? t(known[1]) : name
+}
 type View = '3d' | '2d' | 'values'
 
 const MeshCard = () => {
@@ -52,7 +57,8 @@ const MeshCard = () => {
     if (!library) return
     if (profile.startsWith('plate:')) {
       const p = library.plates.find(x => `plate:${x.id}` === profile)
-      setProfile(p ? `measure:${plateBase(p).id}` : 'active')
+      const base = p ? plateBase(p) : null
+      setProfile(base ? `measure:${base.id}` : 'active')
     } else if (profile.startsWith('measure:') && !found) setProfile('active')
   }, [library, profile, found])
   const [view, setView] = useState<View>('3d')
@@ -68,7 +74,7 @@ const MeshCard = () => {
   )
   const shown = found
     ? tpl('plates.measure_option', { name: found.plate.name, temp: found.measure.temp })
-    : `${t('bed.saved_profile')} · ${profile}`
+    : `${t('bed.saved_profile')} · ${profileLabel(profile)}`
   const xs = [...new Set(points.map(p => p.x))].sort((a, b) => a - b)
   const ys = [...new Set(points.map(p => p.y))].sort((a, b) => b - a)
   const cells = new Map(points.map(p => [`${p.x},${p.y}`, p.z]))
@@ -178,7 +184,7 @@ const MeshCard = () => {
           <Select class="w-auto" value={profile} onChange={e => setProfile(e.currentTarget.value)}>
             <option value="active">
               {t('bed.active_mesh')}
-              {root?.profile_name ? ` · ${root.profile_name}` : ''}
+              {root?.profile_name ? ` · ${profileLabel(root.profile_name)}` : ''}
             </option>
             {names.map(([n, l]) => (
               <option key={n} value={n}>
@@ -313,10 +319,10 @@ const MeshCard = () => {
         note={
           points.length
             ? profile === 'active'
-              ? `${t('bed.active_mesh_loaded')}${root?.profile_name ? ` · ${root.profile_name}` : ''}.`
+              ? `${t('bed.active_mesh_loaded')}${root?.profile_name ? ` · ${profileLabel(root.profile_name)}` : ''}.`
               : found
                 ? `${shown}.`
-                : `${t('bed.saved_mesh_loaded')} · ${profile}.`
+                : `${t('bed.saved_mesh_loaded')} · ${profileLabel(profile)}.`
             : t('bed.waiting_for_the_printer_mesh')
         }
       />
@@ -379,16 +385,36 @@ const CalibrationProgress = ({ job, lib }: { job: Calibration; lib: PlateLibrary
 }
 
 const MeshActions = ({ reload, note }: { reload: () => void; note: string }) => {
-  const [side, setSide] = useState('')
-  const [temp, setTemp] = useState('60')
-  const [soak, setSoak] = useState('10')
-  const [nozzle, setNozzle] = useState<string | null>(null)
-  // The plate the result is saved to: null follows the mounted plate of that side, '' saves to none.
-  const [target, setTarget] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
   const library = plates.use().data
   const job = library?.calibration
   const running = Boolean(job && job.stage !== 'off')
+  const draft = calibrationForm.use()
+  useEffect(() => {
+    if (running && job)
+      calibrationForm.set({
+        side: job.side === 'B' ? 'default1' : 'default',
+        temp: String(job.temp),
+        soak: String(job.soak / 60),
+        nozzle: job.nozzle,
+        target: job.plate,
+      })
+  }, [running, job?.side, job?.temp, job?.soak, job?.nozzle, job?.plate])
+  const { side, temp, soak, nozzle, target } =
+    running && job
+      ? {
+          side: job.side === 'B' ? 'default1' : 'default',
+          temp: String(job.temp),
+          soak: String(job.soak / 60),
+          nozzle: job.nozzle,
+          target: job.plate,
+        }
+      : draft
+  const setSide = (side: string) => calibrationForm.set({ side, target: null })
+  const setTemp = (temp: string) => calibrationForm.set({ temp })
+  const setSoak = (soak: string) => calibrationForm.set({ soak })
+  const setNozzle = (nozzle: string) => calibrationForm.set({ nozzle })
+  const setTarget = (target: string) => calibrationForm.set({ target })
   // The calibration runs on the printer; the page only follows it, faster while it runs.
   usePoll(refreshPlates, running ? 2000 : 30000)
   const plateSide = side === 'default1' ? 'B' : side === 'default' ? 'A' : null
@@ -461,7 +487,7 @@ const MeshActions = ({ reload, note }: { reload: () => void; note: string }) => 
           {t('common.bed_temperature_c')}
           <Input
             type="number"
-            min="40"
+            min="30"
             max="110"
             step="1"
             value={temp}

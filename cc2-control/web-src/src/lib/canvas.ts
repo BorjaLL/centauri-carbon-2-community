@@ -45,8 +45,19 @@ export function canvasHex(value: any, index: number) {
     : '#00CFE8'
 }
 
+export type CanvasSlotState = 'unknown' | 'empty' | 'present' | 'loaded' | 'transition'
+export type CanvasSlotControl = {
+  slot: number
+  state: CanvasSlotState
+  load: boolean
+  unload: boolean
+  reason_load: string
+  reason_unload: string
+}
+
 export const canvas = store({
   model: null as ReturnType<typeof canvasModel>,
+  controls: [] as CanvasSlotControl[],
   autoRefill: null as boolean | null, // null until the printer has reported the setting
   slot: 0,
   checked: '',
@@ -58,10 +69,11 @@ export async function refreshCanvas() {
     const data = await request('/api/canvas')
     canvas.set({
       model: canvasModel(data),
+      controls: Array.isArray(data?.slots) ? data.slots : [],
       autoRefill: typeof data?.auto_refill === 'boolean' ? data.auto_refill : null,
       checked: new Date().toLocaleTimeString(),
     })
   } catch {
-    /* keep last */
+    canvas.set({ controls: [] }) // Keep material display, revoke permissions on failed refresh.
   }
 }

@@ -30,6 +30,7 @@
 #include "panda.h"
 #include "console.h"
 #include "control.h"
+#include "canvas_state.h"
 #include "uds.h"
 #include "http_guard.h"
 
@@ -2534,22 +2535,23 @@ static void mqtt_diagnostic_response(int fd, const mqtt_client *mqtt) {
 }
 
 static void canvas_response(int fd, const mqtt_client *mqtt) {
-    if(mqtt->canvas_snapshot_len) {
-        size_t cap=mqtt->canvas_snapshot_len+256;
-        char *body=malloc(cap);
-        if(!body)return;
-        int length=snprintf(body,cap,
-            "{\"available\":true,\"active_tray_id\":%d,\"machine_status\":%d,\"auto_refill\":%s,\"telemetry\":%.*s}\n",
-            mqtt->have_canvas_active_tray?mqtt->canvas_active_tray_id:-1,mqtt->machine_status,
-            mqtt->have_auto_refill?(mqtt->auto_refill?"true":"false"):"null",
-            (int)mqtt->canvas_snapshot_len,mqtt->canvas_snapshot);
-        if(length>0&&(size_t)length<cap)
-            respond(fd,200,"OK","application/json; charset=utf-8",body,(size_t)length);
-        free(body);
-    } else {
-        const char *body="{\"available\":false}\n";
-        respond(fd,200,"OK","application/json; charset=utf-8",body,strlen(body));
+    size_t cap=mqtt->canvas_snapshot_len+2304;
+    char *body=malloc(cap);if(!body)return;
+    json_builder b={body,0,cap,0};
+    json_builder_printf(&b,"{\"available\":%s,\"active_tray_id\":%d,\"machine_status\":%d,\"auto_refill\":%s,\"slots\":[",
+      mqtt->canvas_snapshot_len?"true":"false",mqtt->have_canvas_active_tray?mqtt->canvas_active_tray_id:-1,
+      mqtt->machine_status,mqtt->have_auto_refill?(mqtt->auto_refill?"true":"false"):"null");
+    for(int i=0;i<4;i++){
+      canvas_slot_view v=canvas_slot_policy(mqtt,i);
+      json_builder_printf(&b,"%s{\"slot\":%d,\"state\":\"%s\",\"load\":%s,\"unload\":%s,\"reason_load\":\"%s\",\"reason_unload\":\"%s\"}",
+        i?",":"",i,canvas_kind_name(v.state),v.load?"true":"false",v.unload?"true":"false",
+        canvas_reason_name(v.reason_load),canvas_reason_name(v.reason_unload));
     }
+    json_builder_printf(&b,"]");
+    if(mqtt->canvas_snapshot_len)json_builder_printf(&b,",\"telemetry\":%.*s",(int)mqtt->canvas_snapshot_len,mqtt->canvas_snapshot);
+    json_builder_printf(&b,"}\n");
+    if(!b.failed)respond(fd,200,"OK","application/json; charset=utf-8",body,b.length);
+    free(body);
 }
 
 /* OrcaSlicer's Moonraker printer agent connects through /server/info and pulls
@@ -3752,6 +3754,8 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
         mesh_response(fd);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/plates")==0) {
         plates_get_response(fd);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/plates/create")==0) {
+        plates_create_response(fd,mqtt,body,body_len);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/plates/save")==0) {
         plates_save_response(fd,mqtt,body,body_len);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/plates/recapture")==0) {

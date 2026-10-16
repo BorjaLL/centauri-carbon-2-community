@@ -153,11 +153,12 @@ try {
   await row('Cool Plate', 65).getByText('0.6 hardened', { exact: true }).waitFor()
 
   // A new plate from the Side B mesh, with its bed temperature and nozzle; a name the backend refuses never leaves the page.
-  const form = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Save Printer Mesh as a Plate' }) })
+  const form = page.locator('section').filter({ has: page.getByRole('heading', { name: 'New plate profile' }) })
   // Labels wrap their controls, so the names include the current values: address the controls directly.
-  const side = form.locator('select').first(), name = form.locator('input').first()
+  const side = form.locator('select').first(), name = form.locator('input:not([type=checkbox])').first()
   const [zInput, temp] = [form.locator('input[type=number]').nth(0), form.locator('input[type=number]').nth(1)]
   await side.selectOption('B')
+  await form.getByRole('checkbox').check()
   await name.fill('Bad "quote"')
   const before = posts.length
   await form.getByRole('button', { name: 'Save Plate', exact: true }).click()
@@ -165,9 +166,9 @@ try {
   assert.equal(posts.length, before)
   await name.fill('Glass')
   await zInput.fill('0.005')
-  await temp.fill('35')
+  await temp.fill('29')
   await form.getByRole('button', { name: 'Save Plate', exact: true }).click()
-  await toast('Use a whole bed temperature from 40 to 110 °C.')
+  await toast('Use a whole bed temperature from 30 to 110 °C.')
   assert.equal(posts.length, before)
   await temp.fill('70')
   await form.getByRole('button', { name: 'Save Plate', exact: true }).click()

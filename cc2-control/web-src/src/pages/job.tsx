@@ -48,9 +48,10 @@ export const Job = () => {
       ? tpl('job.n_objects_detected', { n: o.list.length })
       : t('job.no_objects_detected')
   const exclude = async () => {
-    if (!o.selected) return
+    if (!v.active || !o.selected || !o.list.includes(o.selected) || o.excluded.includes(o.selected)) return
     const name = o.selected
-    if (await control(`object:exclude:${name}`, tpl('job.exclude_name_from_this_print_this', { name }))) {
+    const label = o.entries.find(e => e.id === name)?.label || name
+    if (await control(`object:exclude:${name}`, tpl('job.exclude_name_from_this_print_this', { name: label }))) {
       objects.set({ selected: '' })
       setTimeout(refreshObjects, 800)
     }
@@ -61,7 +62,7 @@ export const Job = () => {
     [v.active ? v.layer || '—' : '—', t('common.current_layer')],
     [v.total, t('common.total_layers')],
     [v.active ? duration(v.projected) : '—', t('job.est_total_print_time')],
-    [live && o.current ? o.current : '—', t('job.current_object')],
+    [live && o.current ? o.entries.find(e => e.id === o.current)?.label || o.current : '—', t('job.current_object')],
   ]
   return (
     <Page title="common.job" sub="job.live_progress_camera_and_objects">
@@ -97,15 +98,20 @@ export const Job = () => {
         </div>
         <Card class="min-w-0">
           <CardHead icon="cube" title="job.object_exclusion" end={endLabel} />
+          <p class="mb-3 text-xs text-muted">{t('job.object_position_order')}</p>
           <div class="grid gap-3.5 cc2-lg:grid-cols-2">
             <div class="grid min-h-40 grid-cols-2 content-start gap-3 rounded-md border border-edge p-4 cc2-sm:grid-cols-3 cc2-lg:grid-cols-2 cc2-xl:grid-cols-4">
               {o.list.length === 0 ? (
                 <span class="col-span-full text-muted">{t('job.no_live_object_data')}</span>
               ) : (
-                o.list.map(n => {
+                o.entries.map(({ id: n, label, center }) => {
                   const x = o.excluded.includes(n)
                   return (
-                    <div key={n} class={cn('flex min-w-0 flex-col items-center text-center', x && 'text-red')}>
+                    <div
+                      key={n}
+                      title={n}
+                      class={cn('flex min-w-0 flex-col items-center text-center', x && 'text-red')}
+                    >
                       <i
                         class={cn(
                           'grid h-12 w-16 place-items-center rounded-lg border-4 not-italic',
@@ -114,7 +120,12 @@ export const Job = () => {
                       >
                         {x ? <X size={24} strokeWidth={1} /> : <Diamond size={24} strokeWidth={1} />}
                       </i>
-                      <span class="mt-1 text-xs [overflow-wrap:anywhere]">{n}</span>
+                      <span class="mt-1 text-xs [overflow-wrap:anywhere]">{label}</span>
+                      <small class="text-xs text-muted">
+                        {center
+                          ? `X ${center[0].toFixed(1)} · Y ${center[1].toFixed(1)} mm`
+                          : t('job.object_position_unknown')}
+                      </small>
                     </div>
                   )
                 })
@@ -133,20 +144,23 @@ export const Job = () => {
                     )}
                   </span>
                 ) : (
-                  o.list.map(n => {
+                  o.entries.map(({ id: n, label, center }) => {
                     const x = o.excluded.includes(n)
                     return (
                       <Button
                         key={n}
+                        data-object-id={n}
+                        title={n}
                         variant={n === o.selected ? 'active' : 'default'}
                         class={cn(
                           'h-auto justify-start whitespace-normal text-left text-xs [overflow-wrap:anywhere]',
                           x && 'text-red'
                         )}
-                        disabled={x}
+                        disabled={x || !live}
                         onClick={() => objects.set({ selected: n })}
                       >
-                        {x ? <Diamond {...I} /> : <Diamond {...I} fill="currentColor" />} {n}
+                        {x ? <Diamond {...I} /> : <Diamond {...I} fill="currentColor" />} {label}
+                        {center ? ` · X ${center[0].toFixed(1)} / Y ${center[1].toFixed(1)} mm` : ''}
                         {x ? ` · ${t('job.excluded')}` : ''}
                       </Button>
                     )
@@ -157,7 +171,7 @@ export const Job = () => {
                 wide
                 variant="primary"
                 class="mt-3 border-amber bg-amber"
-                disabled={!o.selected}
+                disabled={!live || !o.selected || o.excluded.includes(o.selected)}
                 onClick={exclude}
               >
                 <TriangleAlert {...I} />

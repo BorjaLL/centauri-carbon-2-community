@@ -5,7 +5,7 @@ Community firmware, local printer control and reproducible build tools for the *
 > Independent community project. Not affiliated with, endorsed by or supported
 > by ELEGOO.
 
-<p align="center"><strong>Local control · Canvas · OrcaSlicer sync · Eight app languages · Six themes</strong></p>
+<p align="center"><strong>Local control · Canvas · OrcaSlicer sync · Nine app languages · Six themes</strong></p>
 
 <p align="center">
   <a href="docs/FIRST_RUN.md">First installation</a> · <a href="docs/ORCASLICER.md">OrcaSlicer &amp; Canvas</a> · <a href="docs/SCREENSHOTS.md">Screenshots</a> · <a href="docs/CONTRIBUTORS.md">Community credits</a>
@@ -49,23 +49,30 @@ The exact R3 image passed its signed build and maintainer installation/connectio
 
 **Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
-## CC2 Control 1.2.11 — stable update from the panel
+## CC2 Control 1.2.14 — printer-validated stable update
 
-**[Download CC2 Control 1.2.11](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.11-V4.4)** · [English instructions](docs/UPDATE_CC2.md) · [Istruzioni in italiano](docs/UPDATE_CC2.it.md).
+**[Download CC2 Control 1.2.14](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.14-V4.4)** · [English update guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
 
-**Community Firmware V4.4/V4.4.1 only; V4.3 and original firmware are unsupported.** All features and fixes from 1.2.10 are retained. This corrects Settings → Updates: descriptions of installed/older versions disappear, new signed release notes follow the selected app language, and unavailable translations are explicitly labelled as English.
+**Only Community Firmware V4.4 / V4.4.1. Do not install on V4.3 or stock ELEGOO firmware.** Updates the application while retaining the installed firmware and callback runtime. Existing preferences and profiles are retained.
 
-| Your installation | Update to 1.2.11 |
+| Improvement | Result |
 | --- | --- |
-| V4.4.1, or an app with Settings → Updates | Select **Stable → Check for updates**. Enter the configured LAN code, **Download and verify**, then separately confirm **Install**. |
-| Original V4.4 app without the updater panel | Download and extract **CC2-Control-1.2.11-Multiplatform-Update.zip** on the computer; run the installer described in the English/Italian guide. |
-| Prefer local upload | Upload the release's **.cc2update** file in Settings → Updates. The installer ZIP is not accepted by the panel. |
+| Object Exclusion | Spatial order from front to back and left to right, readable names and numbered copies; original G-code identifiers remain separate from display names. Handles ELEGOO's string-encoded coordinates and clears completed-print objects. |
+| Canvas state | Distinguishes empty slots, filament present but unloaded from the head, loaded filament and transitions. Actions are enabled only when applicable. |
+| Camera and fans | Persistent live keeps its original size; fan sliders drag correctly and numeric values still apply with Enter. |
+| Plate workflow | Create a plate before its first mesh, select it for calibration and retain the destination when changing tabs. Uncalibrated profiles cannot be mounted. |
+| Mesh details | Side A/B labels for default/default1, calibration from 30 to 110 °C, and measurement date plus exact time and timezone. |
+| Languages and updates | Nine languages including Spanish, refined Hungarian, and localized update punctuation. |
 
-Use an idle, connected, cold printer with heater targets zero and live view paused. Checking availability needs no LAN code; download/upload and installation require it. Read the code from the display under **Settings → LAN only**: it is different from the SSH password. No factory reset or firmware reflash is needed. Updates are never installed unattended.
+Open **Settings → Updates → Stable → Check for updates**. Enter the configured LAN code, download and verify, then separately confirm installation. Pause live view and use an idle, connected printer with nozzle/bed at or below 50 °C and heater targets zero. No factory reset is needed. The LAN code is on the display under **Settings → LAN only** and differs from the SSH password. Without the updater panel, use the release's computer-assisted installer ZIP; panel upload accepts the signed .cc2update instead.
 
-**Validated:** all seven CI jobs passed; the maintainer accepted the signed candidate and authorized distribution. Exact source/payload checksums and signature were verified. [PR127](https://github.com/Neme77/centauri-carbon-2-community/pull/127) adds this UI correction; the included 1.2.10 PRs and original contributors remain credited below. Firmware, callback and MQTT Canvas are retained. This does not claim a new long-print test of 1.2.11.
+**Validated on the maintainer's printer:** Canvas, camera geometry, mouse fan controls, Spanish, localized punctuation, A/B labels, Object Exclusion and the new plate/calibration workflow. Native, browser and ARM tests passed; the published signed payload is identical to the tested candidate. This is not a new long-duration printing qualification.
 
-**Italiano:** con il pannello già installato vai in **Impostazioni → Aggiornamenti → Stabile → Controlla aggiornamenti**, inserisci il codice LAN e scegli **Scarica e verifica**, poi conferma **Installa**. La 1.2.11 conserva tutte le novità della 1.2.10 e corregge le note degli aggiornamenti. Solo V4.4/V4.4.1; non serve reinstallare il firmware.
+**Credits:** Spanish by **[asiersan](https://github.com/asiersan)** ([#130](https://github.com/Neme77/centauri-carbon-2-community/pull/130), integration #133); Hungarian refinements by **[pezso92](https://github.com/pezso92)** ([#129](https://github.com/Neme77/centauri-carbon-2-community/pull/129), integration #132); localized punctuation by **[Surfoo](https://github.com/Surfoo)** ([#128](https://github.com/Neme77/centauri-carbon-2-community/pull/128), integration #135). Advanced mesh builds on **beanbo's #104**. Special thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**, our very first beta tester, for his reliability, impartial feedback and constant availability. Thanks to all beta testers for their reports and real-printer trials; [full credits](docs/CONTRIBUTORS.md).
+
+**Library compatibility:** older applications enforcing a 40 °C minimum cannot read measurements created at 30–39 °C, and may discard uncalibrated profiles when saving. Back up the plate library before reverting to an older application. Experimental Canvas ejection, continuous Canvas UDS and webcam-service restart are excluded.
+
+**Italiano:** la 1.2.14 aggiorna esclusivamente CC2 Control su V4.4/V4.4.1. Include esclusione oggetti corretta, stato Canvas, dimensioni del live, cursori ventole, lingue e gestione piatti migliorata. Si possono creare profili prima della prima mesh, calibrare da 30 °C e cambiare scheda senza perdere la destinazione. Installazione dal pannello con codice LAN e conferma separata; firmware e callback restano invariati.
 
 ## Previous application update — CC2 Control 1.2.10
 

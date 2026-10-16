@@ -72,9 +72,13 @@ Thank you to **[@pezso92](https://github.com/pezso92)** for the complete **Hunga
 
 The 1.2.10 updater and Canvas-dialog follow-up were tested on the maintainer's V4.4 printer. Integration preserves original contributor commits and attribution.
 
+## CC2 Control 1.2.14 language and interface contributions
+
+Spanish: **[asiersan](https://github.com/asiersan)**, original #130, integration #133. Hungarian refinements: **[pezso92](https://github.com/pezso92)**, original #129, integration #132. Localized update punctuation: **[Surfoo](https://github.com/Surfoo)**, original #128, integration #135. These original contributions retain exclusive author credit. The plate workflow extends the advanced mesh system by **beanbo** in #104. Thank you to the beta testers who reported the camera, fan, object-layout and plate-workflow issues and validated the combined application on a real printer.
+
 ## Beta testers
 
-Special thanks to **DamiBFryta**, our very first beta tester, for being reliable, impartial and always available throughout development.
+Special thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**, our very first beta tester, for being reliable, impartial and always available throughout development.
 
 Our sincere thanks also go to **Barry Green**, **Michael Husbyn**, **[Jiří Heider](https://www.facebook.com/heiderakcze)**, **James Morriss Hill** and **Brian Mcmillion**, and to **all the other beta testers not named here**. By offering their time and their printers, running long printing sessions and providing patient, precise feedback, they helped identify issues and improve the stability of this release.
 

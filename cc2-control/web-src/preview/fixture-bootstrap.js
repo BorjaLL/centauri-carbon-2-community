@@ -4,6 +4,7 @@
     status: 1,
     reject: false,
     commands: [],
+    headLoaded: false, activeTray: -1, canvasFresh: true,
     fans: { part: 0, aux: 0, box: 0 },
     trays: [0, 1, 2, 3].map(i => ({tray_id:i,status:i===1||i===2?1:0,filament_color:['','#66BB6A','#48A7FA','#F5F5F5'][i],filament_name:['','PETG','PETG','PLA'][i],filament_type:['','PETG','PETG','PLA'][i]})),
     preferences: { language: 'it', theme: 'dark', ...JSON.parse(localStorage.getItem('cc2-fixture-preferences') || '{}') },
@@ -41,7 +42,15 @@
       return reply(state.preferences)
     }
     if (path === '/api/camera/claim') return reply({viewer:String(options.body)})
-    if (path === '/api/canvas') return reply({available:true,auto_refill:false,telemetry:{result:{canvas_info:{canvas_list:[{canvas_id:0,connected:1,tray_list:state.trays}]}}}})
+    if (path === '/api/canvas') return reply({available:true,auto_refill:false,slots:state.trays.map(t=>{
+        const fresh=state.connected&&state.canvasFresh
+        const changing=(state.headLoaded&&state.activeTray===-1)||(!state.headLoaded&&state.activeTray!==-1)
+        const kind=!fresh?'unknown':changing?'transition':t.status===0?'empty':t.status===2&&state.activeTray===t.tray_id&&state.headLoaded?'loaded':t.status===1&&state.activeTray!==t.tray_id?'present':'transition'
+        const busy=state.status!==1
+        const load=fresh&&!busy&&kind==='present'&&!state.headLoaded&&state.activeTray===-1
+        const unload=fresh&&!busy&&kind==='loaded'
+        return {slot:t.tray_id,state:kind,load,unload,reason_load:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='loaded'?'already_loaded':kind==='transition'?'transition':load?'none':'head_occupied',reason_unload:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='transition'?'transition':unload?'none':'not_loaded'}
+      }),telemetry:{result:{canvas_info:{canvas_list:[{canvas_id:0,connected:1,tray_list:state.trays}]}}}})
     if (path === '/api/printer') return reply(printer())
     if (path === '/api/health') return reply({ service: 'cc2-control', version: '1.2.3', mqtt_connected: state.connected })
     if (path === '/api/setup') return reply({ required: false, configured: true, mqtt_connected: state.connected })

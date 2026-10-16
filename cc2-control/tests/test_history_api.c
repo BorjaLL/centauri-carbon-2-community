@@ -82,7 +82,7 @@ int main(void){
     m.registered=0;assert(call(canvas_auto_refill_response,"off",reply,sizeof(reply))==503);m.registered=1;
     /* /api/canvas reports the setting, null until the printer has. */
     strcpy(m.canvas_snapshot,"{\"result\":{\"canvas_info\":{\"canvas_list\":[]}}}");m.canvas_snapshot_len=strlen(m.canvas_snapshot);
-    m.auto_refill=0;assert(get(canvas_response,reply,sizeof(reply))==200&&strstr(reply,"\"auto_refill\":false,\"telemetry\":{"));
+    m.auto_refill=0;assert(get(canvas_response,reply,sizeof(reply))==200&&strstr(reply,"\"auto_refill\":false")&&strstr(reply,"\"telemetry\":{"));
     m.have_auto_refill=0;assert(get(canvas_response,reply,sizeof(reply))==200&&strstr(reply,"\"auto_refill\":null"));
     /* /api/printer carries the latest printer refusal of our own requests. */
     assert(get(printer_response,reply,sizeof(reply))==200&&strstr(reply,"\"printer_error\":null,\"camera_viewer\":null}"));
