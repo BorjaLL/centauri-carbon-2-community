@@ -1,0 +1,908 @@
+diff --git a/cc2-control/src/canvas_json.h b/cc2-control/src/canvas_json.h
+new file mode 100644
+index 0000000..9a0d067
+--- /dev/null
++++ b/cc2-control/src/canvas_json.h
+@@ -0,0 +1,69 @@
++#ifndef CC2_CANVAS_JSON_H
++#define CC2_CANVAS_JSON_H
++#include <ctype.h>
++#include <errno.h>
++#include <math.h>
++#include <stdlib.h>
++#include <string.h>
++static inline const char *ccv_json_string_end(const char *p,const char *end){
++    for(++p;p<end;++p){
++        if(*p=='\\'){if(++p>=end)return NULL;}
++        else if(*p=='"')return p+1;
++    }
++    return NULL;
++}
++
++static inline const char *ccv_json_container_end(const char *p,const char *end){
++    int depth=0;
++    while(p<end){
++        if(*p=='"'){p=ccv_json_string_end(p,end);if(!p)return NULL;continue;}
++        if(*p=='{'||*p=='[')depth++;
++        else if((*p=='}'||*p==']')&&--depth==0)return p+1;
++        p++;
++    }
++    return NULL;
++}
++
++static inline const char *ccv_json_skip_space(const char *p,const char *end){
++    while(p<end&&isspace((unsigned char)*p))p++;
++    return p;
++}
++
++/* Returns the start of the value of a top-level member of the object [obj,end). */
++static inline const char *ccv_json_member(const char *obj,const char *end,const char *key){
++    size_t key_len=strlen(key);
++    const char *p=obj+1;
++    while(1){
++        p=ccv_json_skip_space(p,end);
++        if(p<end&&*p==',')p=ccv_json_skip_space(p+1,end);
++        if(p>=end||*p!='"')return NULL;
++        const char *key_end=ccv_json_string_end(p,end);if(!key_end)return NULL;
++        int match=(size_t)(key_end-p-2)==key_len&&memcmp(p+1,key,key_len)==0;
++        p=ccv_json_skip_space(key_end,end);
++        if(p>=end||*p!=':')return NULL;
++        p=ccv_json_skip_space(p+1,end);
++        if(p>=end)return NULL;
++        if(match)return p;
++        if(*p=='{'||*p=='[')p=ccv_json_container_end(p,end);
++        else if(*p=='"')p=ccv_json_string_end(p,end);
++        else while(p<end&&*p!=','&&*p!='}')p++;
++        if(!p)return NULL;
++    }
++}
++
++static inline const char *ccv_json_member_object(const char *obj,const char *end,const char *key,char open,const char **value_end){
++    const char *value=ccv_json_member(obj,end,key);
++    if(!value||*value!=open)return NULL;
++    *value_end=ccv_json_container_end(value,end);
++    return *value_end?value:NULL;
++}
++
++static inline int ccv_numeric(const char *o,const char *e,const char *key,double *out){
++ const char *p=ccv_json_member(o,e,key);if(!p||(!isdigit((unsigned char)*p)&&*p!='-'))return 0;
++ char *q;errno=0;double v=strtod(p,&q);
++ if(q==p||q>e||errno||!isfinite(v))return 0;
++ q=(char *)ccv_json_skip_space(q,e);if(q<e&&*q!=','&&*q!='}')return 0;
++ *out=v;return 1;
++}
++
++#endif
+diff --git a/cc2-control/src/canvas_state.h b/cc2-control/src/canvas_state.h
+new file mode 100644
+index 0000000..69d6183
+--- /dev/null
++++ b/cc2-control/src/canvas_state.h
+@@ -0,0 +1,88 @@
++#ifndef CC2_CANVAS_STATE_H
++#define CC2_CANVAS_STATE_H
++#include "mqtt.h"
++#include "canvas_json.h"
++#include <time.h>
++enum canvas_slot_kind { CV_UNKNOWN,CV_EMPTY,CV_PRESENT,CV_LOADED,CV_TRANSITION };
++enum canvas_reason { CR_NONE,CR_UNAVAILABLE,CR_EMPTY,CR_BUSY,CR_HEAD_OCCUPIED,CR_NOT_LOADED,CR_ALREADY_LOADED,CR_TRANSITION };
++typedef struct {int state,load,unload,reason_load,reason_unload;} canvas_slot_view;
++static inline const char *canvas_kind_name(int state) {
++ static const char *names[]={"unknown","empty","present","loaded","transition"};
++ return state>=0&&state<=CV_TRANSITION?names[state]:names[0];
++}
++static inline const char *canvas_reason_name(int reason) {
++ static const char *names[]={"none","unavailable","empty","busy","head_occupied","not_loaded","already_loaded","transition"};
++ return reason>=0&&reason<=CR_TRANSITION?names[reason]:names[1];
++}
++/* MQTT Canvas is a retained delta cache within one live session; the existing
++ * disconnect path clears it. Do not add full Canvas UDS subscriptions/polling.
++ * Direct UDS provides only active channel and the small head-presence boolean.
++ */
++static inline int canvas_source_valid(const mqtt_client *m) {
++ time_t now=time(NULL);
++ return m->connected&&m->registered&&m->last_message>0&&now>=m->last_message&&now-m->last_message<=30
++   &&m->canvas_snapshot_len>0&&m->canvas_snapshot_len<sizeof(m->canvas_snapshot)
++   &&m->canvas_direct_known;
++}
++static inline const char *canvas_child(const char *p,const char *end,const char *key,const char **child_end) {
++ return p?ccv_json_member_object(p,end,key,'{',child_end):NULL;
++}
++/* Parse only the connected module and exact tray id. Missing/duplicate entries
++ * are unknown, never inferred to be empty. Values from material strings cannot
++ * masquerade as top-level status fields.
++ */
++static inline int canvas_reported_status(const mqtt_client *m,int slot) {
++ const char *p=m->canvas_snapshot,*end=p+m->canvas_snapshot_len,*re=end,*ie=end,*le=end;
++ if(slot<0||slot>3||p==end||*p!='{'||ccv_json_container_end(p,end)!=end)return -1;
++ const char *result=canvas_child(p,end,"result",&re);
++ const char *info=canvas_child(result,re,"canvas_info",&ie);
++ const char *list=info?ccv_json_member_object(info,ie,"canvas_list",'[',&le):NULL;
++ if(!list)return -1;
++ int found=-1,modules=0;
++ for(p=list+1;p<le;){
++  p=ccv_json_skip_space(p,le);if(p>=le||*p==']')break;
++  if(*p!='{')return -1;
++  const char *me=ccv_json_container_end(p,le);if(!me)return -1;
++  double connected;
++  if(ccv_numeric(p,me,"connected",&connected)&&connected==1){
++   if(++modules!=1)return -1;
++   const char *te,*trays=ccv_json_member_object(p,me,"tray_list",'[',&te);if(!trays)return -1;
++   for(const char *t=trays+1;t<te;){
++    t=ccv_json_skip_space(t,te);if(t>=te||*t==']')break;
++    if(*t!='{')return -1;
++    const char *se=ccv_json_container_end(t,te);if(!se)return -1;
++    double id,value;
++    if(ccv_numeric(t,se,"tray_id",&id)&&id==slot){
++     if(found!=-1||!ccv_numeric(t,se,"status",&value)||value<0||value>2||value!=floor(value))return -1;
++     found=(int)value;
++    }
++    t=ccv_json_skip_space(se,te);if(t<te&&*t==',')t++;else if(t>=te||*t!=']')return -1;
++   }
++  }
++  p=ccv_json_skip_space(me,le);if(p<le&&*p==',')p++;else if(p>=le||*p!=']')return -1;
++ }
++ return found;
++}
++static inline canvas_slot_view canvas_slot_policy(const mqtt_client *m,int slot) {
++ canvas_slot_view v={CV_UNKNOWN,0,0,CR_UNAVAILABLE,CR_UNAVAILABLE};
++ if(!canvas_source_valid(m))return v;
++ int status=canvas_reported_status(m,slot),active=m->canvas_direct_active,head=m->canvas_head_loaded;
++ if(status<0||active<-1||active>3)return v;
++ if((head&&active==-1)||(!head&&active!=-1)){
++  v.state=CV_TRANSITION;v.reason_load=v.reason_unload=CR_TRANSITION;return v;
++ }
++ if(status==0&&active!=slot)v.state=CV_EMPTY;
++ else if(status==1&&active!=slot)v.state=CV_PRESENT;
++ else if(status==2&&active==slot&&head)v.state=CV_LOADED;
++ else {v.state=CV_TRANSITION;v.reason_load=v.reason_unload=CR_TRANSITION;return v;}
++ if(!m->have_machine_status||m->machine_status!=1||!m->canvas_direct_idle){
++  v.reason_load=v.reason_unload=CR_BUSY;return v;
++ }
++ if(v.state==CV_EMPTY){v.reason_load=v.reason_unload=CR_EMPTY;return v;}
++ if(v.state==CV_LOADED){v.unload=1;v.reason_unload=CR_NONE;v.reason_load=CR_ALREADY_LOADED;return v;}
++ v.reason_unload=CR_NOT_LOADED;
++ if(active==-1&&!head){v.load=1;v.reason_load=CR_NONE;}
++ else v.reason_load=CR_HEAD_OCCUPIED;
++ return v;
++}
++#endif
+diff --git a/cc2-control/src/control.c b/cc2-control/src/control.c
+index f70c15f..51c609a 100644
+--- a/cc2-control/src/control.c
++++ b/cc2-control/src/control.c
+@@ -1,4 +1,5 @@
+ #include "control.h"
++#include "canvas_state.h"
+ 
+ #include <ctype.h>
+ #include <math.h>
+@@ -190,12 +191,20 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
+         if(printing(m))return reject(reason,reason_cap,"Canvas loading is blocked while printing");
+         if(!m->have_machine_status||m->machine_status!=1)return reject(reason,reason_cap,"Canvas loading requires the printer to be idle");
+         if(slot<0||slot>3)return reject(reason,reason_cap,"Canvas slot must be 1..4");
++        int end=0;
++        if(sscanf(action,"canvas:load:%d%n",&slot,&end)!=1||action[end])return reject(reason,reason_cap,"Invalid Canvas action");
++        canvas_slot_view view=canvas_slot_policy(m,slot);
++        if(!view.load)return reject(reason,reason_cap,canvas_reason_name(view.reason_load));
+         snprintf(script,cap,"CANVAS_LOAD_FILAMENT CHANNEL=%d",slot);return 1;
+     }
+     if(sscanf(action,"canvas:unload:%d",&slot)==1){
+         if(printing(m))return reject(reason,reason_cap,"Canvas unloading is blocked while printing");
+         if(!m->have_machine_status||m->machine_status!=1)return reject(reason,reason_cap,"Canvas unloading requires the printer to be idle");
+         if(slot<0||slot>3)return reject(reason,reason_cap,"Canvas slot must be 1..4");
++        int end=0;
++        if(sscanf(action,"canvas:unload:%d%n",&slot,&end)!=1||action[end])return reject(reason,reason_cap,"Invalid Canvas action");
++        canvas_slot_view view=canvas_slot_policy(m,slot);
++        if(!view.unload)return reject(reason,reason_cap,canvas_reason_name(view.reason_unload));
+         snprintf(script,cap,"CANVAS_UNLOAD_FILAMENT CHANNEL=%d",slot);return 1;
+     }
+     /* Stock display reset_multi_filament_set resets the four channels by
+diff --git a/cc2-control/src/main.c b/cc2-control/src/main.c
+index 6c7d23a..93281e1 100644
+--- a/cc2-control/src/main.c
++++ b/cc2-control/src/main.c
+@@ -30,6 +30,7 @@
+ #include "panda.h"
+ #include "console.h"
+ #include "control.h"
++#include "canvas_state.h"
+ #include "uds.h"
+ #include "http_guard.h"
+ 
+@@ -2534,22 +2535,23 @@ static void mqtt_diagnostic_response(int fd, const mqtt_client *mqtt) {
+ }
+ 
+ static void canvas_response(int fd, const mqtt_client *mqtt) {
+-    if(mqtt->canvas_snapshot_len) {
+-        size_t cap=mqtt->canvas_snapshot_len+256;
+-        char *body=malloc(cap);
+-        if(!body)return;
+-        int length=snprintf(body,cap,
+-            "{\"available\":true,\"active_tray_id\":%d,\"machine_status\":%d,\"auto_refill\":%s,\"telemetry\":%.*s}\n",
+-            mqtt->have_canvas_active_tray?mqtt->canvas_active_tray_id:-1,mqtt->machine_status,
+-            mqtt->have_auto_refill?(mqtt->auto_refill?"true":"false"):"null",
+-            (int)mqtt->canvas_snapshot_len,mqtt->canvas_snapshot);
+-        if(length>0&&(size_t)length<cap)
+-            respond(fd,200,"OK","application/json; charset=utf-8",body,(size_t)length);
+-        free(body);
+-    } else {
+-        const char *body="{\"available\":false}\n";
+-        respond(fd,200,"OK","application/json; charset=utf-8",body,strlen(body));
+-    }
++    size_t cap=mqtt->canvas_snapshot_len+2304;
++    char *body=malloc(cap);if(!body)return;
++    json_builder b={body,0,cap,0};
++    json_builder_printf(&b,"{\"available\":%s,\"active_tray_id\":%d,\"machine_status\":%d,\"auto_refill\":%s,\"slots\":[",
++      mqtt->canvas_snapshot_len?"true":"false",mqtt->have_canvas_active_tray?mqtt->canvas_active_tray_id:-1,
++      mqtt->machine_status,mqtt->have_auto_refill?(mqtt->auto_refill?"true":"false"):"null");
++    for(int i=0;i<4;i++){
++      canvas_slot_view v=canvas_slot_policy(mqtt,i);
++      json_builder_printf(&b,"%s{\"slot\":%d,\"state\":\"%s\",\"load\":%s,\"unload\":%s,\"reason_load\":\"%s\",\"reason_unload\":\"%s\"}",
++        i?",":"",i,canvas_kind_name(v.state),v.load?"true":"false",v.unload?"true":"false",
++        canvas_reason_name(v.reason_load),canvas_reason_name(v.reason_unload));
++    }
++    json_builder_printf(&b,"]");
++    if(mqtt->canvas_snapshot_len)json_builder_printf(&b,",\"telemetry\":%.*s",(int)mqtt->canvas_snapshot_len,mqtt->canvas_snapshot);
++    json_builder_printf(&b,"}\n");
++    if(!b.failed)respond(fd,200,"OK","application/json; charset=utf-8",body,b.length);
++    free(body);
+ }
+ 
+ /* OrcaSlicer's Moonraker printer agent connects through /server/info and pulls
+diff --git a/cc2-control/src/mqtt.h b/cc2-control/src/mqtt.h
+index f7cb44e..f606051 100644
+--- a/cc2-control/src/mqtt.h
++++ b/cc2-control/src/mqtt.h
+@@ -79,6 +79,7 @@ typedef struct {
+     time_t discovery_ready_at;
+     int canvas_active_tray_id;
+     int have_canvas_active_tray;
++    int canvas_direct_known,canvas_direct_active,canvas_head_loaded,canvas_direct_idle;
+     /* Publishing a request is not acceptance: the printer answers on
+      * <client>/api_response with result.error_code. Last non-zero code: */
+     int reply_error_method, reply_error_code;
+diff --git a/cc2-control/src/uds.c b/cc2-control/src/uds.c
+index eacf82f..50af26e 100644
+--- a/cc2-control/src/uds.c
++++ b/cc2-control/src/uds.c
+@@ -11,7 +11,7 @@
+ #include <sys/un.h>
+ #include <unistd.h>
+ 
+-static const char subscription[] = "{\"id\":11,\"method\":\"objects/subscribe\",\"params\":{\"objects\":{\"extruder\":[\"temperature\",\"target\"],\"heater_bed\":[\"temperature\",\"target\"],\"gcode_move\":[\"speed_factor\",\"extrude_factor\",\"homing_origin\"],\"motion_report\":[\"live_velocity\"],\"toolhead\":[\"homed_axes\"],\"output_pin led_pin\":[\"value\"],\"print_stats\":[\"filename\",\"state\",\"info\",\"print_duration\",\"total_duration\",\"filament_used\"],\"canvas_dev\":[\"active_cid\"],\"bed_mesh\":[\"profile_name\"],\"virtual_sdcard\":[\"progress\"],\"exclude_object\":[\"excluded_objects\",\"current_object\"],\"fan\":[\"speed\",\"rpm\"],\"fan_generic fan1\":[\"speed\",\"rpm\"],\"controller_fan board_cooling_fan\":[\"speed\",\"rpm\"],\"heater_fan heatbreak_cooling_fan\":[\"speed\",\"rpm\"]},\"response_template\":{\"method\":\"cc2_status\"}}}\003"
++static const char subscription[] = "{\"id\":11,\"method\":\"objects/subscribe\",\"params\":{\"objects\":{\"extruder\":[\"temperature\",\"target\"],\"heater_bed\":[\"temperature\",\"target\"],\"gcode_move\":[\"speed_factor\",\"extrude_factor\",\"homing_origin\"],\"motion_report\":[\"live_velocity\"],\"toolhead\":[\"homed_axes\"],\"filament_switch_sensor filament_sensor\":[\"filament_detected\"],\"output_pin led_pin\":[\"value\"],\"print_stats\":[\"filename\",\"state\",\"info\",\"print_duration\",\"total_duration\",\"filament_used\"],\"canvas_dev\":[\"active_cid\"],\"bed_mesh\":[\"profile_name\"],\"virtual_sdcard\":[\"progress\"],\"exclude_object\":[\"excluded_objects\",\"current_object\"],\"fan\":[\"speed\",\"rpm\"],\"fan_generic fan1\":[\"speed\",\"rpm\"],\"controller_fan board_cooling_fan\":[\"speed\",\"rpm\"],\"heater_fan heatbreak_cooling_fan\":[\"speed\",\"rpm\"]},\"response_template\":{\"method\":\"cc2_status\"}}}\003"
+  "{\"id\":13,\"method\":\"gcode/subscribe_report\",\"params\":{\"response_template\":{\"method\":\"cc2_report\"}}}\003";
+ static const char heartbeat[]="{\"id\":12,\"method\":\"info\",\"params\":{}}\003";
+ static double elapsed(struct timespec a,struct timespec b){return (double)(a.tv_sec-b.tv_sec)+(a.tv_nsec-b.tv_nsec)/1e9;}
+@@ -231,6 +231,18 @@ int uds_message(uds_client *c,const char *json,size_t length){
+   c->have_homed_axes=valid;
+   if(valid){memcpy(c->homed_axes,axes+1,count);c->homed_axes[count]=0;}
+  }
++ const char *fe;const char *filament=json_member_object(status,se,"filament_switch_sensor filament_sensor",'{',&fe);
++ if(filament&&(!older||!c->have_head_filament)){
++  const char *value=json_member(filament,fe,"filament_detected");
++  if(value){
++   const char *after=NULL;int loaded=0;
++   if(fe-value>=4&&!memcmp(value,"true",4)){after=value+4;loaded=1;}
++   else if(fe-value>=5&&!memcmp(value,"false",5))after=value+5;
++   if(after)after=json_skip_space(after,fe);
++   c->have_head_filament=after&&after<fe&&(*after==','||*after=='}');
++   if(c->have_head_filament)c->head_filament=loaded;
++  }
++ }
+  const char *le;const char *lamp=json_member_object(status,se,"output_pin led_pin",'{',&le);
+  double lamp_value;
+  if(lamp&&(!older||!c->have_light)&&numeric(lamp,le,"value",&lamp_value)&&
+@@ -293,7 +305,7 @@ void uds_close(uds_client *c){
+  if(c->fd>=0)close(c->fd);
+  c->fd=-1;c->ready=0;c->present=0;c->used=c->sent=0;c->have_filename=c->have_print_state=c->have_mesh_profile=0;
+  c->have_excluded_objects=c->have_current_object=0;
+- c->have_homed_axes=c->have_light=0;
++ c->have_homed_axes=c->have_light=c->have_head_filament=0;
+ }
+ static void uds_disconnect(uds_client *c,const char *reason,int error){
+  c->disconnects++;c->last_disconnect=reason;c->last_errno=error;uds_close(c);
+@@ -365,6 +377,13 @@ void uds_motion_light(const uds_client *c,mqtt_client *v){
+  v->homed_axes[0]=0;
+  if(uds_fresh(c)&&c->have_homed_axes)strcpy(v->homed_axes,c->homed_axes);
+  if(uds_fresh(c)&&c->have_light)v->led_status=c->light;
++ double channel=-2;
++ v->canvas_direct_known=uds_fresh(c)&&c->have_head_filament&&c->have_print_state
++  &&uds_value(c,U_CANVAS_CHANNEL,&channel)&&channel>=-1&&channel<=3&&channel==floor(channel);
++ if(v->canvas_direct_known){
++  v->canvas_direct_active=(int)channel;v->canvas_head_loaded=c->head_filament;
++  v->canvas_direct_idle=!strcmp(c->print_state,"standby")||!strcmp(c->print_state,"complete")||!strcmp(c->print_state,"cancelled");
++ }else v->canvas_direct_idle=0;
+ }
+ void uds_overlay(const uds_client *c,mqtt_client *v){
+  double n;
+diff --git a/cc2-control/src/uds.h b/cc2-control/src/uds.h
+index 7b89ef8..517387b 100644
+--- a/cc2-control/src/uds.h
++++ b/cc2-control/src/uds.h
+@@ -17,6 +17,7 @@ typedef struct {
+  char homed_axes[4];
+  int have_homed_axes;
+  int have_light, light;
++ int have_head_filament,head_filament;
+  char filename[512];
+  int have_filename;
+  /* print_stats.state: printing, paused, complete, cancelled, error or standby. */
+diff --git a/cc2-control/tests/test_c_harnesses.py b/cc2-control/tests/test_c_harnesses.py
+index 7377e99..bedbdbf 100644
+--- a/cc2-control/tests/test_c_harnesses.py
++++ b/cc2-control/tests/test_c_harnesses.py
+@@ -9,6 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
+ FLAGS = ["-O2", "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-D_POSIX_C_SOURCE=200809L", "-pthread", *os.environ.get("CC2_TEST_CFLAGS", "").split()]
+ BACKEND = [ROOT / "src/mqtt.c", ROOT / "src/console.c", ROOT / "src/control.c", ROOT / "src/panda.c", ROOT / "src/uds.c"]
+ HARNESSES = {
++    "test_canvas_state.c": [ROOT / "src/control.c"],
+     "test_app_update_guards.c": BACKEND,
+     "test_gcode_metadata.c": [],
+     "test_object_query.c": BACKEND,
+diff --git a/cc2-control/tests/test_canvas_state.c b/cc2-control/tests/test_canvas_state.c
+new file mode 100644
+index 0000000..99b6d22
+--- /dev/null
++++ b/cc2-control/tests/test_canvas_state.c
+@@ -0,0 +1,42 @@
++#include "../src/canvas_state.h"
++#include "../src/control.h"
++#include <assert.h>
++#include <stdio.h>
++static void snapshot(mqtt_client *m,const char *trays){
++ int n=snprintf(m->canvas_snapshot,sizeof(m->canvas_snapshot),"{\"result\":{\"canvas_info\":{\"canvas_list\":[{\"connected\":1,\"tray_list\":%s}]}}}",trays);
++ assert(n>0&&(size_t)n<sizeof(m->canvas_snapshot));m->canvas_snapshot_len=(size_t)n;
++}
++int main(void){
++ mqtt_client m={0};m.connected=m.registered=m.have_machine_status=1;m.machine_status=1;m.last_message=time(NULL);
++ m.canvas_direct_known=m.canvas_direct_idle=1;m.canvas_direct_active=-1;
++ snapshot(&m,"[{\"tray_id\":0,\"status\":0},{\"tray_id\":1,\"status\":1},{\"tray_id\":2,\"status\":1},{\"tray_id\":3,\"status\":0}]");
++ canvas_slot_view v=canvas_slot_policy(&m,0);assert(v.state==CV_EMPTY&&!v.load&&!v.unload);
++ v=canvas_slot_policy(&m,1);assert(v.state==CV_PRESENT&&v.load&&!v.unload);
++ char command[700],reason[256];
++ assert(control_build_script("canvas:load:1",&m,command,sizeof(command),reason,sizeof(reason))&&!strcmp(command,"CANVAS_LOAD_FILAMENT CHANNEL=1"));
++ assert(!control_build_script("canvas:unload:1",&m,command,sizeof(command),reason,sizeof(reason)));
++ assert(!control_build_script("canvas:load:0",&m,command,sizeof(command),reason,sizeof(reason)));
++ assert(!control_build_script("canvas:load:1junk",&m,command,sizeof(command),reason,sizeof(reason)));
++ m.canvas_direct_active=1;m.canvas_head_loaded=1;
++ snapshot(&m,"[{\"tray_id\":1,\"status\":2},{\"tray_id\":2,\"status\":1}]");
++ v=canvas_slot_policy(&m,1);assert(v.state==CV_LOADED&&!v.load&&v.unload);
++ assert(control_build_script("canvas:unload:1",&m,command,sizeof(command),reason,sizeof(reason))&&!strcmp(command,"CANVAS_UNLOAD_FILAMENT CHANNEL=1"));
++ assert(!control_build_script("canvas:unload:2",&m,command,sizeof(command),reason,sizeof(reason)));
++ assert(!control_build_script("canvas:load:2",&m,command,sizeof(command),reason,sizeof(reason)));
++ m.canvas_head_loaded=0;v=canvas_slot_policy(&m,1);assert(v.state==CV_TRANSITION&&!v.load&&!v.unload);
++ m.canvas_direct_active=-1;
++ snapshot(&m,"[{\"tray_id\":1,\"status\":1}]");
++ m.canvas_head_loaded=1;assert(canvas_slot_policy(&m,1).state==CV_TRANSITION);
++ m.canvas_head_loaded=0;m.machine_status=2;assert(!canvas_slot_policy(&m,1).load);
++ m.machine_status=1;m.canvas_direct_idle=0;assert(!canvas_slot_policy(&m,1).load);
++ m.canvas_direct_idle=1;m.last_message-=60;assert(canvas_slot_policy(&m,1).state==CV_UNKNOWN);
++ m.last_message=time(NULL);m.canvas_direct_known=0;assert(!canvas_slot_policy(&m,1).load);
++ m.canvas_direct_known=1;m.connected=0;assert(!canvas_slot_policy(&m,1).load);
++ m.connected=1;m.registered=0;assert(!canvas_slot_policy(&m,1).load);
++ m.registered=1;
++ snapshot(&m,"[{\"tray_id\":1,\"status\":1},{\"tray_id\":1,\"status\":0}]");assert(canvas_slot_policy(&m,1).state==CV_UNKNOWN);
++ snapshot(&m,"[{\"tray_id\":2,\"status\":1}]");assert(canvas_slot_policy(&m,1).state==CV_UNKNOWN);
++ snapshot(&m,"[{\"tray_id\":1,\"status\":99}]");assert(canvas_slot_policy(&m,1).state==CV_UNKNOWN);
++ snapshot(&m,"[{\"tray_id\":1,\"status\":1,\"filament_name\":\"status: 0\"}]");assert(canvas_slot_policy(&m,1).load);
++ puts("PASS: Canvas empty/present/loaded/transitional slots; exact load/unload actions; head, busy, stale, missing and inconsistent guards");return 0;
++}
+diff --git a/cc2-control/tests/test_uds.c b/cc2-control/tests/test_uds.c
+index 5188fc2..441b19b 100644
+--- a/cc2-control/tests/test_uds.c
++++ b/cc2-control/tests/test_uds.c
+@@ -130,6 +130,15 @@ int main(void){
+  length+=snprintf(big+length,sizeof(big)-(size_t)length,"\"]}}}}");
+  assert(uds_message(&c,big,(size_t)length)&&!c.have_excluded_objects&&uds_exclude_status(&c,live,sizeof(live))<0);
+  uds_close(&c);assert(!c.have_current_object);close(pair[1]);
++ /* Head state is independent of slot presence; stale/malformed values cannot authorize Canvas. */
++ assert(!socketpair(AF_UNIX,SOCK_STREAM,0,pair));uds_init(&c);c.fd=pair[0];
++ message(&c,"{\"id\":11,\"result\":{\"eventtime\":1,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":false},\"canvas_dev\":{\"active_cid\":-1},\"print_stats\":{\"state\":\"standby\"}}}}");
++ uds_motion_light(&c,&view);assert(view.canvas_direct_known&&!view.canvas_head_loaded&&view.canvas_direct_active==-1&&view.canvas_direct_idle);
++ message(&c,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":2,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":true},\"canvas_dev\":{\"active_cid\":1}}}}");
++ uds_motion_light(&c,&view);assert(view.canvas_direct_known&&view.canvas_head_loaded&&view.canvas_direct_active==1);
++ message(&c,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":3,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":null}}}}");
++ uds_motion_light(&c,&view);assert(!view.canvas_direct_known);
++ uds_close(&c);uds_motion_light(&c,&view);assert(!view.canvas_direct_known);close(pair[1]);
+  puts("PASS UDS initial/delta merge, ordering, scaling, job matching, stale fallback, fragmented frames, silence-only probes and exclude_object state");
+  return 0;
+ }
+diff --git a/cc2-control/web-src/package.json b/cc2-control/web-src/package.json
+index 0236d76..4197ad9 100644
+--- a/cc2-control/web-src/package.json
++++ b/cc2-control/web-src/package.json
+@@ -31,7 +31,9 @@
+     "test:spanish": "node preview/test-spanish.mjs",
+     "test:materials": "node preview/test-material-presets.mjs",
+     "test:list-pages": "node preview/test-files-history-pages.mjs",
+-    "test:updates": "node preview/test-updates.mjs"
++    "test:updates": "node preview/test-updates.mjs",
++    "test:control-interactions": "node preview/test-control-interactions.mjs",
++    "test:canvas-states": "node preview/test-canvas-states.mjs"
+   },
+   "devDependencies": {
+     "@biomejs/biome": "2.5.14",
+diff --git a/cc2-control/web-src/preview/fixture-bootstrap.js b/cc2-control/web-src/preview/fixture-bootstrap.js
+index 9253190..70546bf 100644
+--- a/cc2-control/web-src/preview/fixture-bootstrap.js
++++ b/cc2-control/web-src/preview/fixture-bootstrap.js
+@@ -4,6 +4,7 @@
+     status: 1,
+     reject: false,
+     commands: [],
++    headLoaded: false, activeTray: -1, canvasFresh: true,
+     fans: { part: 0, aux: 0, box: 0 },
+     trays: [0, 1, 2, 3].map(i => ({tray_id:i,status:i===1||i===2?1:0,filament_color:['','#66BB6A','#48A7FA','#F5F5F5'][i],filament_name:['','PETG','PETG','PLA'][i],filament_type:['','PETG','PETG','PLA'][i]})),
+     preferences: { language: 'it', theme: 'dark', ...JSON.parse(localStorage.getItem('cc2-fixture-preferences') || '{}') },
+@@ -41,7 +42,15 @@
+       return reply(state.preferences)
+     }
+     if (path === '/api/camera/claim') return reply({viewer:String(options.body)})
+-    if (path === '/api/canvas') return reply({available:true,auto_refill:false,telemetry:{result:{canvas_info:{canvas_list:[{canvas_id:0,connected:1,tray_list:state.trays}]}}}})
++    if (path === '/api/canvas') return reply({available:true,auto_refill:false,slots:state.trays.map(t=>{
++        const fresh=state.connected&&state.canvasFresh
++        const changing=(state.headLoaded&&state.activeTray===-1)||(!state.headLoaded&&state.activeTray!==-1)
++        const kind=!fresh?'unknown':changing?'transition':t.status===0?'empty':t.status===2&&state.activeTray===t.tray_id&&state.headLoaded?'loaded':t.status===1&&state.activeTray!==t.tray_id?'present':'transition'
++        const busy=state.status!==1
++        const load=fresh&&!busy&&kind==='present'&&!state.headLoaded&&state.activeTray===-1
++        const unload=fresh&&!busy&&kind==='loaded'
++        return {slot:t.tray_id,state:kind,load,unload,reason_load:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='loaded'?'already_loaded':kind==='transition'?'transition':load?'none':'head_occupied',reason_unload:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='transition'?'transition':unload?'none':'not_loaded'}
++      }),telemetry:{result:{canvas_info:{canvas_list:[{canvas_id:0,connected:1,tray_list:state.trays}]}}}})
+     if (path === '/api/printer') return reply(printer())
+     if (path === '/api/health') return reply({ service: 'cc2-control', version: '1.2.3', mqtt_connected: state.connected })
+     if (path === '/api/setup') return reply({ required: false, configured: true, mqtt_connected: state.connected })
+diff --git a/cc2-control/web-src/preview/test-canvas-states.mjs b/cc2-control/web-src/preview/test-canvas-states.mjs
+new file mode 100644
+index 0000000..614b503
+--- /dev/null
++++ b/cc2-control/web-src/preview/test-canvas-states.mjs
+@@ -0,0 +1,55 @@
++import assert from 'node:assert/strict'
++import { chromium } from 'playwright'
++import { fixture, launchOptions } from './fixture.mjs'
++
++const demo = await fixture()
++const browser = await chromium.launch(launchOptions)
++try {
++  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
++  await page.addInitScript(() => localStorage.setItem('cc2-fixture-preferences', '{"language":"en"}'))
++  await page.goto(demo.url + '#canvas')
++  const load = page.locator('[data-canvas-action="canvas.load"]')
++  const unload = page.locator('[data-canvas-action="canvas.unload"]')
++  const card = slot => page.locator(`[data-canvas-slot="${slot}"]`)
++  await load.waitFor()
++  assert.equal(await load.isDisabled(), true)
++  assert.equal(await unload.isDisabled(), true)
++  await card(0).getByText('Empty', { exact: true }).waitFor()
++  await card(1).getByRole('button', { name: 'Select slot', exact: true }).click()
++  assert.equal(await load.isDisabled(), false)
++  assert.equal(await unload.isDisabled(), true)
++  await card(1).getByText('Present · unloaded from head', { exact: true }).waitFor()
++  await page.evaluate(() => {
++    Object.assign(window.__CC2_PREVIEW, { activeTray: 1, headLoaded: true })
++    window.__CC2_PREVIEW.trays[1].status = 2
++  })
++  await card(1).getByText('Loaded to head', { exact: true }).waitFor()
++  assert.equal(await load.isDisabled(), true)
++  assert.equal(await unload.isDisabled(), false)
++  await card(2).getByRole('button', { name: 'Select slot', exact: true }).click()
++  assert.equal(await load.isDisabled(), true, 'another loaded channel prevents loading')
++  assert.equal(await unload.isDisabled(), true, 'only the loaded channel can unload')
++  await page.evaluate(() => { window.__CC2_PREVIEW.headLoaded = false })
++  await card(2).getByText('Transition · waiting for confirmation', { exact: true }).waitFor()
++  assert.equal(await load.isDisabled(), true)
++  await page.evaluate(() => { window.__CC2_PREVIEW.activeTray = -1 })
++  await page.waitForFunction(() => !document.querySelector('[data-canvas-action="canvas.load"]').disabled)
++  await page.evaluate(() => { window.__CC2_PREVIEW.status = 2 })
++  await page.waitForFunction(() => document.querySelector('[data-canvas-action="canvas.load"]').disabled)
++  await page.evaluate(() => { window.__CC2_PREVIEW.status = 1; window.__CC2_PREVIEW.canvasFresh = false })
++  await card(2).getByText('State unavailable', { exact: true }).waitFor()
++  assert.equal(await load.isDisabled(), true)
++  assert.equal(await unload.isDisabled(), true)
++  assert.deepEqual(await page.evaluate(() => window.__CC2_PREVIEW.commands), [], 'state changes and disabled actions send no commands')
++  for (const width of [1440, 768, 390]) {
++    await page.setViewportSize({ width, height: 1000 })
++    await page.waitForTimeout(200)
++    const overflow = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth,
++      elements: [...document.querySelectorAll('main *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).slice(0, 8).map(e => [e.tagName, e.className, e.textContent.slice(0, 70)]) }))
++    assert(overflow.scroll <= overflow.width, JSON.stringify(overflow))
++  }
++  console.log('PASS: Canvas slot state and action eligibility across empty, parked, loaded, other channel, transition, print and unavailable state')
++} finally {
++  await browser.close()
++  await demo.cleanup()
++}
+diff --git a/cc2-control/web-src/preview/test-control-interactions.mjs b/cc2-control/web-src/preview/test-control-interactions.mjs
+new file mode 100644
+index 0000000..e53db96
+--- /dev/null
++++ b/cc2-control/web-src/preview/test-control-interactions.mjs
+@@ -0,0 +1,68 @@
++import assert from 'node:assert/strict'
++import { chromium } from 'playwright'
++import { fixture, launchOptions } from './fixture.mjs'
++
++const demo = await fixture()
++const browser = await chromium.launch(launchOptions)
++try {
++  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
++  await page.addInitScript(() => {
++    if (!localStorage.getItem('cc2-fixture-preferences'))
++      localStorage.setItem('cc2-fixture-preferences', '{"language":"en","theme":"dark"}')
++  })
++  const errors = []
++  page.on('pageerror', e => errors.push(e.message))
++  if (process.env.CC2_TEST_CASE !== 'camera') {
++    await page.goto(demo.url + '#control')
++    const range = page.locator('.cc2-fans input[type=range]').first()
++    await range.waitFor()
++    const box = await range.boundingBox()
++    assert(box)
++    await page.mouse.move(box.x + 8, box.y + box.height / 2)
++    await page.mouse.down()
++    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2, { steps: 12 })
++    await page.evaluate(() => { window.__CC2_PREVIEW.fans.part = 15 })
++    await page.waitForTimeout(1800)
++    assert.equal(await range.isDisabled(), false, 'slider must remain enabled during a held mouse drag')
++    assert.equal((await page.evaluate(() => window.__CC2_PREVIEW.commands)).length, 0, 'mouse drag must not commit before release')
++    const draft = Number(await range.inputValue())
++    assert(draft >= 65, 'telemetry must not reset the dragged thumb')
++    await page.mouse.up()
++    await page.waitForFunction(() => window.__CC2_PREVIEW.commands.length === 1)
++    assert.deepEqual(await page.evaluate(() => window.__CC2_PREVIEW.commands), [`fan:part:${draft}`])
++    console.log('PASS: held mouse drag survives telemetry and commits exactly once on release')
++  }
++  if (process.env.CC2_TEST_CASE !== 'fans') {
++    for (const width of [1440, 1920, 768, 390]) {
++      await page.setViewportSize({ width, height: 1000 })
++      const dimensions = async route => {
++        await page.goto(demo.url + '#' + route)
++        const frame = page.locator('.cc2-camera-frame').first()
++        await frame.waitFor()
++        await page.waitForTimeout(400)
++        return { frame: await frame.boundingBox(), card: await frame.locator('..').boundingBox() }
++      }
++      await page.goto(demo.url + '#settings')
++      await page.getByRole('tab', { name: 'Appearance', exact: true }).click()
++      const flag = page.getByRole('checkbox', { name: 'Keep live camera across pages' })
++      await flag.uncheck()
++      const before = {}
++      for (const route of ['dashboard', 'job']) before[route] = await dimensions(route)
++      await page.goto(demo.url + '#settings')
++      await page.getByRole('tab', { name: 'Appearance', exact: true }).click()
++      await flag.check()
++      for (const route of ['dashboard', 'job']) {
++        const after = await dimensions(route)
++        for (const element of ['frame', 'card']) for (const side of ['width', 'height']) {
++          assert(Math.abs(before[route][element][side] - after[element][side]) <= 1,
++            `${route}/${width} persistent ${element} ${side}: ${before[route][element][side]} -> ${after[element][side]}`)
++        }
++      }
++    }
++    console.log('PASS: persistent camera preserves normal card/frame dimensions on dashboard/job at four viewport widths')
++  }
++  assert.deepEqual(errors, [])
++} finally {
++  await browser.close()
++  await demo.cleanup()
++}
+diff --git a/cc2-control/web-src/public/locales/en.json b/cc2-control/web-src/public/locales/en.json
+index d6cca62..3b9fd52 100644
+--- a/cc2-control/web-src/public/locales/en.json
++++ b/cc2-control/web-src/public/locales/en.json
+@@ -914,5 +914,18 @@
+   "updates.idle": "Idle",
+   "updates.selected": "Selected version",
+   "updates.reload": "Reload CC2 Control",
+-  "updates.notes_in_english": "Release notes (English; translation unavailable)"
++  "updates.notes_in_english": "Release notes (English; translation unavailable)",
++  "canvas.slot_state": "Slot state",
++  "canvas.state_empty": "Empty",
++  "canvas.state_present": "Present · unloaded from head",
++  "canvas.state_loaded": "Loaded to head",
++  "canvas.state_transition": "Transition · waiting for confirmation",
++  "canvas.state_unknown": "State unavailable",
++  "canvas.reason_unavailable": "Waiting for current Canvas and toolhead state.",
++  "canvas.reason_empty": "No filament is reported in this slot.",
++  "canvas.reason_busy": "Available only while the printer is idle.",
++  "canvas.reason_head_occupied": "Unload the active filament from the head before loading another slot.",
++  "canvas.reason_not_loaded": "This filament is present in Canvas but is not loaded in the head.",
++  "canvas.reason_already_loaded": "This filament is already loaded in the head.",
++  "canvas.reason_transition": "Waiting for consistent filament and active-channel state."
+ }
+diff --git a/cc2-control/web-src/public/locales/fr.json b/cc2-control/web-src/public/locales/fr.json
+index afa4385..f761706 100644
+--- a/cc2-control/web-src/public/locales/fr.json
++++ b/cc2-control/web-src/public/locales/fr.json
+@@ -914,5 +914,18 @@
+   "updates.idle": "Inactif",
+   "updates.selected": "Version sélectionnée",
+   "updates.reload": "Recharger CC2 Control",
+-  "updates.notes_in_english": "Notes de version en anglais : traduction indisponible"
++  "updates.notes_in_english": "Notes de version en anglais : traduction indisponible",
++  "canvas.slot_state": "État du logement",
++  "canvas.state_empty": "Vide",
++  "canvas.state_present": "Présent · déchargé de la tête",
++  "canvas.state_loaded": "Chargé dans la tête",
++  "canvas.state_transition": "Transition · en attente de confirmation",
++  "canvas.state_unknown": "État indisponible",
++  "canvas.reason_unavailable": "En attente de l’état actuel du Canvas et de la tête.",
++  "canvas.reason_empty": "Aucun filament signalé dans ce logement.",
++  "canvas.reason_busy": "Disponible uniquement lorsque l’imprimante est inactive.",
++  "canvas.reason_head_occupied": "Déchargez le filament actif de la tête avant de charger un autre logement.",
++  "canvas.reason_not_loaded": "Ce filament est présent dans le Canvas mais pas chargé dans la tête.",
++  "canvas.reason_already_loaded": "Ce filament est déjà chargé dans la tête.",
++  "canvas.reason_transition": "En attente de données cohérentes sur le filament et le canal actif."
+ }
+diff --git a/cc2-control/web-src/public/locales/it.json b/cc2-control/web-src/public/locales/it.json
+index e662e20..b4178bb 100644
+--- a/cc2-control/web-src/public/locales/it.json
++++ b/cc2-control/web-src/public/locales/it.json
+@@ -914,5 +914,18 @@
+   "updates.idle": "Inattivo",
+   "updates.selected": "Versione selezionata",
+   "updates.reload": "Ricarica CC2 Control",
+-  "updates.notes_in_english": "Note della release in inglese: traduzione non disponibile"
++  "updates.notes_in_english": "Note della release in inglese: traduzione non disponibile",
++  "canvas.slot_state": "Stato slot",
++  "canvas.state_empty": "Vuoto",
++  "canvas.state_present": "Presente · scaricato dalla testina",
++  "canvas.state_loaded": "Caricato nella testina",
++  "canvas.state_transition": "In transizione · attesa conferma",
++  "canvas.state_unknown": "Stato non disponibile",
++  "canvas.reason_unavailable": "In attesa dello stato aggiornato di Canvas e testina.",
++  "canvas.reason_empty": "Nessun filamento segnalato in questo slot.",
++  "canvas.reason_busy": "Disponibile solo con stampante inattiva.",
++  "canvas.reason_head_occupied": "Scarica il filamento attivo dalla testina prima di caricare un altro slot.",
++  "canvas.reason_not_loaded": "Il filamento è presente nel Canvas ma non è caricato nella testina.",
++  "canvas.reason_already_loaded": "Questo filamento è già caricato nella testina.",
++  "canvas.reason_transition": "In attesa di dati coerenti su filamento e canale attivo."
+ }
+diff --git a/cc2-control/web-src/src/components/shared.tsx b/cc2-control/web-src/src/components/shared.tsx
+index e8afad9..897d186 100644
+--- a/cc2-control/web-src/src/components/shared.tsx
++++ b/cc2-control/web-src/src/components/shared.tsx
+@@ -58,6 +58,8 @@ export const FanSlider = ({
+   const [busy, setBusy] = useState(false)
+   const editing = useRef(false)
+   const dragging = useRef(false)
++  const range = useRef<HTMLInputElement>(null)
++  const pendingRange = useRef(false)
+   const sending = useRef(false)
+   const latest = useRef(pct)
+   latest.current = pct
+@@ -84,10 +86,25 @@ export const FanSlider = ({
+       setBusy(false)
+     }
+   }
++  useEffect(() => {
++    const element = range.current
++    if (!element) return
++    // Preact compat maps JSX onChange to input for ranges. Listen to the
++    // native change event so a mouse drag commits only when released.
++    const changed = () => {
++      if (!pendingRange.current) return
++      pendingRange.current = false
++      dragging.current = false
++      void commit(Math.round(+element.value))
++    }
++    element.addEventListener('change', changed)
++    return () => element.removeEventListener('change', changed)
++  }, [commit])
+   return (
+     <div class="cc2-fan-row text-[13px]">
+       <span>{t(label)}</span>
+       <input
++        ref={range}
+         type="range"
+         min="0"
+         max="100"
+@@ -96,14 +113,27 @@ export const FanSlider = ({
+         aria-label={t(label)}
+         onInput={e => {
+           dragging.current = true
++          pendingRange.current = true
+           const next = Math.round(+e.currentTarget.value)
+           setV(next)
+           setDraft(String(next))
+         }}
+-        onChange={e => {
++        onPointerDown={() => {
++          dragging.current = true
++        }}
++        onPointerUp={() => {
++          if (!pendingRange.current) dragging.current = false
++        }}
++        onPointerCancel={() => {
+           dragging.current = false
+-          const next = Math.round(+e.currentTarget.value)
+-          void commit(next)
++          pendingRange.current = false
++          restore()
++        }}
++        onBlur={() => {
++          if (!dragging.current) return
++          dragging.current = false
++          pendingRange.current = false
++          restore()
+         }}
+       />
+       <form
+diff --git a/cc2-control/web-src/src/index.css b/cc2-control/web-src/src/index.css
+index 7164d47..50c21cf 100644
+--- a/cc2-control/web-src/src/index.css
++++ b/cc2-control/web-src/src/index.css
+@@ -255,6 +255,7 @@ input[type=range], input[type=checkbox], input[type=radio], progress { accent-co
+ }
+ 
+ /* Control preview: numeric fan targets and matched desktop card edges. */
++.cc2-camera-dock, .cc2-persistent-camera { display: contents; }
+ .cc2-fan-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto; align-items: center; gap: 12px; }
+ .cc2-fan-row > input[type="range"] { min-width: 0; width: 100%; }
+ .cc2-fan-value input { padding-inline: 4px; }
+diff --git a/cc2-control/web-src/src/lib/canvas.ts b/cc2-control/web-src/src/lib/canvas.ts
+index 0de1ace..423273b 100644
+--- a/cc2-control/web-src/src/lib/canvas.ts
++++ b/cc2-control/web-src/src/lib/canvas.ts
+@@ -45,8 +45,19 @@ export function canvasHex(value: any, index: number) {
+     : '#00CFE8'
+ }
+ 
++export type CanvasSlotState = 'unknown' | 'empty' | 'present' | 'loaded' | 'transition'
++export type CanvasSlotControl = {
++  slot: number
++  state: CanvasSlotState
++  load: boolean
++  unload: boolean
++  reason_load: string
++  reason_unload: string
++}
++
+ export const canvas = store({
+   model: null as ReturnType<typeof canvasModel>,
++  controls: [] as CanvasSlotControl[],
+   autoRefill: null as boolean | null, // null until the printer has reported the setting
+   slot: 0,
+   checked: '',
+@@ -58,10 +69,11 @@ export async function refreshCanvas() {
+     const data = await request('/api/canvas')
+     canvas.set({
+       model: canvasModel(data),
++      controls: Array.isArray(data?.slots) ? data.slots : [],
+       autoRefill: typeof data?.auto_refill === 'boolean' ? data.auto_refill : null,
+       checked: new Date().toLocaleTimeString(),
+     })
+   } catch {
+-    /* keep last */
++    canvas.set({ controls: [] }) // Keep material display, revoke permissions on failed refresh.
+   }
+ }
+diff --git a/cc2-control/web-src/src/pages/canvas.tsx b/cc2-control/web-src/src/pages/canvas.tsx
+index dcd6060..edb3ef1 100644
+--- a/cc2-control/web-src/src/pages/canvas.tsx
++++ b/cc2-control/web-src/src/pages/canvas.tsx
+@@ -131,7 +131,7 @@ const MaterialDialog = ({ slot, onClose }: { slot: number; onClose: () => void }
+ }
+ 
+ export const Canvas = () => {
+-  const { model, autoRefill, slot, optimistic, checked } = canvas.use()
++  const { model, controls, autoRefill, slot, optimistic, checked } = canvas.use()
+   const library = spools.use().data
+   const tracking = Boolean(library?.available && library.enabled)
+   const [dialog, setDialog] = useState(false)
+@@ -161,6 +161,24 @@ export const Canvas = () => {
+   useEffect(() => (dialog ? undefined : poll(refreshCanvas, 2000)), [dialog])
+   usePoll(refreshSpools, 10000)
+   const ok = Boolean(model?.connected)
++  const selected = controls.find(c => c.slot === slot)
++  const stateLabels = {
++    empty: 'canvas.state_empty',
++    present: 'canvas.state_present',
++    loaded: 'canvas.state_loaded',
++    transition: 'canvas.state_transition',
++    unknown: 'canvas.state_unknown',
++  } as const
++  const reasons: Record<string, Key> = {
++    unavailable: 'canvas.reason_unavailable',
++    empty: 'canvas.reason_empty',
++    busy: 'canvas.reason_busy',
++    head_occupied: 'canvas.reason_head_occupied',
++    not_loaded: 'canvas.reason_not_loaded',
++    already_loaded: 'canvas.reason_already_loaded',
++    transition: 'canvas.reason_transition',
++  }
++  const reason = (key?: string) => t(reasons[key || ''] || 'canvas.reason_unavailable')
+   const sync = async () => {
+     try {
+       await post('/api/canvas/refresh')
+@@ -194,6 +212,7 @@ export const Canvas = () => {
+     const spool = held ? findSpool(library, held.spool) : null
+     return {
+       i,
++      state: controls.find(c => c.slot === i)?.state || 'unknown',
+       present: Number(tray?.status) > 0,
+       colour:
+         Number(tray?.status) > 0 && raw !== undefined && raw !== null && raw !== '' ? canvasColour(raw, i) : '#334553',
+@@ -208,12 +227,13 @@ export const Canvas = () => {
+       spool,
+     }
+   })
+-  const ctl: [typeof ArrowBigUp, Key, () => void, string][] = [
++  const ctl: [typeof ArrowBigUp, Key, () => void, boolean, string][] = [
+     [
+       ArrowBigUp,
+       'canvas.load',
+       () => control(`canvas:load:${slot}`, tpl('canvas.load_filament_from_canvas_slot', { slot: slot + 1 })) as any,
+-      '',
++      Boolean(selected?.load && idle),
++      reason(idle ? selected?.reason_load : 'busy'),
+     ],
+     [
+       ArrowBigDown,
+@@ -225,10 +245,11 @@ export const Canvas = () => {
+             slot: slot + 1,
+           })
+         ) as any,
+-      '',
++      Boolean(selected?.unload && idle),
++      reason(idle ? selected?.reason_unload : 'busy'),
+     ],
+-    [Palette, 'canvas.select_material', () => setDialog(true), ''],
+-    [RefreshCw, 'canvas.sync', sync, ''],
++    [Palette, 'canvas.select_material', () => setDialog(true), idle, reason('busy')],
++    [RefreshCw, 'canvas.sync', sync, true, ''],
+   ]
+   return (
+     <Page title="common.canvas" sub="canvas.material_system_overview_and">
+@@ -278,6 +299,7 @@ export const Canvas = () => {
+             {slots.map(s => (
+               <Card
+                 key={s.i}
++                data-canvas-slot={s.i}
+                 class={cn(
+                   'flex min-h-72 flex-col',
+                   ok && 'cursor-pointer',
+@@ -292,6 +314,7 @@ export const Canvas = () => {
+                   style={{ borderColor: s.colour, boxShadow: s.present ? `0 0 18px ${s.colour}66` : 'none' }}
+                 />
+                 <div class="mt-auto">
++                  <Row label="canvas.slot_state" value={t(stateLabels[s.state])} />
+                   <Row label="canvas.material" value={s.material} />
+                   <Row label="canvas.color" value={s.raw || '—'} />
+                   {s.held && (
+@@ -353,8 +376,15 @@ export const Canvas = () => {
+           <Card>
+             <CardHead icon="settings" title={ok ? 'canvas.canvas_controls' : 'canvas.controls_unavailable'} />
+             <div class="grid gap-2">
+-              {ctl.map(([Glyph, label, fn]) => (
+-                <Button key={label} class="justify-between" disabled={!ok} onClick={fn}>
++              {ctl.map(([Glyph, label, fn, allowed, why]) => (
++                <Button
++                  key={label}
++                  data-canvas-action={label}
++                  class="justify-between"
++                  disabled={!ok || !allowed}
++                  title={!ok ? reason('unavailable') : !allowed ? why : undefined}
++                  onClick={fn}
++                >
+                   <span class="flex items-center gap-2">
+                     <Glyph {...I} />
+                     {t(label)}
+@@ -365,6 +395,15 @@ export const Canvas = () => {
+                 </Button>
+               ))}
+             </div>
++            {(!selected?.load || !selected?.unload || !idle) && (
++              <p class="mt-2 text-xs text-muted" data-canvas-action-reason>
++                {!idle
++                  ? reason('busy')
++                  : !selected?.load
++                    ? reason(selected?.reason_load)
++                    : reason(selected?.reason_unload)}
++              </p>
++            )}
+             <Button wide class="mt-3" disabled={!ok || !idle || resetBusy} onClick={resetAll}>
+               <BrushCleaning {...I} />
+               {t('canvas.reset_all')}
