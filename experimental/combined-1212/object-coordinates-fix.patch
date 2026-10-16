@@ -1,0 +1,250 @@
+--- a/cc2-control/VERSION
++++ b/cc2-control/VERSION
+@@ -1 +1 @@
+-1.2.12
++1.2.13
+--- /dev/null
++++ b/cc2-control/web-src/preview/fixtures/elegoo-object-coordinates.json
+@@ -0,0 +1,24 @@
++{
++  "result": {
++    "status": {
++      "exclude_object": {
++        "objects": [
++          {
++            "name": "GPUSUPPORT_BASE.STL_ID_0_COPY_0",
++            "center": "[185.813,114.082]"
++          },
++          {
++            "name": "GPUSUPPORT_SCREW.STL_ID_1_COPY_0",
++            "center": "[47.409,115.154]"
++          },
++          {
++            "name": "GPUSUPPORT_STOP.STL_ID_2_COPY_0",
++            "center": "[116.549,113.552]"
++          }
++        ],
++        "excluded_objects": null,
++        "current_object": ""
++      }
++    }
++  }
++}
+--- a/cc2-control/web-src/preview/test-object-layout.mjs
++++ b/cc2-control/web-src/preview/test-object-layout.mjs
+@@ -1,4 +1,5 @@
+ import assert from 'node:assert/strict'
++import { readFile } from 'node:fs/promises'
+ import { layoutObjects } from '../src/lib/object-layout.ts'
+ const raw = [
+   { name: 'Buddha.stl_id_3_copy_0', center: [150, 150] },
+@@ -7,6 +8,14 @@
+   { name: 'Buddha.stl_id_1_copy_0', center: [50, 50] },
+ ]
+ const rows = layoutObjects(raw)
++const captured = JSON.parse(await readFile(new URL('./fixtures/elegoo-object-coordinates.json',import.meta.url)))
++const actual = layoutObjects(captured.result.status.exclude_object.objects)
++assert.deepEqual(actual.map(o=>o.id), ['GPUSUPPORT_SCREW.STL_ID_1_COPY_0','GPUSUPPORT_STOP.STL_ID_2_COPY_0','GPUSUPPORT_BASE.STL_ID_0_COPY_0'])
++assert.deepEqual(actual.map(o=>o.center), [[47.409,115.154],[116.549,113.552],[185.813,114.082]])
++assert.deepEqual(layoutObjects([{name:'P',polygon:'[[0,0],[2,0],[2,2]]'}])[0].center,[1,1])
++for (const value of ['not json','[null,1]','["2",3]','[1e999,3]','"[1,2]"']) assert.equal(layoutObjects([{name:'P',center:value}])[0].center,null)
++const anchored = layoutObjects([{name:'A',center:[50,0]},{name:'B',center:[10,1.5]},{name:'C',center:[0,3]}])
++assert.deepEqual(anchored.map(o=>o.id),['B','A','C'],'row tolerance must not chain or break comparator transitivity')
+ assert.deepEqual(rows.map(o => [o.id, o.label, o.center]), [
+   [raw[3].name, 'Buddha-1', [50, 50]], [raw[1].name, 'Buddha-2', [150, 50]],
+   [raw[2].name, 'Buddha-3', [50, 150]], [raw[0].name, 'Buddha-4', [150, 150]],
+--- a/cc2-control/web-src/preview/test-object-selection.mjs
++++ b/cc2-control/web-src/preview/test-object-selection.mjs
+@@ -1,7 +1,9 @@
+ import assert from 'node:assert/strict'
++import { readFile } from 'node:fs/promises'
+ import { chromium } from 'playwright'
+ import { fixture, launchOptions } from './fixture.mjs'
+ const demo = await fixture()
++const captured = JSON.parse(await readFile(new URL('./fixtures/elegoo-object-coordinates.json',import.meta.url)))
+ const browser = await chromium.launch(launchOptions)
+ try {
+   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+@@ -52,6 +54,15 @@
+   await page.waitForFunction(() => window.__CC2_PREVIEW.commands.length === 1)
+   assert.deepEqual(await page.evaluate(() => window.__CC2_PREVIEW.commands), ['object:exclude:Buddha.stl_id_2_copy_0'])
+   await page.waitForFunction(() => document.querySelectorAll('[data-object-id]')[2].disabled)
++  await page.evaluate(rows=>{window.__CC2_PREVIEW.objectRows=rows;window.__CC2_PREVIEW.excluded=[]},captured.result.status.exclude_object.objects)
++  await page.waitForFunction(()=>document.querySelector('[data-object-id]')?.getAttribute('data-object-id')==='GPUSUPPORT_SCREW.STL_ID_1_COPY_0')
++  assert.deepEqual(await buttons.evaluateAll(nodes=>nodes.map(n=>n.dataset.objectId)),['GPUSUPPORT_SCREW.STL_ID_1_COPY_0','GPUSUPPORT_STOP.STL_ID_2_COPY_0','GPUSUPPORT_BASE.STL_ID_0_COPY_0'])
++  assert.match(await buttons.first().innerText(), /X 47\.4 \/ Y 115\.2 mm/)
++  await buttons.nth(1).click()
++  await page.getByRole('button',{name:'Exclude Selected Object',exact:true}).click()
++  await dialog.getByRole('button',{name:'Confirm',exact:true}).click()
++  await page.waitForFunction(()=>window.__CC2_PREVIEW.commands.length===2)
++  assert.equal((await page.evaluate(()=>window.__CC2_PREVIEW.commands))[1],'object:exclude:GPUSUPPORT_STOP.STL_ID_2_COPY_0')
+   const rawId = 'pièce_测试_"Buddha".stl_id_0_copy_0'
+   await page.evaluate(id => { window.__CC2_PREVIEW.objectRows = [{name:id}]; window.__CC2_PREVIEW.excluded = [] }, rawId)
+   await page.waitForFunction(id => document.querySelector('[data-object-id]')?.getAttribute('data-object-id') === id, rawId)
+@@ -60,13 +71,16 @@
+   await buttons.first().click()
+   await page.getByRole('button', { name:'Exclude Selected Object', exact:true }).click()
+   await dialog.getByRole('button', {name:'Confirm', exact:true}).click()
+-  await page.waitForFunction(() => window.__CC2_PREVIEW.commands.length === 2)
+-  assert.equal((await page.evaluate(() => window.__CC2_PREVIEW.commands))[1], `object:exclude:${rawId}`)
++  await page.waitForFunction(() => window.__CC2_PREVIEW.commands.length === 3)
++  assert.equal((await page.evaluate(() => window.__CC2_PREVIEW.commands))[2], `object:exclude:${rawId}`)
+   for (const width of [390,768,1440]) {
+     await page.setViewportSize({width,height:1000})
+     await page.waitForTimeout(250)
+     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+   }
+   assert.deepEqual(errors, [])
++  await page.evaluate(()=>{window.__CC2_PREVIEW.status=1})
++  await page.getByText('No live object data',{exact:true}).waitFor()
++  assert.equal(await buttons.count(),0,'idle clears previous objects and selection')
+   console.log('PASS: real object selection, spatial labels, polling reorder and exact original exclusion command; responsive layout')
+ } finally { await browser.close(); await demo.cleanup() }
+--- a/cc2-control/web-src/public/locales/cs.json
++++ b/cc2-control/web-src/public/locales/cs.json
+@@ -928,6 +928,6 @@
+   "canvas.reason_not_loaded": "Tento filament je přítomen v Canvas, ale není zavedený do tiskové hlavy.",
+   "canvas.reason_already_loaded": "Tento filament je již zavedený do tiskové hlavy.",
+   "canvas.reason_transition": "Čeká se na konzistentní stav filamentu a aktivního kanálu.",
+-  "job.object_position_order": "Pořadí zepředu dozadu (rostoucí Y), poté zleva doprava (X). Objekty bez souřadnic jsou na konci seznamu.",
++  "job.object_position_order": "Řady zepředu dozadu (rozdíl Y středů do 2 mm), poté zleva doprava. Objekty bez souřadnic jsou na konci seznamu.",
+   "job.object_position_unknown": "Poloha není dostupná"
+ }
+--- a/cc2-control/web-src/public/locales/en.json
++++ b/cc2-control/web-src/public/locales/en.json
+@@ -928,6 +928,6 @@
+   "canvas.reason_not_loaded": "This filament is present in Canvas but is not loaded in the head.",
+   "canvas.reason_already_loaded": "This filament is already loaded in the head.",
+   "canvas.reason_transition": "Waiting for consistent filament and active-channel state.",
+-  "job.object_position_order": "Ordered from front to back (increasing Y), then left to right (X). Objects without coordinates are listed last.",
++  "job.object_position_order": "Rows from front to back (centers within 2 mm in Y), then left to right. Objects without coordinates are listed last.",
+   "job.object_position_unknown": "Position unavailable"
+ }
+--- a/cc2-control/web-src/public/locales/fr.json
++++ b/cc2-control/web-src/public/locales/fr.json
+@@ -928,6 +928,6 @@
+   "canvas.reason_not_loaded": "Ce filament est présent dans le Canvas mais pas chargé dans la tête.",
+   "canvas.reason_already_loaded": "Ce filament est déjà chargé dans la tête.",
+   "canvas.reason_transition": "En attente de données cohérentes sur le filament et le canal actif.",
+-  "job.object_position_order": "Ordre de l’avant vers l’arrière (Y croissant), puis de gauche à droite (X). Les objets sans coordonnées sont placés en fin de liste.",
++  "job.object_position_order": "Rangées de l’avant vers l’arrière (centres à moins de 2 mm en Y), puis de gauche à droite. Les objets sans coordonnées sont en fin de liste.",
+   "job.object_position_unknown": "Position indisponible"
+ }
+--- a/cc2-control/web-src/public/locales/it.json
++++ b/cc2-control/web-src/public/locales/it.json
+@@ -928,6 +928,6 @@
+   "canvas.reason_not_loaded": "Il filamento è presente nel Canvas ma non è caricato nella testina.",
+   "canvas.reason_already_loaded": "Questo filamento è già caricato nella testina.",
+   "canvas.reason_transition": "In attesa di dati coerenti su filamento e canale attivo.",
+-  "job.object_position_order": "Ordine dal davanti al fondo (Y crescente), poi da sinistra a destra (X). Gli oggetti senza coordinate sono in fondo alla lista.",
++  "job.object_position_order": "File dal davanti al fondo (centri entro 2 mm in Y), poi da sinistra a destra. Gli oggetti senza coordinate sono in fondo alla lista.",
+   "job.object_position_unknown": "Posizione non disponibile"
+ }
+--- a/cc2-control/web-src/public/locales/pl.json
++++ b/cc2-control/web-src/public/locales/pl.json
+@@ -928,6 +928,6 @@
+   "canvas.reason_not_loaded": "Ten filament jest obecny w Canvas, ale nie jest załadowany do głowicy.",
+   "canvas.reason_already_loaded": "Ten filament jest już załadowany do głowicy.",
+   "canvas.reason_transition": "Oczekiwanie na spójny stan filamentu i aktywnego kanału.",
+-  "job.object_position_order": "Kolejność od przodu do tyłu (rosnące Y), następnie od lewej do prawej (X). Obiekty bez współrzędnych są na końcu listy.",
++  "job.object_position_order": "Rzędy od przodu do tyłu (różnica Y środków do 2 mm), następnie od lewej do prawej. Obiekty bez współrzędnych są na końcu listy.",
+   "job.object_position_unknown": "Pozycja niedostępna"
+ }
+--- a/cc2-control/web-src/src/lib/object-layout.ts
++++ b/cc2-control/web-src/src/lib/object-layout.ts
+@@ -3,14 +3,26 @@
+ const point = (p: unknown): p is [number, number] =>
+   Array.isArray(p) && p.length === 2 && p.every(n => typeof n === 'number' && Number.isFinite(n))
+ 
++function decodeCoordinates(value: unknown): unknown {
++  if (typeof value !== 'string') return value
++  if (value.length > 1024 * 1024) return null
++  try {
++    return JSON.parse(value)
++  } catch {
++    return null
++  }
++}
++
+ function center(o: any): [number, number] | null {
+-  if (point(o?.center)) return [o.center[0], o.center[1]]
+-  if (!Array.isArray(o?.polygon) || o.polygon.length < 3 || !o.polygon.every(point)) return null
++  const middle = decodeCoordinates(o?.center)
++  if (point(middle)) return [middle[0], middle[1]]
++  const polygon = decodeCoordinates(o?.polygon)
++  if (!Array.isArray(polygon) || polygon.length < 3 || !polygon.every(point)) return null
+   let xmin = Infinity,
+     xmax = -Infinity,
+     ymin = Infinity,
+     ymax = -Infinity
+-  for (const [x, y] of o.polygon) {
++  for (const [x, y] of polygon) {
+     xmin = Math.min(xmin, x)
+     xmax = Math.max(xmax, x)
+     ymin = Math.min(ymin, y)
+@@ -43,7 +55,7 @@
+   const counts = new Map<string, number>()
+   for (const o of rows) counts.set(o.id, (counts.get(o.id) || 0) + 1)
+   // Ambiguous original IDs cannot safely identify a physical object for exclusion.
+-  const sorted = rows
++  const byY = rows
+     .filter(o => counts.get(o.id) === 1)
+     .sort((a, b) => {
+       if (a.center && b.center)
+@@ -51,6 +63,20 @@
+       if (a.center || b.center) return a.center ? -1 : 1
+       return a.id.localeCompare(b.id, 'en', { numeric: true })
+     })
++  // A row spans at most 2 mm in center Y. Anchor at its first Y, rather than
++  // chaining neighbours or using a non-transitive tolerance in a comparator.
++  const groups: PrintObject[][] = []
++  const unknown = byY.filter(o => !o.center)
++  for (const o of byY) {
++    if (!o.center) continue
++    const row = groups[groups.length - 1]
++    const first = row?.[0].center
++    if (!row || !first || o.center[1] - first[1] > 2) groups.push([o])
++    else row.push(o)
++  }
++  const sorted = groups
++    .flatMap(row => row.sort((a, b) => (a.center?.[0] ?? 0) - (b.center?.[0] ?? 0) || a.id.localeCompare(b.id, 'en')))
++    .concat(unknown)
+   const totals = new Map<string, number>()
+   for (const o of sorted) totals.set(o.label, (totals.get(o.label) || 0) + 1)
+   const numbers = new Map<string, number>()
+--- a/cc2-control/web-src/src/lib/objects.ts
++++ b/cc2-control/web-src/src/lib/objects.ts
+@@ -16,12 +16,22 @@
+ const model = (d: any) =>
+   (d?.result && (d.result.status?.exclude_object || d.result.exclude_object)) || d?.status?.exclude_object || null
+ 
++function clearObjects() {
++  const old = objects.get()
++  if (old.has || old.error || old.list.length || old.selected)
++    objects.set({ list: [], entries: [], excluded: [], current: '', has: false, error: false, selected: '' })
++}
++
+ export async function refreshObjects() {
+   // Objects exist only during a print, and every printer request this route might
+   // make stays in the firmware's memory: an idle Job page asks for nothing.
+-  if (!view(printer.get().data).active) return
++  const job = view(printer.get().data)
++  if (!job.active) return clearObjects()
+   try {
+     const m = model(await request('/api/exclude-objects'))
++    const currentJob = view(printer.get().data)
++    if (!currentJob.active) return clearObjects()
++    if (currentJob.rawFilename !== job.rawFilename) return
+     const has = Boolean(m && Array.isArray(m.objects))
+     const entries = has ? layoutObjects(m.objects) : []
+     const list = entries.map(o => o.id)
+@@ -37,6 +47,9 @@
+       selected: list.includes(s.selected) && !excluded.includes(s.selected) ? s.selected : '',
+     }))
+   } catch {
++    const currentJob = view(printer.get().data)
++    if (!currentJob.active) return clearObjects()
++    if (currentJob.rawFilename !== job.rawFilename) return
+     objects.set({ list: [], entries: [], excluded: [], current: '', has: false, error: true, selected: '' })
+   }
+ }

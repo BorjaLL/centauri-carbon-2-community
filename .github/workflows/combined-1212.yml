@@ -1,7 +1,7 @@
 name: Combined CC2 Control printer trial
 on:
   push:
-    branches: [test/cc2-control-1.2.12-combined]
+    branches: [test/cc2-control-1.2.13-combined]
 permissions:
   contents: read
 jobs:
@@ -13,6 +13,8 @@ jobs:
         run: |
           git apply --check experimental/combined-1212/changes.patch
           git apply experimental/combined-1212/changes.patch
+          git apply --check experimental/combined-1212/object-coordinates-fix.patch
+          git apply experimental/combined-1212/object-coordinates-fix.patch
           git add -N cc2-control
       - uses: actions/setup-node@v7
         with:
@@ -48,6 +50,6 @@ jobs:
         run: python3 experimental/combined-1212/package_trial.py
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: cc2-control-1.2.12-combined-trial
-          path: output/combined-1212/*
+          name: cc2-control-1.2.13-combined-trial
+          path: output/combined-1213/*
           if-no-files-found: error
