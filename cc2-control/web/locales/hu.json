@@ -915,6 +915,11 @@
   "updates.selected": "Kiválasztott verzió:",
   "updates.reload": "CC2 Control újratöltése",
   "updates.notes_in_english": "Kiadási megjegyzések angolul (magyar fordítás nem érhető el)",
+  "updates.notifications": "Frissítési értesítések",
+  "updates.notice_available": "Elérhető: CC2 Control {version}",
+  "updates.open": "Frissítések megnyitása",
+  "updates.notice_manual": "A letöltéshez és telepítéshez megerősítés szükséges a Beállításokban.",
+  "updates.dismiss": "Bezárás",
   "canvas.slot_state": "Canvas-hely állapota",
   "canvas.state_empty": "Üres",
   "canvas.state_present": "Jelen van · nincs a fejbe töltve",
@@ -934,5 +939,11 @@
   "plates.created_without_mesh": "A tárgyasztalprofil létrejött. Felhelyezés előtt kalibráld.",
   "plates.include_existing_mesh": "Az oldal meglévő magassághálójának átvétele",
   "plates.empty_profile_hint": "Először hozd létre a profilt, majd kalibrálj, és ezt a profilt válaszd a mérés mentési helyének.",
-  "plates.calibrate_plate": "A tárgyasztallap kalibrálása"
+  "plates.calibrate_plate": "A tárgyasztallap kalibrálása",
+  "plates.mesh_selector": "Háló a könyvtárból",
+  "plates.mesh_choose": "Válasszon mentett mérést",
+  "plates.mesh_apply": "Felszerelés és aktiválás",
+  "plates.mesh_active": "A nyomtató aktív hálója",
+  "plates.mesh_scope": "A kiválasztás önmagában nem küld parancsot. Alkalmazás előtt erősítse meg a felszerelt lapot. Újraindítás csak szükség esetén kell. A nyomtatás továbbra is a kiválasztott oldalt és szintezési beállításokat használja.",
+  "plates.mesh_confirm": "Erősítse meg a felszerelt lapot: {name}, {side} oldal, mérés {temp} °C-on. A háló és a lap/fúvóka Z-eltolása lesz alkalmazva."
 }

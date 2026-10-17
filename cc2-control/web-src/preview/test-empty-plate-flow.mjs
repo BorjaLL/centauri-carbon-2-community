@@ -31,7 +31,7 @@ try {
  const field=text=>page.locator('label',{hasText:text}).locator('select,input')
  const side=field('Calibration plate side'),temp=field('Bed temperature, °C'),soak=field('Soak, min'),target=field('Save the result to plate')
  await side.waitFor();assert.equal(await side.inputValue(),'default1');assert.equal(await target.inputValue(),id)
- await temp.fill('30');await soak.fill('2')
+ await temp.fill('30');await soak.selectOption('2')
  await page.getByRole('tab',{name:'Build Plates',exact:true}).click()
  await page.getByRole('tab',{name:'Mesh & Saved Profiles',exact:true}).click()
  assert.equal(await target.inputValue(),id);assert.equal(await temp.inputValue(),'30');assert.equal(await soak.inputValue(),'2')

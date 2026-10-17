@@ -92,7 +92,7 @@ export const meshProfile = store({ profile: 'active' })
 export const calibrationForm = store({
   side: '',
   temp: '60',
-  soak: '10',
+  soak: '2',
   nozzle: null as string | null,
   target: null as string | null,
 })

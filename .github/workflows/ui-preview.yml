@@ -60,6 +60,8 @@ jobs:
           CC2_SCREENSHOTS: ${{ runner.temp }}/cc2-preview-screenshots
       - name: Verify mesh calibration homes an unhomed printer first
         run: npm run test:calibration
+      - name: Verify calibration destination and hold selection survive navigation
+        run: npm run test:plate-flow
       - name: Verify the Job page asks for objects only during a print
         run: npm run test:job-objects
       - name: Browser upload and same-name reload

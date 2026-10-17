@@ -50,14 +50,13 @@ try {
   await side.waitFor()
   await side.selectOption('default')
   assert.equal(await target.inputValue(), 'a1b2c3d4e5f60718', 'the mounted Side A plate takes the result')
-  assert.equal(await soak.inputValue(), '10', 'the bed is held for ten minutes unless chosen otherwise')
+  assert.equal(await soak.inputValue(), '2', 'new calibrations default to a two-minute hold')
+  assert.equal(await soak.locator('option').count(), 61, 'every whole minute from zero to sixty is selectable')
+  assert.equal(await soak.locator('option[value="61"]').count(), 0, 'out-of-range times cannot be selected')
 
   // Invalid values never reach the printer.
-  await soak.fill('61')
-  await run.click()
-  await toast('Use a whole soak time from 0 to 60 minutes.')
   await temperature.fill('120')
-  await soak.fill('10')
+  await soak.selectOption('10')
   await run.click()
   await toast('Use a whole bed temperature from 30 to 110 °C.')
   assert.equal(await dialog.count(), 0)
@@ -104,7 +103,7 @@ try {
   // Homed, no plate, no soak: the confirmation says less; stopping while heating switches the bed off.
   homed = 'xyz'
   await page.waitForTimeout(2500)
-  await soak.fill('0')
+  await soak.selectOption('0')
   await target.selectOption('')
   plateCalls.length = 0
   await run.click()
