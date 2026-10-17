@@ -51,16 +51,6 @@ jobs:
           path: output/CC2-Control-*-Multiplatform-Update.zip*
           if-no-files-found: error
 
-      - name: Build a version-only successor for the real panel-install trial
-        working-directory: .
-        run: python3 .github/scripts/build-next-app-trial.py --increments 2
-
-      - name: Save the unsigned panel-install trial for local maintainer signing
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: cc2-control-v44-panel-install-trial
-          path: output/panel-install-trial/*
-          if-no-files-found: error
 
   web:
     name: Web UI (type-check, build, up to date)
@@ -106,6 +96,22 @@ jobs:
 
       - name: Signed update panel confirmations and mobile layouts
         run: npm run test:updates
+
+      - name: Update notification, compatibility, cache and mobile header
+        run: npm run test:update-notice
+
+      - name: Library mesh selection and guarded activation
+        run: npm run test:mesh-selector
+        env:
+          CC2_MESH_SCREENSHOTS: /tmp/cc2-mesh-preview
+
+      - name: Save mesh selector screenshots
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: mesh-library-selector-preview
+          path: /tmp/cc2-mesh-preview/
+          if-no-files-found: ignore
 
       - name: Printing temperature interaction regression
         run: npm run test:print-temperatures
