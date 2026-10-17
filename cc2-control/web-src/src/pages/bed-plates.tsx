@@ -642,7 +642,7 @@ const MeshSelector = ({ lib, idle, busy, act }: { lib: PlateLibrary; idle: boole
               <optgroup key={p.id} label={`${p.name} · ${tpl('plates.side_n', { side: p.side })}`}>
                 {p.measures.map(m => (
                   <option key={m.id} value={m.id}>
-                    {m.temp} °C · {savedOn(m.measured)}
+                    {p.name} · {tpl('plates.side_n', { side: p.side })} · {m.temp} °C · {savedOn(m.measured)}
                   </option>
                 ))}
               </optgroup>
