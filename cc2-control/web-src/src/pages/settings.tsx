@@ -15,7 +15,7 @@ import {
   detectLanguage,
   i18n,
   type Key,
-  LANGUAGE_NAMES,
+  LANGUAGE_OPTIONS,
   setLanguage,
   setTheme,
   t,
@@ -234,7 +234,7 @@ const Appearance = () => {
           <label class={lab}>
             {t('settings.language')}
             <Select class="mt-1.5" value={lang} onChange={e => setLanguage(e.currentTarget.value, true)}>
-              {Object.entries(LANGUAGE_NAMES).map(([c, n]) => (
+              {LANGUAGE_OPTIONS.map(([c, n]) => (
                 <option key={c} value={c}>
                   {n}
                 </option>

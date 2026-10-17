@@ -185,8 +185,31 @@ try {
   assert.ok(await page.getByRole('button', { name: '+ 0.01', exact: true }).isEnabled())
   await page.locator('#cc2-navigation a[href="#settings"]').click()
   await page.getByRole('tab').nth(2).click()
+  const savedTheme = page.waitForResponse(r =>
+    r.url().endsWith('/api/preferences') && r.request().method() === 'PUT' &&
+    r.request().postDataJSON()?.theme === 'light')
   await page.locator('main select:has(option[value="light"])').selectOption('light')
+  assert.equal((await savedTheme).status(), 200, 'Theme save initially succeeds')
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
+  // Reject the next theme write at the HTTP level: 503 responses used to be ignored.
+  await page.route('**/api/preferences', async route => {
+    if (route.request().method() === 'PUT' && route.request().postDataJSON()?.theme === 'nord') {
+      return route.fulfill({ status: 503, json: { error: 'Simulated preference save failure' } })
+    }
+    await route.continue()
+  })
+  const rejectedTheme = page.waitForResponse(r =>
+    r.url().endsWith('/api/preferences') && r.request().method() === 'PUT' &&
+    r.request().postDataJSON()?.theme === 'nord')
+  await page.locator('main select:has(option[value="nord"])').selectOption('nord')
+  assert.equal((await rejectedTheme).status(), 503)
+  await page.getByRole('alert').filter({ hasText: 'Simulated preference save failure' }).waitFor()
+  const persisted = await (await page.request.get(`${origin}/api/preferences`)).json()
+  assert.equal(persisted.theme, 'light', 'Failed save must leave server theme unchanged')
+  await page.unroute('**/api/preferences')
+  await page.reload()
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
+  await page.getByRole('tab').nth(2).click()
   await page.route('**/api/preferences', async route => {
     if (route.request().method() === 'PUT' && route.request().postDataJSON()?.quick1) {
       return route.fulfill({ status: 500, json: { error: 'Simulated quick-action save failure' } })
