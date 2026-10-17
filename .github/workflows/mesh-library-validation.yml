@@ -9,6 +9,20 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
+      - name: Regression must fail against the previous mounting implementation
+        working-directory: cc2-control
+        run: |
+          cp src/plates.h /tmp/cc2-fixed-plates.h
+          trap 'cp /tmp/cc2-fixed-plates.h "$GITHUB_WORKSPACE/cc2-control/src/plates.h"' EXIT
+          git show 706807122bdc06cd5dc26b0714a6bd66576f6692:cc2-control/src/plates.h > src/plates.h
+          gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -D_POSIX_C_SOURCE=200809L -pthread tests/test_plates.c src/mqtt.c src/console.c src/control.c src/panda.c src/uds.c -o /tmp/cc2-old-mount -lm
+          mkdir /tmp/cc2-old-fixture
+          cd /tmp/cc2-old-fixture
+          if CC2_TEST_ACTIVE_ONLY=1 /tmp/cc2-old-mount; then
+            echo 'FAIL: old mount passed the independent active-mesh regression'
+            exit 1
+          fi
+          echo 'PASS: previous mount fails the active B-from-A regression'
       - name: Compile and exercise stored versus active mesh with warnings as errors
         working-directory: cc2-control
         run: |
@@ -16,3 +30,27 @@ jobs:
           mkdir /tmp/cc2-mesh-fixture
           cd /tmp/cc2-mesh-fixture
           /tmp/cc2-test-plates
+  browser-mesh:
+    runs-on: ubuntu-26.04
+    defaults:
+      run:
+        working-directory: cc2-control/web-src
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:mesh-selector
+        env:
+          CC2_MESH_SCREENSHOTS: /tmp/cc2-mesh-screenshots
+      - run: npm run test:plates
+      - name: Save selector screenshots
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: mesh-library-selector-preview
+          path: /tmp/cc2-mesh-screenshots/
+          if-no-files-found: ignore

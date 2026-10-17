@@ -970,6 +970,7 @@ int main(void) {
     object_query_path = service_socket;
     plates_uds = fake_uds;
     uds_init(&telemetry);
+    if (getenv("CC2_TEST_ACTIVE_ONLY")) { test_active_mount(); return 0; }
     test_names_and_numbers();
     test_autosave();
     test_store();

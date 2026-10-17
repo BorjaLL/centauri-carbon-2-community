@@ -107,6 +107,9 @@ jobs:
       - name: Signed update panel confirmations and mobile layouts
         run: npm run test:updates
 
+      - name: Library mesh selection and guarded activation
+        run: npm run test:mesh-selector
+
       - name: Printing temperature interaction regression
         run: npm run test:print-temperatures
 
