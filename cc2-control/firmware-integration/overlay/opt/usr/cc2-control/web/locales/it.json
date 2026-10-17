@@ -945,5 +945,13 @@
   "plates.mesh_apply": "Monta e attiva",
   "plates.mesh_active": "Mesh attiva sulla stampante",
   "plates.mesh_scope": "La selezione da sola non invia comandi. Conferma il piatto fisicamente montato prima di applicare. Il riavvio viene richiesto solo se necessario. La stampa segue comunque il lato e le opzioni di livellamento scelti.",
-  "plates.mesh_confirm": "Conferma il piatto installato: {name}, lato {side}, misura a {temp} °C. Verranno applicati la mesh e l’offset Z del piatto/ugello."
+  "plates.mesh_confirm": "Conferma il piatto installato: {name}, lato {side}, misura a {temp} °C. Verranno applicati la mesh e l’offset Z del piatto/ugello.",
+  "console.monitor_live": "Monitor G-code in diretta",
+  "console.monitor_description": "Monitora i messaggi della stampante; i comandi manuali sono disponibili sotto.",
+  "console.monitor_hint": "Messaggi G-code in sola lettura, non il registro completo di sistema. Conserva gli ultimi 32 messaggi (fino a 1 KiB ciascuno); si sospende quando la pagina viene nascosta o chiusa.",
+  "console.monitor_waiting": "In attesa di nuovi messaggi dal firmware…",
+  "console.monitor_connected": "Flusso stampante connesso",
+  "console.monitor_disconnected": "Flusso stampante disconnesso",
+  "console.monitor_unreachable": "Monitor non disponibile; ultimi messaggi conservati",
+  "console.monitor_dropped": "Messaggi vecchi, troppo lunghi o oltre il limite omessi: {count}"
 }

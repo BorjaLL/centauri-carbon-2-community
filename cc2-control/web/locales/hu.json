@@ -945,5 +945,13 @@
   "plates.mesh_apply": "Felhelyezés és aktiválás",
   "plates.mesh_active": "A nyomtatón aktív szintezési háló",
   "plates.mesh_scope": "A kiválasztás önmagában nem küld parancsot. Alkalmazás előtt ellenőrizd és erősítsd meg, melyik tárgyasztallap van ténylegesen felhelyezve. A rendszer csak szükség esetén kér újraindítást. A nyomtatás indításakor továbbra is a kiválasztott oldal és a szintezési beállítások érvényesek.",
-  "plates.mesh_confirm": "Erősítsd meg a felhelyezett tárgyasztallapot: „{name}”, {side} oldal, {temp} °C-on készült mérés. A rendszer alkalmazza a hozzá tartozó szintezési hálót, valamint a lap és a fúvóka Z-eltolását."
+  "plates.mesh_confirm": "Erősítsd meg a felhelyezett tárgyasztallapot: „{name}”, {side} oldal, {temp} °C-on készült mérés. A rendszer alkalmazza a hozzá tartozó szintezési hálót, valamint a lap és a fúvóka Z-eltolását.",
+  "console.monitor_live": "Élő G-code figyelő",
+  "console.monitor_description": "Figyeld a nyomtató üzeneteit; a kézi parancsok alább érhetők el.",
+  "console.monitor_hint": "Csak olvasható G-code üzenetek, nem a teljes rendszernapló. Az utolsó 32 üzenetet őrzi meg (egyenként legfeljebb 1 KiB); az oldal elrejtésekor vagy bezárásakor szünetel.",
+  "console.monitor_waiting": "Várakozás új firmware-üzenetekre…",
+  "console.monitor_connected": "Nyomtató adatfolyama csatlakoztatva",
+  "console.monitor_disconnected": "Nyomtató adatfolyama megszakadt",
+  "console.monitor_unreachable": "A figyelő nem érhető el; az utolsó üzenetek megmaradtak",
+  "console.monitor_dropped": "Kihagyott régebbi, túl hosszú vagy korláton felüli üzenetek: {count}"
 }

@@ -3441,6 +3441,24 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
     respond(fd, 200, "OK", "application/json; charset=utf-8", ok, strlen(ok));
 }
 
+/* Passive G-code reports only: no command, extra socket or firmware polling. */
+static void console_monitor_response(int fd) {
+ uds_console_lease(&telemetry);
+ const uds_console *log=&telemetry.console;
+ size_t capacity=UDS_CONSOLE_LINES*(UDS_CONSOLE_LINE*2+4)+256;
+ char *body=malloc(capacity);
+ if(!body){respond(fd,503,"Service Unavailable","application/json","{}",2);return;}
+ size_t used=(size_t)snprintf(body,capacity,"{\"connected\":%s,\"sequence\":%lu,\"dropped\":%lu,\"frames\":[",
+  uds_fresh(&telemetry)?"true":"false",log->sequence,log->dropped);
+ for(unsigned int i=0;i<log->count;i++){
+  unsigned int index=(log->next+UDS_CONSOLE_LINES-log->count+i)%UDS_CONSOLE_LINES;
+  char escaped[UDS_CONSOLE_LINE*2];json_escape(escaped,sizeof(escaped),log->lines[index]);
+  used+=(size_t)snprintf(body+used,capacity-used,"%s\"%s\"",i?",":"",escaped);
+ }
+ used+=(size_t)snprintf(body+used,capacity-used,"]}");
+ respond(fd,200,"OK","application/json; charset=utf-8",body,used);free(body);
+}
+
 static void console_status_response(int fd, console_state *console) {
     size_t capacity = CONSOLE_OUTPUT_MAX * 2 + 1024;
     char *body = malloc(capacity);
@@ -3802,6 +3820,11 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
         spools_adjust_response(fd,body,body_len);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/pid")==0) {
         pid_status_response(fd,console);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/console/monitor/clear")==0) {
+        memset(&telemetry.console,0,sizeof(telemetry.console));
+        console_monitor_response(fd);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/console/monitor")==0) {
+        console_monitor_response(fd);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/console")==0) {
         console_status_response(fd,console);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/console/clear")==0) {

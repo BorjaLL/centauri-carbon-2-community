@@ -945,5 +945,13 @@
   "plates.mesh_apply": "Mount and activate",
   "plates.mesh_active": "Active mesh on the printer",
   "plates.mesh_scope": "Selection alone sends no commands. Confirm the physical plate before applying. A restart is requested only when needed. Print startup still follows its side and levelling options.",
-  "plates.mesh_confirm": "Confirm the installed plate: {name}, side {side}, measurement at {temp} °C. Its mesh and plate/nozzle Z offset will be applied."
+  "plates.mesh_confirm": "Confirm the installed plate: {name}, side {side}, measurement at {temp} °C. Its mesh and plate/nozzle Z offset will be applied.",
+  "console.monitor_live": "Live G-code monitor",
+  "console.monitor_description": "Monitor printer messages; manual commands are available below.",
+  "console.monitor_hint": "Read-only G-code messages, not the full system log. Keeps the latest 32 reports (up to 1 KiB each); pauses when this page is hidden or closed.",
+  "console.monitor_waiting": "Waiting for new firmware messages…",
+  "console.monitor_connected": "Printer stream connected",
+  "console.monitor_disconnected": "Printer stream disconnected",
+  "console.monitor_unreachable": "Monitor unavailable; last messages retained",
+  "console.monitor_dropped": "Older, oversized or rate-limited reports omitted: {count}"
 }

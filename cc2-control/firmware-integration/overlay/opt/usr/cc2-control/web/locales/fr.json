@@ -945,5 +945,13 @@
   "plates.mesh_apply": "Monter et activer",
   "plates.mesh_active": "Maillage actif sur l’imprimante",
   "plates.mesh_scope": "La sélection seule n’envoie aucune commande. Confirmez le plateau installé avant application. Un redémarrage est demandé si nécessaire. Le démarrage suit toujours le côté et les options de nivellement choisis.",
-  "plates.mesh_confirm": "Confirmez le plateau installé : {name}, côté {side}, mesure à {temp} °C. Le maillage et le décalage Z du plateau/de la buse seront appliqués."
+  "plates.mesh_confirm": "Confirmez le plateau installé : {name}, côté {side}, mesure à {temp} °C. Le maillage et le décalage Z du plateau/de la buse seront appliqués.",
+  "console.monitor_live": "Moniteur G-code en direct",
+  "console.monitor_description": "Suivez les messages de l’imprimante ; les commandes manuelles sont disponibles ci-dessous.",
+  "console.monitor_hint": "Messages G-code en lecture seule, pas le journal système complet. Conserve les 32 derniers messages (1 KiB maximum chacun) ; pause lorsque la page est masquée ou fermée.",
+  "console.monitor_waiting": "En attente de nouveaux messages du firmware…",
+  "console.monitor_connected": "Flux imprimante connecté",
+  "console.monitor_disconnected": "Flux imprimante déconnecté",
+  "console.monitor_unreachable": "Moniteur indisponible ; derniers messages conservés",
+  "console.monitor_dropped": "Messages anciens, trop longs ou dépassant la limite omis : {count}"
 }

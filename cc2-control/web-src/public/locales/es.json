@@ -925,5 +925,13 @@
   "plates.mesh_apply": "Montar y activar",
   "plates.mesh_active": "Malla activa en la impresora",
   "plates.mesh_scope": "La selección por sí sola no envía comandos. Confirma la placa instalada antes de aplicar. Se pide reiniciar solo si es necesario. La impresión sigue el lado y las opciones de nivelación elegidos.",
-  "plates.mesh_confirm": "Confirma la placa instalada: {name}, lado {side}, medición a {temp} °C. Se aplicarán la malla y el desplazamiento Z de placa/boquilla."
+  "plates.mesh_confirm": "Confirma la placa instalada: {name}, lado {side}, medición a {temp} °C. Se aplicarán la malla y el desplazamiento Z de placa/boquilla.",
+  "console.monitor_live": "Monitor G-code en directo",
+  "console.monitor_description": "Supervisa los mensajes de la impresora; los comandos manuales están disponibles abajo.",
+  "console.monitor_hint": "Mensajes G-code de solo lectura, no el registro completo del sistema. Conserva los últimos 32 mensajes (hasta 1 KiB cada uno); se pausa al ocultar o cerrar esta página.",
+  "console.monitor_waiting": "Esperando nuevos mensajes del firmware…",
+  "console.monitor_connected": "Flujo de impresora conectado",
+  "console.monitor_disconnected": "Flujo de impresora desconectado",
+  "console.monitor_unreachable": "Monitor no disponible; últimos mensajes conservados",
+  "console.monitor_dropped": "Mensajes antiguos, demasiado largos o por encima del límite omitidos: {count}"
 }

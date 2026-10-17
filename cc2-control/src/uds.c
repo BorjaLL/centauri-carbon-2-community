@@ -177,10 +177,25 @@ static int vendor_report(uds_client *c,const char *root,const char *end){
  memcpy(c->report_message,text,sizeof(text));
  return 1;
 }
+void uds_console_lease(uds_client *c) {
+ c->console.until=now_mono();c->console.until.tv_sec+=12;
+}
+static void console_report(uds_client *c,const char *json,size_t length) {
+ uds_console *log=&c->console;struct timespec now=now_mono();
+ if(!log->until.tv_sec||elapsed(now,log->until)>=0)return;
+ if(elapsed(now,log->rate_start)>=1){log->rate_start=now;log->rate_count=0;}
+ if(length>=UDS_CONSOLE_LINE||log->rate_count++>=20){log->dropped++;return;}
+ if(log->count==UDS_CONSOLE_LINES)log->dropped++;else log->count++;
+ memcpy(log->lines[log->next],json,length);log->lines[log->next][length]=0;
+ log->next=(log->next+1)%UDS_CONSOLE_LINES;log->sequence++;
+}
 int uds_message(uds_client *c,const char *json,size_t length){
  const char *end=json+length,*root=json_skip_space(json,end),*ce,*se;
  c->parse_error="invalid_json";
  if(root>=end||*root!='{'||json_container_end(root,end)!=end)return 0;
+ const char *method=json_member(root,end,"method");
+ if((method&&end-method>=12&&!memcmp(method,"\"cc2_report\"",12))||json_member(root,end,"report"))
+  console_report(c,json,length);
  if(vendor_report(c,root,end))return 1;
  double id=0;int initial=numeric(root,end,"id",&id)&&id==11;
  if(initial&&json_member(root,end,"error")){c->parse_error="subscription_error";return 0;}

@@ -911,5 +911,13 @@
   "plates.mesh_apply": "安装并激活",
   "plates.mesh_active": "打印机当前网床",
   "plates.mesh_scope": "仅选择不会发送指令。应用前请确认实际安装的打印板。仅在必要时请求重启。打印启动仍遵循所选板面和调平选项。",
-  "plates.mesh_confirm": "请确认已安装的打印板：{name}，{side} 面，{temp} °C 下的测量。将应用网床及打印板/喷嘴 Z 偏移。"
+  "plates.mesh_confirm": "请确认已安装的打印板：{name}，{side} 面，{temp} °C 下的测量。将应用网床及打印板/喷嘴 Z 偏移。",
+  "console.monitor_live": "实时 G-code 监视器",
+  "console.monitor_description": "查看打印机消息；下方可使用手动命令。",
+  "console.monitor_hint": "只读 G-code 消息，并非完整系统日志。保留最近 32 条消息（每条最多 1 KiB）；页面隐藏或关闭时暂停。",
+  "console.monitor_waiting": "正在等待新的固件消息…",
+  "console.monitor_connected": "打印机消息流已连接",
+  "console.monitor_disconnected": "打印机消息流已断开",
+  "console.monitor_unreachable": "监视器不可用；已保留最近的消息",
+  "console.monitor_dropped": "已省略过旧、过长或超过速率限制的消息：{count}"
 }

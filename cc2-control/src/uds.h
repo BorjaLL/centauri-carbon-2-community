@@ -8,7 +8,18 @@
 enum uds_field { U_ET,U_EG,U_BT,U_BG,U_CF,U_HF,U_PF,U_AF,
  U_CRPM,U_HRPM,U_PRPM,U_ARPM,U_SPEED_FACTOR,U_FLOW_FACTOR,
  U_LIVE_SPEED,U_PROGRESS,U_LAYER,U_DURATION,U_TOTAL_DURATION,U_Z_OFFSET,U_FILAMENT_USED,U_CANVAS_CHANNEL,U_FIELDS };
+#define UDS_CONSOLE_LINES 32
+#define UDS_CONSOLE_LINE 1024
+/* Fixed memory, event-loop owned. A visible viewer renews a short capture lease. */
 typedef struct {
+ char lines[UDS_CONSOLE_LINES][UDS_CONSOLE_LINE];
+ unsigned int next, count, rate_count;
+ unsigned long sequence, dropped;
+ struct timespec until, rate_start;
+} uds_console;
+
+typedef struct {
+ uds_console console;
  int fd, ready;
  size_t used, sent;
  char input[16384];
@@ -39,6 +50,7 @@ typedef struct {
  struct timespec report_received, report_identity;
  char report_message[1024]; /* validated JSON string, or null */
 } uds_client;
+void uds_console_lease(uds_client *c);
 void uds_init(uds_client *c);
 void uds_close(uds_client *c);
 void uds_tick(uds_client *c,const char *path);
