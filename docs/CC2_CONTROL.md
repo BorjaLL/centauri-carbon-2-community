@@ -1,6 +1,6 @@
 # CC2 Control
 
-CC2 Control is the lightweight local control platform for the Centauri Carbon 2 Community Firmware. Community Firmware **V4.2** originally ships CC2 Control **1.1.30**; **1.1.31** is the current standalone CC2 Control update and source line. It runs directly on the printer and serves a dependency-free web interface on TCP port **8081**.
+CC2 Control is the lightweight local control platform for the Centauri Carbon 2 Community Firmware. It runs directly on the printer and serves a local web interface on TCP port **8081**. Historically, Community Firmware V4.2 shipped CC2 Control 1.1.30; the complete **V4.4.1 firmware** includes CC2 Control **1.2.10** and its signed application updater. Compatible V4.4/V4.4.1 installations can receive newer application-only updates without replacing printer firmware. See the [project README](../README.md) and [changelog](../CHANGELOG.md) for the current application release and firmware compatibility.
 
 Open:
 
@@ -24,7 +24,9 @@ Protected actions include jogging and homing, live Z-offset adjustment, temperat
 
 CC2 Control retains the unified Bed Mesh, saved Side A / Side B profiles, active mesh state and four-screw measurement under one **Bed Levelling** workflow.
 
-**Build Plates** keeps a library of plate surfaces, each with the mesh the printer measured for it and its own Z offset. Calibrate the mesh once with a plate mounted, save it, and mount it again later from the list. A plate whose mesh is already in the printer's Side A or Side B slot mounts at once; any other plate is written to that slot and the printer restarts (about 1.5 minutes) after a confirmation. The plate Z offset is applied on top of the printer's own plate offset and again after every restart. Tune it with Live Z Offset in CC2 Control rather than on the printer screen: the screen's Z offset setting does not know the plate offset, and its first press replaces it. See `cc2-control/docs/API.md` for the exact behaviour.
+**Build Plates** maintains named plate profiles with Side A / Side B association, saved mesh measurements at different bed temperatures, and per-plate Z offsets. You can create a profile **before its first calibration** and optionally import an already stored side mesh. A saved measurement may be selected by plate, side and temperature; **Mount and activate** requires confirmation of the physically installed plate. CC2 Control verifies the actual active mesh profile, matrix and bounds before reporting success. If the side-slot profile must be rewritten, a separate confirmation requests a printer restart. Simply viewing a saved mesh or selecting a graph does **not** activate it on the printer.
+
+The plate Z offset is applied on top of the printer's own plate offset and again after every restart. When nozzle profiles are configured, the selected nozzle's Z correction is also applied. Tune the plate offset with Live Z Offset in CC2 Control rather than on the printer screen: the screen's Z offset setting does not know the plate offset, and its first press can replace it. See [the plate/API details](../cc2-control/docs/API.md) for the exact behaviour.
 
 Four-screw corrections are displayed in **microns**. A guarded **Optimized reference adjustment** suggestion may be shown when it reduces the largest required correction and remains inside the protected movement range. The suggestion is advisory only; CC2 Control does not move or turn screws automatically.
 
@@ -42,9 +44,9 @@ CC2 Control therefore sends `M84` once the printer has stood Idle for ten minute
 
 ## Settings and themes
 
-Settings are split into compact Connection, Safety, Integrations, Appearance and About panels.
+Settings are organised into **Connection, Integrations, Appearance, About and Updates** tabs. The Updates tab checks a signed compatibility catalog and requires separate confirmation to download and install an application update; it does not update the printer firmware.
 
-CC2 Control keeps the original Dark theme and adds a persistent monochrome **Light theme**. The selected appearance is shared between browser and OrcaSlicer.
+CC2 Control provides six themes (Dark, Light, Dracula, Nord, Monokai and Solarized Light). Saved appearance preferences are stored on the printer and shared between browsers, including the OrcaSlicer Device view.
 
 ## OrcaSlicer Device integration
 
