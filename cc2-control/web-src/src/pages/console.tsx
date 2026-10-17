@@ -177,7 +177,7 @@ export const Console = () => {
           >
             {shown}
           </pre>
-          <details class="mt-4">
+          <details class="mt-4" aria-label={t('console.send_g_code_commands_and_view')}>
             <summary class="cursor-pointer font-semibold">{t('console.send_g_code_command')}</summary>
             <label htmlFor="console-command" class="mb-2 mt-4 block font-semibold">
               {t('console.send_g_code_command')}
