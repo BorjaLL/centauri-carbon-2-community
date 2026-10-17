@@ -76,11 +76,16 @@ export const tpl = (key: Key, vars: Record<string, string | number>) => {
 
 // Saves only what the user changed: saving the theme must not pin the language detected from the browser.
 function persist(prefs: { language?: string; theme?: string }) {
-  void fetch('/api/preferences', {
+  // Persisted preferences are best-effort for the current page, but failed HTTP
+  // responses must not silently masquerade as a successful save.
+  void request('/api/preferences', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-CC2-Request': '1' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(prefs),
-  }).catch(() => {})
+  }).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error)
+    notify(tpl('dashboard.save_failed_error', { error: message }), 'error')
+  })
 }
 
 export async function setLanguage(code: string, save = false) {
