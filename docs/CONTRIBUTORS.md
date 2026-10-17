@@ -47,13 +47,13 @@ Thank you to **[@Skcycos](https://github.com/Skcycos)** for the **Simplified Chi
 
 **[@Neme77](https://github.com/Neme77)** maintains the project, develops and integrates firmware/control changes, coordinates printer-side validation and prepares the release artifacts. The latest integration includes the Control panel/camera updates ([#107](https://github.com/Neme77/centauri-carbon-2-community/pull/107)), Canvas reset ([#108](https://github.com/Neme77/centauri-carbon-2-community/pull/108)), Polish/Czech interface translations ([#109](https://github.com/Neme77/centauri-carbon-2-community/pull/109)) and 4.4 firmware-base port ([#110](https://github.com/Neme77/centauri-carbon-2-community/pull/110)). Original contributor credit remains with the work listed above.
 
-## Filament ejection under review — excluded from the application update
+## Retired experimental filament ejection — excluded from the application update
 
 We also thank **[@sauadhi](https://github.com/sauadhi)** for the full Canvas filament-ejection proposal, touchscreen/web integration and validation work in [#103](https://github.com/Neme77/centauri-carbon-2-community/pull/103), following [#102](https://github.com/Neme77/centauri-carbon-2-community/pull/102).
 
 The advanced temperature/nozzle mesh and soaked calibration by **[@beanbo](https://github.com/beanbo)** in [#104](https://github.com/Neme77/centauri-carbon-2-community/pull/104) is now merged and included in the separate application update below. It remains absent from the original complete V4.4 firmware assets.
 
-Full filament ejection, including PR103/114, remains excluded. PR104 is included in the application update; original V4.4 firmware artifacts are unchanged. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
+Full filament ejection, including PR103/114, was investigated on the printer and retired without merging: filament can leave the rollers while remaining inside the inlet sensor. The sensor-present state must not be treated as an empty slot or a successful complete ejection. The original proposal and its author remain credited; it is excluded from the release. PR104 is included in the application update; original V4.4 firmware artifacts are unchanged. The four-slot material-data reset included in V4.4 is a different operation from full physical filament ejection.
 
 ## CC2 Control 1.2.10 application update
 
@@ -76,9 +76,13 @@ The 1.2.10 updater and Canvas-dialog follow-up were tested on the maintainer's V
 
 Spanish: **[asiersan](https://github.com/asiersan)**, original #130, integration #133. Hungarian refinements: **[pezso92](https://github.com/pezso92)**, original #129, integration #132. Localized update punctuation: **[Surfoo](https://github.com/Surfoo)**, original #128, integration #135. These original contributions retain exclusive author credit. The plate workflow extends the advanced mesh system by **beanbo** in #104. Thank you to the beta testers who reported the camera, fan, object-layout and plate-workflow issues and validated the combined application on a real printer.
 
+## CC2 Control 1.2.15
+
+Hungarian completion (20 remaining strings): **[pezso92](https://github.com/pezso92)**, original #138 and integration #141, with original author commits retained. Verified library mesh activation extends **[beanbo](https://github.com/beanbo)**'s plate/mesh library. Update notification and mesh changes are qualified together in #142, including #139/#140. Existing Spanish, Hungarian and punctuation credits above remain unchanged.
+
 ## Beta testers
 
-Special thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**, our very first beta tester, for being reliable, impartial and always available throughout development.
+Special thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**, our very first beta tester, **our ultimate beta tester**, for being reliable, impartial and always available throughout development. He was the first to report error 803 and continues to investigate, reproduce and validate fixes with exceptional persistence, offering his time and his printer.
 
 Our sincere thanks also go to **Barry Green**, **Michael Husbyn**, **[Jiří Heider](https://www.facebook.com/heiderakcze)**, **James Morriss Hill** and **Brian Mcmillion**, and to **all the other beta testers not named here**. By offering their time and their printers, running long printing sessions and providing patient, precise feedback, they helped identify issues and improve the stability of this release.
 

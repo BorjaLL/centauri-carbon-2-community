@@ -49,7 +49,34 @@ The exact R3 image passed its signed build and maintainer installation/connectio
 
 **Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
-## CC2 Control 1.2.14 — printer-validated stable update
+## CC2 Control 1.2.15 — update notifications and verified library meshes
+
+**[Download CC2 Control 1.2.15](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.15-V4.4)** · [English update guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
+
+**Community Firmware V4.4 / V4.4.1 only, based on ELEGOO 02.01.01.07.** This is an application update: installed firmware, callback patch, preferences and profiles are retained. V4.3 and stock firmware are unsupported.
+
+| New in 1.2.15 | What changes |
+| --- | --- |
+| Update notification bell | Beside Emergency Stop, indicates a newer compatible update from the verified signed catalog. Opens Settings → Updates; never downloads or installs automatically. |
+| Library mesh selector | Choose a saved measurement by plate, side, temperature and timestamp. **Mount and activate** confirms the physical plate and verifies the actual active profile, measured matrix and bounds before claiming success. Merely selecting or viewing a graph changes nothing. |
+| Clear calibration hold | A dropdown chooses 0–60 minutes of thermal stabilization after reaching the target temperature; new runs default to 2 minutes. The confirmation and countdown show the wait. Changing pages preserves the selected destination and timing. |
+| Hungarian completion | 20 remaining Canvas, object-position and plate/calibration translations by **pezso92**. All nine languages remain supported. |
+
+Official ELEGOO A/B selection in the print popup retains its existing behavior. A saved graph is not proof that its mesh is active: use the explicit library action with the corresponding physical plate. Restart is requested only when needed and with separate consent; pending verification is not reported as mounted.
+
+**Install:** Settings → Updates → Stable → Check for updates, then enter the LAN code from the display under **Settings → LAN only**. Download and verify, then confirm installation separately. Pause live view; the printer must be connected, idle, with nozzle/bed ≤50 °C and heater targets zero. Check for updates needs no LAN code; download/upload and installation do. The LAN code differs from the SSH password. Alternatively upload the release's signed `.cc2update`; use the computer-assisted installer ZIP if the updater panel is absent. No factory reset or intermediate application release is required.
+
+**Printer validation:** the combined trial installed successfully, the bell worked, and a new Side B mesh was calibrated, saved and loaded with the correct displayed result. The final hold-selector follow-up has automated interaction coverage; it changes the form, not the calibration engine. These checks do not claim a new long-duration print, first-layer comparison or every custom A/B combination. Full CI covers host/ARM/qemu, sanitizers, browser interactions, firmware builder and pinned sources.
+
+**Included PRs:** [#139](https://github.com/Neme77/centauri-carbon-2-community/pull/139), [#140](https://github.com/Neme77/centauri-carbon-2-community/pull/140), [#138](https://github.com/Neme77/centauri-carbon-2-community/pull/138)/[#141](https://github.com/Neme77/centauri-carbon-2-community/pull/141), qualified together in [#142](https://github.com/Neme77/centauri-carbon-2-community/pull/142). Original commits and attribution are retained.
+
+**Thanks:** **[pezso92](https://github.com/pezso92)** for Hungarian and **[beanbo](https://github.com/beanbo)** for the underlying plate/mesh library. A special salute to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**: the first to report error 803, and still tireless in reproducing problems, checking fixes and lending us his time and printer. Thank you to every contributor and beta tester; [full community credits](docs/CONTRIBUTORS.md).
+
+This cumulative update also retains Spanish by **asiersan**, earlier Hungarian work by **pezso92**, localized punctuation by **Surfoo**, and the previously released Canvas, camera, fans and Object Exclusion fixes. Full experimental Canvas ejection (#103/#114) has been retired and is not included.
+
+**Italiano:** campanella degli aggiornamenti, selezione e attivazione verificata delle mesh dalla libreria piatti, attesa termica selezionabile da 0 a 60 minuti (2 predefiniti) e completamento ungherese di pezso92. Confermati sulla stampante aggiornamento, campanella e creazione/salvataggio/caricamento della mesh corretta. La scelta A/B ufficiale resta invariata. Solo V4.4/V4.4.1; firmware e callback invariati. **DamiBFryta, il beta tester definitivo**, merita un ringraziamento speciale per la prima segnalazione dell'errore 803 e le continue prove pazienti e precise.
+
+## Previous application update — CC2 Control 1.2.14
 
 **[Download CC2 Control 1.2.14](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.14-V4.4)** · [English update guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
 
