@@ -77,6 +77,14 @@ try {
   await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click()
   assert(!posts.some(body => body.includes('REBOOT')), 'restart must require its own confirmation')
+  await apply.click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click()
+  await page.getByRole('dialog').getByText('Write the 80 °C mesh', { exact: false }).waitFor()
+  await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click()
+  await page.getByText('CC2 Control checks it once the printer is back.', { exact: false }).waitFor()
+  assert(posts.at(-1).endsWith('REBOOT'))
+  assert.equal(await page.locator('[data-plate]').getByText('Mounted', { exact: true }).count(), 0, 'pending verification must not claim mounted')
+  pending = ''; current = ''
   idle = false
   await page.reload()
   await page.locator('[data-mesh-selector]').waitFor()

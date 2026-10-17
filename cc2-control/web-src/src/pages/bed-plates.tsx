@@ -263,7 +263,7 @@ const PlateCard = ({
   const [z, setZ] = useState(p.z_offset.toFixed(3))
   const base = plateBase(p)
   const [temp, setTemp] = useState(String(base?.temp ?? 60))
-  const mounted = lib.current === p.id
+  const mounted = lib.current === p.id && !lib.pending
   const locked = busy || Boolean(lib.pending) || !lib.available
   const adjustment = mounted && live !== null && reference !== null ? live - reference : 0
   const idleOnly = idle ? undefined : t('common.available_when_idle')
@@ -684,7 +684,7 @@ export const Plates = () => {
   const v = view(printer.use().data)
   const { busy, act } = useAct()
   usePoll(refreshPlates, rebooting || lib?.pending || (lib && lib.print_mesh.state !== 'off') ? 4000 : 20000)
-  const current = lib?.plates.find(p => p.id === lib.current)
+  const current = lib?.pending ? undefined : lib?.plates.find(p => p.id === lib.current)
   const waiting = lib?.plates.find(p => p.id === lib.pending)
   const installed = lib?.nozzles.find(n => n.id === lib.nozzle)
   return (
