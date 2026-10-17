@@ -497,15 +497,13 @@ const MeshActions = ({ reload, note }: { reload: () => void; note: string }) => 
         </label>
         <label class="grid gap-1">
           {t('bed.soak_minutes')}
-          <Input
-            type="number"
-            min="0"
-            max="60"
-            step="1"
-            value={soak}
-            disabled={busy}
-            onInput={e => setSoak(e.currentTarget.value)}
-          />
+          <Select value={soak} disabled={busy} onChange={e => setSoak(e.currentTarget.value)}>
+            {Array.from({ length: 61 }, (_, minutes) => (
+              <option key={minutes} value={String(minutes)}>
+                {minutes}
+              </option>
+            ))}
+          </Select>
         </label>
         {library && (
           <label class="grid gap-1">
