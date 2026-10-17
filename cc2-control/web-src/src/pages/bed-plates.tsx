@@ -628,7 +628,7 @@ const MeshSelector = ({ lib, idle, busy, act }: { lib: PlateLibrary; idle: boole
   }
   return (
     <div class="mt-3 rounded-md border border-edge p-3" data-mesh-selector>
-      <div class="flex flex-wrap items-end gap-3">
+      <div class="flex flex-col gap-3 cc2-sm:flex-row cc2-sm:items-end">
         <label class="grid min-w-0 flex-1 gap-1 text-xs">
           {t('plates.mesh_selector')}
           <Select

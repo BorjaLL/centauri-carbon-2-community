@@ -59,6 +59,12 @@ try {
   await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click()
   await box.getByText('Side B', { exact: true }).waitFor()
   assert.equal(posts.at(-1), '0f1e2d3c4b5a6978\nbb00000000000060')
+  for (const width of [1440, 768, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'page overflow ' + width)
+    const shots = process.env.CC2_MESH_SCREENSHOTS
+    if (shots) { await mkdir(shots, { recursive: true }); await page.screenshot({ path: path.join(shots, 'mesh-selector-' + width + '.png') }) }
+  }
   // An unverified activation reports the refusal; it cannot become a successful mount.
   fail = true
   await selector.selectOption('aa00000000000060')
@@ -71,12 +77,6 @@ try {
   await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click()
   assert(!posts.some(body => body.includes('REBOOT')), 'restart must require its own confirmation')
-  for (const width of [1440, 768, 390]) {
-    await page.setViewportSize({ width, height: 1000 })
-    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'page overflow ' + width)
-    const shots = process.env.CC2_MESH_SCREENSHOTS
-    if (shots) { await mkdir(shots, { recursive: true }); await page.screenshot({ path: path.join(shots, 'mesh-selector-' + width + '.png') }) }
-  }
   idle = false
   await page.reload()
   await page.locator('[data-mesh-selector]').waitFor()
