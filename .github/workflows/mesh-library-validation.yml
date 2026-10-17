@@ -1,0 +1,18 @@
+name: Mesh library validation
+on:
+  push:
+    branches: [test/mesh-library-selector]
+permissions:
+  contents: read
+jobs:
+  native-mesh:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile and exercise stored versus active mesh with warnings as errors
+        working-directory: cc2-control
+        run: |
+          gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -D_POSIX_C_SOURCE=200809L -pthread tests/test_plates.c src/mqtt.c src/console.c src/control.c src/panda.c src/uds.c -o /tmp/cc2-test-plates -lm
+          mkdir /tmp/cc2-mesh-fixture
+          cd /tmp/cc2-mesh-fixture
+          /tmp/cc2-test-plates
