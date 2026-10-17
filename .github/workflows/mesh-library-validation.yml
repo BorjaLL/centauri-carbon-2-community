@@ -2,6 +2,9 @@ name: Mesh library validation
 on:
   push:
     branches: [test/mesh-library-selector]
+concurrency:
+  group: mesh-library-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -14,6 +17,7 @@ jobs:
         run: |
           cp src/plates.h /tmp/cc2-fixed-plates.h
           trap 'cp /tmp/cc2-fixed-plates.h "$GITHUB_WORKSPACE/cc2-control/src/plates.h"' EXIT
+          git fetch --depth=1 origin 706807122bdc06cd5dc26b0714a6bd66576f6692
           git show 706807122bdc06cd5dc26b0714a6bd66576f6692:cc2-control/src/plates.h > src/plates.h
           gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror -D_POSIX_C_SOURCE=200809L -pthread tests/test_plates.c src/mqtt.c src/console.c src/control.c src/panda.c src/uds.c -o /tmp/cc2-old-mount -lm
           mkdir /tmp/cc2-old-fixture

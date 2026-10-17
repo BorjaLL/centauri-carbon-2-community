@@ -18,6 +18,9 @@ try {
   await page.route('**/api/printer', async r => {
     const response = await r.fetch(), data = await response.json()
     data.machine.status = idle ? 1 : 2
+    data.machine.status_name = idle ? 'Idle' : 'Printing'
+    data.print.enabled = !idle
+    data.print.state = idle ? 'standby' : 'printing'
     data.connected = true; data.last_message_age = 0
     await r.fulfill({ response, json: data })
   })
