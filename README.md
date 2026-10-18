@@ -49,7 +49,26 @@ The exact R3 image passed its signed build and maintainer installation/connectio
 
 **Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
-## CC2 Control 1.2.16 — backup, languages, Console and print mesh status
+## CC2 Control 1.2.17 — Orca checks, diagnostics and Canvas observations
+
+**[Download CC2 Control 1.2.17](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.17-V4.4)** · [English guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
+
+**Only Community Firmware V4.4/V4.4.1, ELEGOO base 02.01.01.07.** Application update; firmware and callback unchanged. Preferences and libraries are retained. No factory reset or intermediate application release is required.
+
+- **Orca connection checks:** test the actual Moonraker and Canvas lane endpoints; distinguish a disconnected printer, incomplete lane data and endpoint errors. This helps diagnose configuration; it is not a guarantee that every OrcaSlicer version completes synchronization.
+- **Manual diagnostics export:** download a small report from Settings → About. An explicit allowlist includes version, connection/memory status, temperatures and Canvas counts. No credentials, addresses, filenames or raw API responses are exported; no automatic upload occurs.
+- **Observed Canvas timeline:** up to 24 recent slot-state changes in browser memory, with a clear button and no additional periodic requests. It resets on reload. Times indicate observations; this is not a complete physical-movement log.
+- **Integration fixes:** correct the diagnostic Canvas envelope, reject ambiguous timeline rows, guard repeated Orca tests and register the timeline icon to prevent a rendering failure.
+
+**Original feature credit: [pezso92](https://github.com/pezso92)**, [#155](https://github.com/Neme77/centauri-carbon-2-community/pull/155), [#156](https://github.com/Neme77/centauri-carbon-2-community/pull/156), [#157](https://github.com/Neme77/centauri-carbon-2-community/pull/157), integrated in [#158](https://github.com/Neme77/centauri-carbon-2-community/pull/158). Original commits and attribution retained. Automated checks and the real-printer trial passed: diagnostics, Canvas observations/loaded-head slot, Canvas synchronization and print submission from the newly installed OrcaSlicer. Exact Orca version was not recorded.
+
+Install from **Settings → Updates → Stable → Check for updates**, enter the printer **LAN access code** from the display, download/verify and confirm installation separately. The LAN code differs from the SSH password. Printer must be connected, idle and cold (nozzle/bed ≤50 °C), heater targets zero, live view paused. Wait for completion, then Ctrl+F5. Alternatively upload the signed `.cc2update`; the installer ZIP is extracted on the computer. Notifications never install unattended.
+
+Retains backup/restore, languages and all earlier fixes, including Spanish by **asiersan**, Hungarian by **pezso92**, punctuation by **Surfoo** and plate/mesh work by **beanbo**. Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, and all contributors/testers. Experimental Canvas ejection remains excluded.
+
+**Italiano:** controlli Orca più precisi, esportazione diagnostica manuale e cronologia degli stati Canvas, proposti da **pezso92**. Solo V4.4/V4.4.1; firmware/callback e dati personali conservati. Aggiornare dal pannello con codice LAN e conferma separata. La cronologia osserva gli stati e non certifica movimenti fisici; il rapporto diagnostico non viene inviato automaticamente.
+
+## Previous application update — CC2 Control 1.2.16 — backup, languages, Console and print mesh status
 
 **[Download CC2 Control 1.2.16](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.16-V4.4)** · [English guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
 
