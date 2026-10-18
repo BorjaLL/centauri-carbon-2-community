@@ -75,9 +75,122 @@ try {
   await dialog.getByRole('group', { name: 'Filament T0', exact: true }).getByRole('radio', { name: /Slot 2/ }).check()
   assert.equal(starts.length, 1, 'choosing a slot never starts a print')
   if (process.env.CC2_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.CC2_SCREENSHOTS, 'filament-mapping-mobile.png') })
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await dialog.waitFor({ state: 'hidden' })
+
+  // A failed /api/mesh request is unknown, not proof that both side meshes are absent.
+  // The printer must never receive an implicit calibration or start in that state.
+  await page.unroute('**/api/mesh')
+  let meshMode = 'unavailable'
+  let customMesh
+  let meshReads = 0
+  await page.route('**/api/mesh', r => {
+    meshReads++
+    if (meshMode === 'custom') return r.fulfill({ json: customMesh })
+    if (meshMode === 'unavailable')
+      return r.fulfill({ status: 503, json: { error: 'Mock mesh service unavailable' } })
+    if (meshMode === 'malformed')
+      return r.fulfill({ json: { result: { status: {} } } })
+    return r.fulfill({
+      json: { result: { status: { bed_mesh: { profiles: meshMode === 'saved' ? { default: {} } : {} } } } },
+    })
+  })
+  const open = async () => {
+    await page.getByRole('button', { name: 'Print', exact: true }).first().click()
+    await dialog.waitFor()
+  }
+  const close = async () => {
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await dialog.waitFor({ state: 'hidden' })
+  }
+  await open()
+  await dialog.locator('[data-mesh-readiness="unknown"]').waitFor()
+  await dialog.getByText('Mesh unavailable: Mock mesh service unavailable', { exact: true }).waitFor()
+  const calibrate = dialog.getByRole('checkbox', { name: 'Calibrate bed before printing' })
+  const startPrint = dialog.getByRole('button', { name: 'Start print', exact: true })
+  assert.equal(await calibrate.isChecked(), false, 'failed mesh read must not force calibration')
+  assert.ok(await startPrint.isDisabled(), 'unknown mesh requires a deliberate calibration choice or a recheck')
+  assert.equal(starts.length, 1, 'unknown mesh must not silently submit a print')
+  await calibrate.check()
+  assert.ok(await startPrint.isEnabled(), 'operator can explicitly choose calibration')
+  await calibrate.uncheck()
+  meshMode = 'saved'
+  await dialog.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await dialog.locator('[data-mesh-readiness="saved"]').waitFor()
+  assert.equal(await calibrate.isChecked(), false, 'rechecking does not change operator intent')
+  assert.ok(await startPrint.isEnabled(), 'verified saved mesh restores the normal print path')
+  await close()
+
+  meshMode = 'missing'
+  await open()
+  await dialog.locator('[data-mesh-readiness="missing"]').waitFor()
+  assert.ok(await calibrate.isChecked(), 'confirmed missing mesh requires calibration')
+  assert.ok(await calibrate.isDisabled(), 'required calibration cannot be unchecked')
+  await close()
+
+  meshMode = 'malformed'
+  await open()
+  await dialog.locator('[data-mesh-readiness="unknown"]').waitFor()
+  assert.ok(await startPrint.isDisabled(), 'invalid mesh response is also unknown, never missing')
+  assert.equal(starts.length, 1, 'no additional print requests from status probing')
+  await close()
+
+  // Classify each side independently. A present but malformed entry is unknown,
+  // not a missing profile and not evidence that a saved profile is available.
+  meshMode = 'custom'
+  const wrap = profiles => ({ result: { status: { bed_mesh: { profiles } } } })
+  for (const malformed of [null, false, 0, 1, '', 'bad', []]) {
+    customMesh = wrap({ default: malformed, default1: {} })
+    await open()
+    await dialog.locator('[data-mesh-readiness="unknown"]').waitFor()
+    assert.equal(await calibrate.isChecked(), false)
+    assert.ok(await startPrint.isDisabled())
+    await dialog.getByRole('radio', { name: 'Side B', exact: true }).check()
+    await dialog.locator('[data-mesh-readiness="saved"]').waitFor()
+    assert.ok(await startPrint.isEnabled(), 'malformed A does not invalidate confirmed B')
+    await close()
+
+    customMesh = wrap({ default: {}, default1: malformed })
+    await open()
+    await dialog.locator('[data-mesh-readiness="saved"]').waitFor()
+    await dialog.getByRole('radio', { name: 'Side B', exact: true }).check()
+    await dialog.locator('[data-mesh-readiness="unknown"]').waitFor()
+    assert.equal(await calibrate.isChecked(), false)
+    assert.ok(await startPrint.isDisabled())
+    await close()
+  }
+  for (const profiles of [null, [], 'bad', false, 0]) {
+    customMesh = wrap(profiles)
+    await open()
+    await dialog.locator('[data-mesh-readiness="unknown"]').waitFor()
+    assert.equal(await calibrate.isChecked(), false)
+    assert.ok(await startPrint.isDisabled())
+    await close()
+  }
+  customMesh = wrap({ default: {} })
+  await open()
+  await dialog.getByRole('radio', { name: 'Side B', exact: true }).check()
+  await dialog.locator('[data-mesh-readiness="missing"]').waitFor()
+  assert.ok(await calibrate.isChecked())
+  assert.ok(await calibrate.isDisabled(), 'confirmed missing B requires calibration too')
+  await close()
+
+  customMesh = wrap({ default: null })
+  await open()
+  await dialog.locator('[data-mesh-readiness="unknown"]').waitFor()
+  await calibrate.check()
+  const readsBefore = meshReads
+  customMesh = wrap({ default: {}, default1: {} })
+  await dialog.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await dialog.locator('[data-mesh-readiness="saved"]').waitFor()
+  assert.equal(meshReads, readsBefore + 1, 'manual recheck issues one mesh GET')
+  assert.ok(await calibrate.isChecked(), 'recheck retains explicit calibration intent')
+  await close()
+  assert.equal(starts.length, 1, 'classification and rechecks never submit a print')
   assert.deepEqual(errors, [])
   console.log('PASS: slow analysis indicator, duplicate-click guard, confirmation, filament labels and mapping')
 } finally {
   await browser?.close()
   await server.close()
 }
+
