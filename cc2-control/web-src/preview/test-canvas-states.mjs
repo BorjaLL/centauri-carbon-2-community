@@ -24,6 +24,9 @@ try {
     window.__CC2_PREVIEW.trays[1].status = 2
   })
   await card(1).getByText('Loaded to head', { exact: true }).waitFor()
+  const timeline = page.locator('[data-canvas-timeline]')
+  await timeline.locator('[data-canvas-event]').filter({ hasText: 'Present · unloaded from head → Loaded to head' }).waitFor()
+  assert.ok((await timeline.locator('[data-canvas-event]').count()) <= 24, 'Timeline is bounded')
   assert.equal(await load.isDisabled(), true)
   assert.equal(await unload.isDisabled(), false)
   await card(2).getByRole('button', { name: 'Select slot', exact: true }).click()
@@ -41,6 +44,10 @@ try {
   assert.equal(await load.isDisabled(), true)
   assert.equal(await unload.isDisabled(), true)
   assert.deepEqual(await page.evaluate(() => window.__CC2_PREVIEW.commands), [], 'state changes and disabled actions send no commands')
+  await timeline.getByRole('button', { name: 'Clear history', exact: true }).click()
+  await timeline.locator('[data-canvas-timeline-empty]').waitFor()
+  assert.equal(await timeline.locator('[data-canvas-event]').count(), 0, 'History clears without printer commands')
+  assert.deepEqual(await page.evaluate(() => window.__CC2_PREVIEW.commands), [], 'Clear must not send a hardware command')
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 })
     await page.waitForTimeout(200)
