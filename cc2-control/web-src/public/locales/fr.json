@@ -456,8 +456,10 @@
   "settings.mqtt_connection": "Connexion MQTT",
   "settings.network_and_device_access_settings": "Paramètres réseau et d’accès à l’appareil",
   "settings.octo_klipper_test_endpoint": "Point de test Octo/Klipper",
-  "settings.orca_compatibility_ready_text": "Compatibilité Orca prête : {text}",
   "settings.orca_compatibility_unavailable": "Compatibilité Orca indisponible : {error}",
+  "settings.orca_sync_ready": "CC2 Moonraker répond et fournit les données de {count} emplacements Canvas. Réglez l'agent d'imprimante d'OrcaSlicer sur Moonraker.",
+  "settings.orca_sync_pending": "CC2 Moonraker répond, mais aucune donnée d'emplacement Canvas n'est disponible. Vérifiez l'état de Canvas et réessayez.",
+  "settings.orca_sync_disconnected": "CC2 Moonraker répond, mais la connexion à l'imprimante n'est pas encore prête.",
   "settings.orcaslicer_compatibility": "Compatibilité OrcaSlicer",
   "settings.panda_breath_compatibility": "Compatibilité Panda Breath",
   "settings.panda_endpoint_available": "Le point de terminaison de compatibilité Panda Breath est disponible.",
@@ -981,5 +983,14 @@
   "backup.restored": "Données sélectionnées restaurées. Vérifiez les associations physiques avant utilisation.",
   "backup.download_started": "Téléchargement de la sauvegarde lancé.",
   "backup.cancelled": "Aperçu annulé.",
-  "backup.working": "Opération en cours…"
+  "backup.working": "Opération en cours…",
+  "settings.diagnostics_export": "Télécharger le diagnostic",
+  "settings.diagnostics_help": "Crée un instantané en lecture seule de la connexion, des ressources et des erreurs. Aucun fichier, identifiant, adresse réseau ou mot de passe n'est inclus. Vérifiez le JSON avant de le partager.",
+  "settings.diagnostics_downloaded": "Rapport de diagnostic téléchargé.",
+  "settings.diagnostics_failed_error": "Impossible de créer le rapport de diagnostic : {error}",
+  "canvas.timeline_title": "Changements Canvas observés",
+  "canvas.timeline_hint": "Cette session uniquement : transitions d'état des emplacements signalées par l'imprimante. Ne détecte ni le mouvement physique du filament ni les problèmes de purge.",
+  "canvas.timeline_empty": "Aucun changement d'emplacement enregistré.",
+  "canvas.timeline_change": "Emplacement {slot} : {from} → {to}",
+  "canvas.timeline_clear": "Effacer l'historique"
 }

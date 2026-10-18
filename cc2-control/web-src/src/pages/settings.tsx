@@ -7,8 +7,9 @@ import { Tag } from '@/components/ui/badge'
 import { Input, PasswordInput, Select } from '@/components/ui/field'
 import { Tabs } from '@/components/ui/tabs'
 import { GithubIcon } from '@/components/github-icon'
-import { Activity, Info, Link, Palette, Plug, RefreshCw, Undo2, Archive } from 'lucide-preact'
+import { Activity, Info, Link, Palette, Plug, RefreshCw, Undo2, Archive, FileDown } from 'lucide-preact'
 import { errText, notify, post, request } from '@/lib/api'
+import { collectDiagnostics } from '@/lib/diagnostics'
 import {
   cameraPreferences,
   setPersistentCamera,
@@ -143,6 +144,43 @@ const Connection = () => {
 }
 
 const Integrations = () => {
+  const checking = useRef(false)
+  const [orcaBusy, setOrcaBusy] = useState(false)
+  // Test the actual Moonraker and Canvas sync endpoints, not only the app version.
+  const testOrca = async () => {
+    if (checking.current) return
+    checking.current = true
+    setOrcaBusy(true)
+    try {
+      const info = await request('/server/info')
+      if (info?.result?.klippy_connected !== true) {
+        notify(t('settings.orca_sync_disconnected'), 'error')
+        return
+      }
+      const lanes = await request('/server/database/item?namespace=lane_data')
+      const value = lanes?.result?.value
+      if (lanes?.result?.namespace !== 'lane_data' || !value || typeof value !== 'object' || Array.isArray(value))
+        throw Error(t('settings.orca_sync_pending'))
+      const count = Object.entries(value).filter(([key, row]) => {
+        if (!/^lane[1-4]$/.test(key) || !row || typeof row !== 'object' || Array.isArray(row)) return false
+        const entry = row as Record<string, unknown>
+        return (
+          entry.lane === String(Number(key.slice(4)) - 1) &&
+          typeof entry.material === 'string' &&
+          entry.material.trim().length > 0 &&
+          typeof entry.color === 'string' &&
+          /^(?:#|0x)?[0-9a-f]{6}(?:[0-9a-f]{2})?$/i.test(entry.color)
+        )
+      }).length
+      if (count) notify(tpl('settings.orca_sync_ready', { count }))
+      else notify(t('settings.orca_sync_pending'))
+    } catch (error) {
+      notify(tpl('settings.orca_compatibility_unavailable', { error: errText(error) }), 'error')
+    } finally {
+      checking.current = false
+      setOrcaBusy(false)
+    }
+  }
   const ping = async (url: string, ok: Key, fail: Key, parse?: (r: any) => string) => {
     try {
       const r = await fetch(url)
@@ -176,16 +214,7 @@ const Integrations = () => {
       <div class={row}>
         <b>{t('settings.orcaslicer_compatibility')}</b>
         <span class="text-muted">{t('settings.octo_klipper_test_endpoint')}</span>
-        <Button
-          onClick={() =>
-            ping(
-              '/api/version',
-              'settings.orca_compatibility_ready_text',
-              'settings.orca_compatibility_unavailable',
-              v => v.text
-            )
-          }
-        >
+        <Button disabled={orcaBusy} onClick={testOrca}>
           <Activity {...G} />
           {t('settings.test_orca')}
         </Button>
@@ -283,6 +312,42 @@ const Appearance = () => {
   )
 }
 
+const DiagnosticsExport = () => {
+  const [busy, setBusy] = useState(false)
+  const download = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      const report = await collectDiagnostics(request)
+      const json = `${JSON.stringify(report, null, 2)}\n`
+      if (json.length > 16384) throw Error(t('state.unknown'))
+      const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `CC2-Control-diagnostics-${new Date().toLocaleDateString('sv-SE')}.json`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      notify(t('settings.diagnostics_downloaded'))
+    } catch (error) {
+      notify(tpl('settings.diagnostics_failed_error', { error: errText(error) }), 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div class="mt-4 border-t border-edge pt-3">
+      <p class="mb-3 max-w-2xl text-xs text-muted">{t('settings.diagnostics_help')}</p>
+      <Button disabled={busy} onClick={() => void download()}>
+        <FileDown {...G} />
+        {t('settings.diagnostics_export')}
+      </Button>
+    </div>
+  )
+}
+
 export const Settings = () => {
   usePoll(refreshHealth, 5000)
   usePoll(refreshSetup, 5000)
@@ -328,6 +393,7 @@ export const Settings = () => {
                   v={<span class="font-normal">{t('settings.preact_tailwind_css_lucide_icons')}</span>}
                 />
               </div>
+              <DiagnosticsExport />
             </Card>
           )}
         </div>

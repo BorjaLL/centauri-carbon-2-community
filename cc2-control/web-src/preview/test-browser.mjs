@@ -6,6 +6,7 @@ import { createServer } from 'vite'
 import { chromium } from 'playwright'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
+const labels = JSON.parse(await readFile(path.join(root, 'public/locales/it.json'), 'utf8'))
 // An accidental proxy would fail the API and browser checks below.
 process.env.CC2_BACKEND = 'http://127.0.0.1:1'
 const server = await createServer({ root, configFile: path.join(root, 'vite.config.ts'), mode: 'demo', server: { port: 0, host: '127.0.0.1' } })
@@ -16,7 +17,7 @@ try {
   browser = await chromium.launch({ headless: true, ...(process.env.CC2_BROWSER_PATH ? { executablePath: process.env.CC2_BROWSER_PATH, args: ['--no-sandbox', '--disable-gpu', '--disable-software-rasterizer', '--single-process', '--no-zygote'] } : {}) })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const errors = [], outside = []
-  page.on('pageerror', e => errors.push(e.message))
+  page.on('pageerror', e => { errors.push(e.message); console.error(e.stack || e.message) })
   page.on('request', r => {
     if (!r.url().startsWith(`${origin}/`) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) outside.push(r.url())
   })
@@ -29,6 +30,49 @@ try {
   assert.equal((await page.request.post(`${origin}/api/gcode-files/upload?name=demo.gcode`, { data: 'G28' })).status(), 403)
   assert.equal((await page.request.post(`${origin}/api/console/command`, { data: 'G28' })).status(), 403)
   assert.equal((await page.request.post(`${origin}/api/setup`, { data: '123456' })).status(), 403)
+  // Simulated healthy, missing and disconnected Moonraker/Canvas responses.
+  let orcaState = 'ready'
+  let infoCalls = 0, laneCalls = 0
+  await page.route('**/server/info', route => {
+    infoCalls++
+    return route.fulfill({ json: { result: { klippy_connected: orcaState !== 'disconnected' } } })
+  })
+  const laneMatcher = url => url.pathname === '/server/database/item' && url.searchParams.get('namespace') === 'lane_data'
+  await page.route(laneMatcher, route => {
+    laneCalls++
+    if (orcaState === 'failure') return route.fulfill({ status: 503, json: { error: 'Mock lane_data failure' } })
+    const value = orcaState === 'empty' ? {} : orcaState === 'malformed' ? {
+      lane1: { lane: '3', material: 'PLA', color: '#FF0000' },
+      lane2: { lane: '1', material: '', color: 'bad' },
+    } : {
+      lane1: { lane: '0', material: 'PLA', color: '#FF0000' },
+      lane2: { lane: '1', material: 'PETG', color: '#FFFFFF' },
+    }
+    return route.fulfill({ json: { result: { namespace: 'lane_data', value } } })
+  })
+  await page.locator('#cc2-navigation a[href="#settings"]').click()
+  await page.getByRole('tab').nth(1).click()
+  const orcaTest = page.getByRole('button', { name: labels['settings.test_orca'], exact: true })
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_ready'].replace('{count}', '2'), { exact: true }).waitFor()
+  assert.equal(infoCalls, 1)
+  assert.equal(laneCalls, 1)
+  orcaState = 'empty'
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_pending'], { exact: true }).waitFor()
+  orcaState = 'disconnected'
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_disconnected'], { exact: true }).waitFor()
+  assert.equal(laneCalls, 2, 'Disconnected printer must not request Canvas lanes')
+  orcaState = 'malformed'
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_pending'], { exact: true }).waitFor()
+  orcaState = 'failure'
+  await orcaTest.click()
+  await page.getByRole('alert').filter({ hasText: 'Mock lane_data failure' }).waitFor()
+  await page.unroute('**/server/info')
+  await page.unroute(laneMatcher)
+  await page.locator('#cc2-navigation a[href="#dashboard"]').click()
   const naturalControl = async () => {
     const layout = await page.locator('.cc2-control-columns').evaluate(e => {
       const groups = [...e.children]
@@ -56,9 +100,10 @@ try {
     for (const tab of ['dashboard', 'control', 'job', 'files', 'history', 'bed', 'canvas', 'spools', 'console', 'settings']) {
       if (await page.locator('#cc2-menu-toggle').isVisible()) await page.locator('#cc2-menu-toggle').click()
       await page.locator(`a[href="#${tab}"]`).click()
+      await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
       await page.waitForTimeout(150)
       if (tab === 'job') assert.equal(await page.locator('main .cc2-tuning').count(), 0, 'Job must not duplicate dashboard tuning')
-      assert.ok(await page.locator('main').innerText(), `${width} ${tab}: empty page`)
+      assert.ok(await page.locator('main').innerText(), `${width} ${tab}: empty page; browser errors: ${JSON.stringify(errors)}`)
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)
       assert.equal(overflow, false, `${width} ${tab}: horizontal overflow`)
       if (tab === 'control' && width >= 1280 && height > 500) await naturalControl()
@@ -75,6 +120,7 @@ try {
     assert.equal(await page.locator('header').evaluate(e => Math.round(e.getBoundingClientRect().height)), 60)
     for (const tab of ['dashboard', 'control', 'job', 'files', 'history', 'bed', 'canvas', 'spools', 'console', 'settings']) {
       await page.locator(`a[href="#${tab}"]`).click()
+      await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
       await page.waitForTimeout(150)
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${width} collapsed ${tab}: overflow`)
       if (tab === 'control' && width >= 1280) await naturalControl()
@@ -89,6 +135,7 @@ try {
   await page.locator('#cc2-navigation button[aria-expanded]').click()
   for (const tab of ['dashboard', 'control', 'job', 'files', 'history', 'bed', 'canvas', 'spools', 'console', 'settings']) {
     await page.locator(`a[href="#${tab}"]`).click()
+    await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
     await page.waitForTimeout(200)
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `Collapsed sidebar: ${tab} overflow`)
     if (shots) await page.screenshot({ path: path.join(shots, `1440-collapsed-${tab}.png`), fullPage: true })
@@ -118,7 +165,6 @@ try {
   }
   await Promise.all([page.waitForEvent('load'), page.locator('#preview-reset').click()])
   assert.equal((await (await page.request.get(`${origin}/__preview/scenario`)).json()).scene, 'printing')
-  const labels = JSON.parse(await readFile(path.join(root, 'public/locales/it.json'), 'utf8'))
   // Print history: rendering needs an idle printer, a rendered video becomes a download.
   const refreshed = page.waitForResponse(r => r.url().endsWith('/api/history/refresh') && r.request().method() === 'POST')
   await page.locator('#cc2-navigation a[href="#history"]').click()
@@ -265,6 +311,65 @@ try {
   await page.locator('main summary').click()
   assert.ok(await page.locator('#console-command').isVisible())
   assert.ok(await page.locator('#console-command').isDisabled(), 'Monitoring must not unlock manual commands')
+  // Deliberately place sensitive strings in raw APIs. An exported diagnostic
+  // may only contain the narrow allowlist, never full server responses.
+  let healthFails = false, canvasMissing = false
+  await page.route('**/api/health', route =>
+    healthFails
+      ? route.fulfill({ status: 503, json: { error: 'PRIVATE-HEALTH-ERROR' } })
+      : route.fulfill({ json: {
+          version: '1.2.16', uptime_seconds: 250, mem_total_kb: 111168, mem_available_kb: 30720,
+          mqtt_connected: true, mqtt_registered: true, snapshot_received: true,
+          printer_uuid: 'PRIVATE-UUID', lan_code: 'PRIVATE-LAN-CODE',
+        } })
+  )
+  await page.route('**/api/printer', route =>
+    route.fulfill({ json: {
+      connected: true,
+      file_name: 'PRIVATE-MODEL.gcode', api_key: 'PRIVATE-KEY',
+      extruder: { temperature: 210 }, heater_bed: { temperature: 60 },
+      z_offset: { value: -0.01, pending: false },
+      printer_error: { method: 1020, code: 1009, age: 4, details: 'PRIVATE-DETAIL' },
+    } })
+  )
+  await page.route('**/api/canvas', route =>
+    route.fulfill({ json: {
+      auto_refill: true, private_ip: 'PRIVATE-IP-ADDRESS',
+      telemetry: canvasMissing ? null : { result: { canvas_info: { canvas_list: [
+        { connected: 1, tray_list: [{ filament_name: 'PRIVATE-FILAMENT' }, {}] },
+      ] } } },
+    } })
+  )
+  await page.locator('#cc2-navigation a[href="#settings"]').click()
+  await page.getByRole('tab').nth(3).click()
+  const diagnosticButton = page.getByRole('button', { name: labels['settings.diagnostics_export'], exact: true })
+  const downloadPromise = page.waitForEvent('download')
+  await diagnosticButton.click()
+  const diagnosticDownload = await downloadPromise
+  assert.match(diagnosticDownload.suggestedFilename(), /^CC2-Control-diagnostics-\d{4}-\d{2}-\d{2}\.json$/)
+  const diagnosticJson = await readFile(await diagnosticDownload.path(), 'utf8')
+  assert.ok(!diagnosticJson.includes('PRIVATE-'), 'Allowlist must exclude all secret-like fields')
+  const diagnostic = JSON.parse(diagnosticJson)
+  assert.equal(diagnostic.format, 'cc2-control-diagnostics')
+  assert.equal(diagnostic.schema_version, 1)
+  assert.deepEqual(diagnostic.sources, { health: 'ok', printer: 'ok', canvas: 'ok' })
+  assert.equal(diagnostic.health.version, '1.2.16')
+  assert.equal(diagnostic.printer.last_error_code, 1009)
+  assert.equal(diagnostic.canvas.connected_modules, 1)
+  assert.equal(diagnostic.canvas.slot_records, 2)
+  healthFails = true
+  canvasMissing = true
+  const partialDownload = page.waitForEvent('download')
+  await diagnosticButton.click()
+  const partialReport = JSON.parse(await readFile(await (await partialDownload).path(), 'utf8'))
+  assert.equal(partialReport.sources.health, 'unavailable')
+  assert.equal(partialReport.health.version, null)
+  assert.equal(partialReport.canvas.connected_modules, null, 'missing telemetry is unknown, not zero modules')
+  assert.equal(partialReport.canvas.slot_records, null)
+  assert.ok(!JSON.stringify(partialReport).includes('PRIVATE-HEALTH-ERROR'))
+  await page.unroute('**/api/health')
+  await page.unroute('**/api/printer')
+  await page.unroute('**/api/canvas')
   assert.deepEqual(errors, [])
   assert.deepEqual(outside, [], 'Preview must never request printer ports or external services')
   console.log('PASS: isolated preview, all pages at 9 viewport sizes and desktop sidebar states, scenario controls, tuning reset, history, auto refill, printer refusals, sub-states, blocked hardware actions and local-only requests')

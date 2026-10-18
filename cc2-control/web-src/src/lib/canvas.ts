@@ -1,5 +1,6 @@
 import { store } from './store'
 import { request } from './api'
+import { observeCanvasSlots } from './canvas-events'
 
 export function canvasModel(data: any) {
   const telemetry = data?.telemetry || data
@@ -67,13 +68,17 @@ export const canvas = store({
 export async function refreshCanvas() {
   try {
     const data = await request('/api/canvas')
+    const model = canvasModel(data)
+    const controls = Array.isArray(data?.slots) ? data.slots : []
+    observeCanvasSlots(Boolean(model?.connected), controls)
     canvas.set({
-      model: canvasModel(data),
-      controls: Array.isArray(data?.slots) ? data.slots : [],
+      model,
+      controls,
       autoRefill: typeof data?.auto_refill === 'boolean' ? data.auto_refill : null,
       checked: new Date().toLocaleTimeString(),
     })
   } catch {
+    observeCanvasSlots(false, []) // Never infer transitions across a lost connection.
     canvas.set({ controls: [] }) // Keep material display, revoke permissions on failed refresh.
   }
 }
