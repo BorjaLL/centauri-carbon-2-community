@@ -26,6 +26,10 @@ jobs:
           cache-dependency-path: cc2-control/web-src/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Backup restore controls and selected-language first render
+        run: npm run test:backup-language
+        env:
+          CC2_SCREENSHOTS: ${{ runner.temp }}/cc2-preview-screenshots
       - name: Navigate the isolated preview and capture each page
         run: npm run test:preview
         env:

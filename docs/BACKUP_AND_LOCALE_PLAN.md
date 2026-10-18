@@ -1,174 +1,144 @@
-# Planned: application backup/restore and language startup
+# Application backup/restore and selected-language startup
 
-Status: **design draft, not implemented or released**. Track these two related
-settings improvements in one PR. Keep `VERSION`, the stable catalog and firmware
-unchanged while developing. This document is a specification, not an installation
-or recovery procedure.
+Status: implementation candidate; automated and real-printer qualification pending.
+These settings improvements share PR #147. The backup suggestion and the report
+of English text during startup came from **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**.
 
-The backup suggestion and the observation of English text during startup came
-from **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)**. Preserve that credit
-when the implementation is released.
+## External application backup
 
-## 1. Backup outside the printer
+Settings → Backup and restore downloads a JSON file to the user's computer.
+The file includes UI preferences and Quick Actions, material presets, plate and
+nozzle definitions with library measurements, and spool inventory/usage/history.
+Export encodes the authoritative in-memory libraries, including spool usage not
+yet due for a periodic disk save. It does not flush or modify those stores.
 
-Add **Settings → Backup and restore**, with a downloadable application backup,
-a file preview, category selection and a separate restore confirmation. Download
-to the browser/computer; do not call an on-printer copy an external backup.
-The file must be usable after replacing a motherboard, once the compatible
-community firmware and CC2 Control are installed and LAN access is configured.
+This is not a printer image. Passwords, LAN/MQTT/SSH configuration, network
+settings, private keys, firmware/binaries, G-code and video are excluded. The
+complete firmware `autosave.cfg` is never exported or restored. Official A/B
+meshes not saved as measurements in the plate library are outside this scope.
 
-### Data inventory from the current sources
+Format v1 has `format: cc2-control-backup`, `schema: 1`, an eight-digit lowercase
+`crc32`, and a `data` object containing model `CC2`, firmware family `4.4`, source
+application version, creation timestamp and named `sections`. The CRC covers
+the exact UTF-8 bytes of the `data` object. It detects corruption, not a trusted
+author. Reformatting JSON changes the CRC; use the downloaded file unchanged.
+Only user-owned, trusted backups should be restored.
 
-`cc2-control/src/main.c` defines the configurable storage locations. Resolve
-these application-owned paths internally; never accept paths from a backup.
+The maximum file size is 512 KiB. Unknown formats/models/firmware families,
+unsupported schemas or section names, duplicate/escaped keys, malformed JSON,
+nonfinite values, invalid identifiers/references, oversized collections and
+invalid mesh bounds/points are refused before changing application state.
+The model/store parsers do not install the parsed data into globals.
 
-| Category | Current storage | Intended backup contents |
-| --- | --- | --- |
-| Interface | `ui-preferences.json` | Language, theme, Quick Actions and persistent-camera preference |
-| Materials | `material-presets.json` | User presets and their temperatures |
-| Plates and nozzles | `bed-plates.json` | Plate/nozzle definitions, offsets, uncalibrated profiles and saved measurements with mesh points, bounds, temperature and timestamp |
-| Spools | `spools.json` | Spool inventory, recorded weights/usage, retained event history and slot association information |
+## Preview and selective restore
 
-`plates_save()` and `spools_save()` serialize the authoritative application
-stores. Spools can have unsaved consumption in memory: export must take a
-consistent snapshot of the current store, not simply copy a stale disk file.
-The existing `plates_load()` / `spools_load()` mutate globals and are **not**
-suitable as trial validators for untrusted restore input. Extract or introduce
-pure bounded parsers before implementing restore.
+Enter the printer LAN access code, choose the file, inspect the server-validated
+preview and select categories. Selected categories replace their current data;
+missing or unchecked categories are not erased or merged. A separate destructive
+confirmation is required before restore. The LAN code is never put in the file
+or browser storage. Standard same-origin and mutation-marker checks still apply.
 
-This is **not** a whole-printer image. Exclude LAN/SSH passwords, MQTT connection
-configuration (`cc2-control.conf`), network credentials, tokens, signing keys,
-firmware/executables, G-code files, camera recordings and temporary jobs. Do not
-copy or restore the complete `/opt/usr/cfg/autosave.cfg`: it contains independent
-firmware calibration. Library measurements are included; official A/B meshes
-that have never been saved in the library are outside this initial scope.
-State that limit in the export preview and user guide.
+The server accepts sequential chunks up to 8 KiB through its ordinary bounded,
+nonblocking HTTP receive pool. One private process-memory upload of at most
+512 KiB is allowed; a preview/upload expires after five minutes. There is no
+blocking network upload loop or new worker thread. This intentionally avoids
+persisting unvalidated uploads: only validated canonical data is staged on disk
+at commit. No new runtime dependency or compression library is required.
 
-### Portable format and preview
+Restore requires fresh MQTT and UDS evidence, connected idle/cold state, zero
+heating targets, and no printing/paused job, calibration, console operation,
+pending restart/mount, offset change or file/application transfer. Eligibility
+is checked throughout upload and again at commit. Fingerprints detect edits to
+selected current categories after preview; conflicts require a new preview.
+Cancellation remains possible if printing starts after preview.
 
-- Use a versioned application-specific format, an explicit compatible model and
-  firmware family, source app version, creation time and an allowlisted section
-  manifest. The storage representation is not finalized in this design draft.
-- Include corruption checks. A checksum detects corruption; it must not be
-  presented as proof of a trusted author or authorization to restore.
-- Validate the complete file before writing any application state: schema,
-  bounds, finite numbers, supported versions, section sizes/counts, IDs,
-  references, duplicate fields/IDs and checksums. Reject unknown required
-  sections or newer unsupported formats; never silently restore only the part
-  that happened to parse. Show errors without changing the existing libraries.
-- Preview source version, creation time, included categories and counts. Missing
-  optional categories are explicit and do not erase existing data.
-- Let the user select categories. Use replacement, not implicit merging, in the
-  first implementation and label that clearly. Preserve an automatic local
-  recovery copy of the previous application state before committing a restore.
+Restored calibration is data, not physical verification:
 
-### Restore and physical state
+- Mounted/pending plate and selected nozzle state is cleared. No mesh load,
+  Z-offset command, firmware slot rewrite, motion or printer reboot is sent.
+  Check the actual plate/nozzle and measurements before explicitly mounting.
+- Restored spool inventory and recorded history are retained. Tracking starts
+  disabled; active job accounting, questions/timers and physical slot bindings
+  are cleared. Previous assignments remain historical suggestions requiring
+  confirmation. Import does not debit a spool or resume an interrupted job.
+- Camera preference is preserved without starting a stream. Interface language,
+  theme and presets refresh after a successful restore.
 
-Restore needs the existing same-origin/mutation protections, LAN-code
-confirmation and fresh connected idle telemetry. Refuse printing, paused jobs,
-calibration, active console commands, pending plate changes/restarts and active
-application/file transfers. Recheck eligibility at commit, not just preview.
-Never hold the HTTP main loop while receiving a slow large backup: its current
-request buffer is bounded. Use a bounded staged upload and retain emergency
-control responsiveness. No new large dependencies are needed.
+## Recoverable transaction
 
-Imported data is not evidence of the physical hardware state:
+Fixed internally resolved application paths are used; no backup-supplied filename
+or directory is accepted. Targets, staging and recovery files reject symlinks,
+hard links, unsafe ownership and writable parent directories. Private recovery
+storage is next to the preferences file in a `.restore` directory.
 
-- Restore plate/nozzle definitions and measured values, but clear the mounted,
-  pending and automatically applied state. Never load a mesh, apply a Z offset,
-  rewrite firmware A/B slots or reboot merely because a backup was imported.
-- Require the user to verify a restored measurement against the actual plate
-  and hardware, particularly after a motherboard/sensor/mechanical change.
-  Keep normal explicit mount/activation guards; restoring is not mounting.
-- Preserve spool inventory, recorded usage and historical associations as data,
-  but require confirmation before treating an association as physically current.
-  Start tracking disabled and clear interrupted job/runout/question timers;
-  never resume an old accounting session or debit a spool on import.
-- Preserve the camera preference without starting the stream automatically.
-  Do not overwrite the target printer's connection credentials.
+All selected previous data and canonical new data are written/fsynced before a
+durable PREPARED journal is installed. New files are staged in their target
+directories, then renamed and directory-synced. Success requires a durable
+COMPLETE marker. A failed replacement rolls back every selected category. An
+interrupted PREPARED operation is rolled back before loading stores or opening
+the service on the next start. Unrecoverable/invalid recovery metadata refuses
+startup rather than serving an unrecognized mixture. Previous plate/spool
+recovery copies encode their current in-memory stores, including unsaved usage.
+The latest completed recovery set is retained until the next restore begins.
 
-Stage files privately on persistent storage, enforce quotas and maximum sizes,
-use fixed allowlisted names and reject links/path traversal. Commit all selected
-categories as a recoverable transaction: a disk-full, interrupted process or
-power loss must not leave an unrecognized mixture of old and new libraries.
-Define and test a recovery journal or equivalent restart recovery before
-claiming atomic multi-file restore. A series of individual renames alone is
-not an atomic multi-file transaction. Keep valid old state if validation or
-staging fails, and clean up abandoned staging without deleting recovery copies.
+This is a recoverable multi-file transaction, not a claim that several renames
+are one filesystem-atomic operation. Tests inject write/rename failure and kill
+a child after one replacement, then verify startup recovery. Hardware power-loss
+qualification and printer resource/stability acceptance remain pending.
 
-## 2. Remove the English flash at startup
+## Selected-language startup
 
-Observed code path: `web-src/src/lib/i18n.ts` starts with an empty active
-dictionary and English bundled fallback; `main.tsx` starts
-`loadUiPreferences()` without awaiting it and renders the application. The
-non-English dictionary arrives later from `/i18n/<code>.json` and triggers a
-browser render. This explains the brief English text; translation runs in the
-browser. It is not evidence of a printer crash or measured CPU spike.
+The first meaningful application render awaits printer-saved preferences and its
+selected dictionary. A neutral CC2 Control identity/spinner appears while these
+bounded requests run. Both fetches have a 1.8-second abort timeout; failure reaches
+a usable application and English fallback instead of an indefinite blank page.
+The server's preferences win over browser hints, including another printer's
+language setting. Failed language changes retain an already loaded dictionary.
+Missing keys still fall back to bundled English.
 
-The backend serves HTML/locales with `Cache-Control: no-store`; no service
-worker/offline application shell is implemented. Do not introduce one here.
-A previously reported old offline page requires separate browser/proxy evidence.
+Only the selected dictionary is downloaded, with validated bounded string data
+and a shared in-flight request. Dictionary caching lasts only within the current
+page/build; no persistent translation cache, service worker or offline HTML
+application shell is introduced. Storage-disabled browsers are supported.
 
-### Intended behavior
+## API
 
-- Initialize the first meaningful render with the selected dictionary when
-  available, rather than render known-wrong English and then switch labels.
-- If caching translations locally in the browser, cache only validated bounded
-  dictionaries, keyed by locale and the exact UI build/version. Invalidate stale
-  dictionaries after an app update. This must not cache an old HTML application
-  or pretend the printer is reachable while offline.
-- Printer-saved preferences remain authoritative. Browser preferences/cache
-  provide startup hints only, including when visiting another printer.
-- For a first uncached visit, use a short bounded initialization state rather
-  than an unbounded blank page. Limit network waits, handle storage-disabled
-  browsers, retain usable connection/error information and never leave emergency
-  controls hidden indefinitely behind a failed translation request.
-- Retain the existing English fallback for missing keys and the current-language
-  behavior on failed language changes. Do not download all nine dictionaries or
-  poll translations repeatedly. Reuse one in-flight request for a locale.
-- Preserve title, dialogs, theme, language switching, camera-window behavior and
-  mobile layout. Explain a genuine fallback without displaying a fake offline
-  version of the application.
+- `GET /api/backup/export`: exact JSON bytes, `application/octet-stream` so a
+  browser helper does not parse/re-stringify the checksum-protected data.
+- `POST /api/backup/import/start`: decimal total size, LAN confirmation header;
+  returns a random preview token.
+- `POST /api/backup/import/chunk`: token, decimal offset header and ≤8192 raw bytes.
+- `POST /api/backup/import/finish`: validate the complete file and return preview.
+- `POST /api/backup/import/restore`: selected-category bitmask (1/2/4/8), token and
+  LAN confirmation; preview and current eligibility/conflicts rechecked.
+- `POST /api/backup/import/cancel`: discard private transient state.
 
-## Acceptance and implementation checklist
+## Validation gate
 
-All items below are **pending**. Do not merge this design draft as a feature
-implementation or publish a package on its strength.
+Candidate tests cover round-trip custom presets, uncalibrated/calibrated plates,
+meshes/nozzles, unsaved spool values/history, corruption/duplicate/schema/refusal,
+selective restore, chunk ordering/expiry, auth/idle/hot/stale/busy guards, symlink
+refusal, failed writes/renames and interrupted-process recovery. Real HTTP checks
+cover export integrity and responsiveness during an incomplete upload. Browser
+checks exercise actual file selection, download, preview, checkboxes, confirmation,
+cancellation/errors/mobile layout and first-render Italian/Polish/Hungarian with
+delayed locale, disabled storage and failed/stalled requests.
 
-- [ ] Pure bounded backup parsers and a documented versioned format.
-- [ ] Consistent export, including unsaved spool changes, with no credentials.
-- [ ] Settings export/import preview and category selection in all nine locales.
-- [ ] Authenticated staged restore with fresh guards at preview and commit.
-- [ ] Recoverable transaction and restart handling; interrupted/disk-full cases.
-- [ ] Mesh/nozzle verification and inert physical state after restore.
-- [ ] Spool usage/history retention without stale live associations/accounting.
-- [ ] Browser language bootstrap, versioned dictionary caching or equivalent,
-      bounded failure path and no stale offline HTML.
-- [ ] Export/restore round trip with custom materials, an empty plate profile,
-      calibrated measurements, nozzle corrections and spool records.
-- [ ] Corrupt/truncated/oversized/unsupported/duplicate input, wrong firmware,
-      traversal/symlink attempts, stale telemetry, print/calibration and auth
-      refusals leave current data unchanged.
-- [ ] Slow/nonresponding upload does not stall telemetry or emergency stop.
-- [ ] Actual browser import confirmation and selected-category behavior;
-      cancellation is inert; desktop/mobile layouts remain usable.
-- [ ] Actual first-render tests in Italian/Polish/Hungarian, delayed locale and
-      preferences, failed requests, disabled storage, language changes and stale
-      cache after an app update. Verify all nine locales still build.
-- [ ] Host/ARM, sanitizer and relevant browser checks; exact UI/overlay/snapshot
-      and builder references refreshed only when application sources change.
-- [ ] English and Italian user instructions, including backup coverage limits
-      and the need to revalidate physical calibration after hardware changes.
-- [ ] Controlled printer trial before feature merge/release. Keep trial revisions
-      separate from release version numbering; do not bump versions per trial.
+Host/ARM/sanitizer/browser CI, exact UI/overlay/source snapshot pins and a
+controlled cumulative printer trial must pass before merge/release. Trial
+revisions do not advance the application release number.
 
 ## Italiano
 
-Un'unica PR in bozza raccoglie **Backup e ripristino** e **avvio della lingua
-senza il passaggio visibile in inglese**. Il backup sarà scaricabile sul computer
-e comprenderà i dati dell'applicazione elencati sopra, non firmware o password.
-Il ripristino mostrerà prima il contenuto e richiederà una conferma; mesh, offset
-e associazioni fisiche delle bobine non verranno riattivati automaticamente.
-Le due funzioni devono ancora essere implementate e provate. Nessuna modifica
-alla release 1.2.15 o al canale stabile in questa PR di pianificazione.
+In **Impostazioni → Backup e ripristino** si scaricano sul computer i dati
+dell'applicazione; il file non contiene password o firmware. Per ripristinarlo,
+inserire il codice LAN, scegliere il file, controllare l'anteprima e le categorie,
+quindi confermare. Le categorie scelte sostituiscono i dati presenti.
 
+Piatti, ugelli e misure importati vanno verificati sulla stampante reale prima
+di montarli. Le bobine importate mantengono inventario e cronologia, con
+tracciamento spento e abbinamenti fisici da riconfermare. Le mesh ufficiali A/B
+che non sono state salvate nella libreria piatti non fanno parte del backup.
+Le richieste di avvio della lingua sono limitate nel tempo e precedono la prima
+visualizzazione dell'interfaccia. Qualificazione automatica e prova cumulativa
+sulla stampante ancora da completare per questa revisione.

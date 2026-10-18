@@ -141,6 +141,34 @@ with tempfile.TemporaryDirectory(prefix="cc2-uds-api-") as temporary:
         assert value["values"]["nozzle_temperature"] == 30
         assert value["values"]["speed_factor"] is None
         assert value["homed_axes"] is None and value["light"] is None
+        # Passive monitoring uses the SAME connection, even while print state is active.
+        send({"method": "cc2_status", "params": {"eventtime": 0.2, "status": {
+            "print_stats": {"state": "printing"}
+        }}})
+        wait_for("/api/uds", lambda x: x["print_state"] == "printing")
+        def monitor(route="/api/console/monitor"):
+            request = urllib.request.Request(f"http://127.0.0.1:{port}{route}", data=b"",
+                headers={"X-CC2-Request": "1"}, method="POST")
+            with urllib.request.urlopen(request, timeout=3) as reply:
+                return json.load(reply)
+        assert monitor()["frames"] == []
+        report = {"method": "cc2_report", "params": {"response": 'probe: 1.234 \"quoted\" <script> & \nnext'}}
+        frame = json.dumps(report).encode() + b"\x03"
+        peer.sendall(frame[:17]); peer.sendall(frame[17:])
+        time.sleep(0.15)
+        log = monitor()
+        assert len(log["frames"]) == 1 and json.loads(log["frames"][0]) == report
+        assert get("/api/console")["command"] == "", "Monitoring must not run a command"
+        cleared = monitor("/api/console/monitor/clear")
+        assert cleared["frames"] == [] and cleared["dropped"] == 0
+        peer.settimeout(0.1)
+        unsolicited = b""
+        try:
+            while True:
+                unsolicited += peer.recv(4096)
+        except socket.timeout:
+            pass
+        assert b"gcode/script" not in unsolicited
         print("PASS UDS subscription, HTTP cache, delta preservation, silence-only probe, disconnect fallback and reconnect")
     finally:
         if peer is not None:

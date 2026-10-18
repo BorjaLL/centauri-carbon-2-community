@@ -3441,6 +3441,24 @@ static void preferences_put_response(int fd, const char *body, size_t body_len) 
     respond(fd, 200, "OK", "application/json; charset=utf-8", ok, strlen(ok));
 }
 
+/* Passive G-code reports only: no command, extra socket or firmware polling. */
+static void console_monitor_response(int fd) {
+ uds_console_lease(&telemetry);
+ const uds_console *log=&telemetry.console;
+ size_t capacity=UDS_CONSOLE_LINES*(UDS_CONSOLE_LINE*2+4)+256;
+ char *body=malloc(capacity);
+ if(!body){respond(fd,503,"Service Unavailable","application/json","{}",2);return;}
+ size_t used=(size_t)snprintf(body,capacity,"{\"connected\":%s,\"sequence\":%lu,\"dropped\":%lu,\"frames\":[",
+  uds_fresh(&telemetry)?"true":"false",log->sequence,log->dropped);
+ for(unsigned int i=0;i<log->count;i++){
+  unsigned int index=(log->next+UDS_CONSOLE_LINES-log->count+i)%UDS_CONSOLE_LINES;
+  char escaped[UDS_CONSOLE_LINE*2];json_escape(escaped,sizeof(escaped),log->lines[index]);
+  used+=(size_t)snprintf(body+used,capacity-used,"%s\"%s\"",i?",":"",escaped);
+ }
+ used+=(size_t)snprintf(body+used,capacity-used,"]}");
+ respond(fd,200,"OK","application/json; charset=utf-8",body,used);free(body);
+}
+
 static void console_status_response(int fd, console_state *console) {
     size_t capacity = CONSOLE_OUTPUT_MAX * 2 + 1024;
     char *body = malloc(capacity);
@@ -3602,6 +3620,7 @@ static void idle_motors_tick(const mqtt_client *mqtt,console_state *console){
 
 #include "app_updates.h"
 #include "app_update_catalog.h"
+#include "backup.h"
 
 #define HTTP_PENDING_MAX 8
 typedef struct {
@@ -3655,7 +3674,10 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
         app_update_fail(fd, 409, "Application update is running; printer changes are paused");
         return 0;
     }
-    if (strcmp(method, "GET") == 0 && strcmp(path, "/api/app-update/status") == 0) {
+    if ((strcmp(method,"GET")==0 && strcmp(path,"/api/backup/export")==0) ||
+        (strcmp(method,"POST")==0 && !strncmp(path,"/api/backup/import/",19))) {
+        bk_response(fd,path,request,body,body_len,mqtt,console);
+    } else if (strcmp(method, "GET") == 0 && strcmp(path, "/api/app-update/status") == 0) {
         app_update_status_response(fd, mqtt, console);
     } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/app-update/upload") == 0) {
         return header_end ? app_update_upload_start(fd, request, used, (size_t)(body-request), mqtt, console, NULL) : 0;
@@ -3802,6 +3824,11 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
         spools_adjust_response(fd,body,body_len);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/pid")==0) {
         pid_status_response(fd,console);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/console/monitor/clear")==0) {
+        memset(&telemetry.console,0,sizeof(telemetry.console));
+        console_monitor_response(fd);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/console/monitor")==0) {
+        console_monitor_response(fd);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/console")==0) {
         console_status_response(fd,console);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/console/clear")==0) {
@@ -3870,6 +3897,7 @@ int main(int argc, char **argv) {
     console_init(&console,"/tmp/elegoo_uds");
     recovery_console=&console;
     uds_init(&telemetry);
+    if(!bk_recover()){fprintf(stderr,"Application restore recovery failed; refusing to load mixed libraries\n");console_destroy(&console);return 1;}
     plates_load();
     if (!plates_available) fprintf(stderr, "Plate library disabled: %s (%s)\n", plates_error, plates_path);
     spools_load();
@@ -3909,6 +3937,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<HTTP_PENDING_MAX;i++)pending[i].fd=-1;
     while (running) {
         recovery_tick();
+        bk_tick();
         mqtt_tick(&mqtt);
         object_query_path = uds_path;
         uds_tick(&telemetry,uds_path);
@@ -3986,6 +4015,7 @@ int main(int argc, char **argv) {
     }
     for(int i=0;i<HTTP_PENDING_MAX;i++)if(pending[i].fd>=0)close(pending[i].fd);
     free(pending);
+    bk_discard();
     spools_flush();
     object_query_close();
     uds_close(&telemetry);

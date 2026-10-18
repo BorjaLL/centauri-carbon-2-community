@@ -629,14 +629,13 @@ static void spools_event_json(json_builder *b, const spool_event *e) {
     json_builder_printf(b, "}");
 }
 
-static int spools_save(void) {
+static char *spools_encode(const spool_store *store, size_t *length) {
     json_builder b = {malloc(SPOOLS_FILE_MAX), 0, SPOOLS_FILE_MAX, 0};
-    spools_saved_ms = spools_clock();
-    if (!b.data) return -1;
-    const spool_job *job = &spools.job;
-    json_builder_printf(&b, "{\"version\":1,\"enabled\":%s,\"slots\":[", spools.enabled ? "true" : "false");
+    if (!b.data) return NULL;
+    const spool_job *job = &store->job;
+    json_builder_printf(&b, "{\"version\":1,\"enabled\":%s,\"slots\":[", store->enabled ? "true" : "false");
     for (int i = 0; i < SPOOL_SLOTS; ++i) {
-        const spool_slot *s = &spools.slots[i];
+        const spool_slot *s = &store->slots[i];
         json_builder_printf(&b, "%s{\"spool\":\"%s\",\"last\":\"%s\",\"question\":%d,\"question_since\":%lld,"
             "\"question_mm\":%.3f,\"question_job\":", i ? "," : "", s->spool, s->last, s->question, s->question_since,
             s->question_mm);
@@ -659,18 +658,28 @@ static int spools_save(void) {
         json_builder_printf(&b, "%s{\"mm\":%.3f,\"grams\":%.4f,\"spool\":\"%s\"}", i ? "," : "", job->mm[i],
                             job->grams[i], job->spool[i]);
     json_builder_printf(&b, "]},\"spools\":[");
-    for (int i = 0; i < spools.count; ++i) {
+    for (int i = 0; i < store->count; ++i) {
         if (i) json_builder_printf(&b, ",");
-        spools_entry_json(&b, &spools.spools[i]);
+        spools_entry_json(&b, &store->spools[i]);
     }
     json_builder_printf(&b, "],\"log\":[");
-    for (int i = 0; i < spools.log_count; ++i) {
+    for (int i = 0; i < store->log_count; ++i) {
         if (i) json_builder_printf(&b, ",");
-        spools_event_json(&b, &spools.log[i]);
+        spools_event_json(&b, &store->log[i]);
     }
     json_builder_printf(&b, "]}\n");
-    int result = b.failed ? -1 : plates_replace_file(spools_path, NULL, b.data, b.length, 0644);
-    free(b.data);
+    if (b.failed) { free(b.data); return NULL; }
+    *length = b.length;
+    return b.data;
+}
+
+static int spools_save(void) {
+    spools_saved_ms = spools_clock();
+    size_t length = 0;
+    char *data = spools_encode(&spools, &length);
+    if (!data) return -1;
+    int result = plates_replace_file(spools_path, NULL, data, length, 0644);
+    free(data);
     if (!result) { spools_dirty = 0; spools_urgent = 0; spools_unsaved = 0; }
     return result;
 }

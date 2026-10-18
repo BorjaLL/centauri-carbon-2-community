@@ -23,7 +23,7 @@ required = (
     "console.unlock_console_to_send_g_code",
     "LANGUAGE_NAMES",
     "setLanguage(e.currentTarget.value, true)",
-    "fetch(`/i18n/${code}.json`",
+    "boundedJson(`/i18n/${code}.json`",
     "const dict = lang === 'en' ? {} : await loadLocale(lang)",
 )
 for marker in required:

@@ -185,8 +185,31 @@ try {
   assert.ok(await page.getByRole('button', { name: '+ 0.01', exact: true }).isEnabled())
   await page.locator('#cc2-navigation a[href="#settings"]').click()
   await page.getByRole('tab').nth(2).click()
+  const savedTheme = page.waitForResponse(r =>
+    r.url().endsWith('/api/preferences') && r.request().method() === 'PUT' &&
+    r.request().postDataJSON()?.theme === 'light')
   await page.locator('main select:has(option[value="light"])').selectOption('light')
+  assert.equal((await savedTheme).status(), 200, 'Theme save initially succeeds')
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
+  // Reject the next theme write at the HTTP level: 503 responses used to be ignored.
+  await page.route('**/api/preferences', async route => {
+    if (route.request().method() === 'PUT' && route.request().postDataJSON()?.theme === 'nord') {
+      return route.fulfill({ status: 503, json: { error: 'Simulated preference save failure' } })
+    }
+    await route.continue()
+  })
+  const rejectedTheme = page.waitForResponse(r =>
+    r.url().endsWith('/api/preferences') && r.request().method() === 'PUT' &&
+    r.request().postDataJSON()?.theme === 'nord')
+  await page.locator('main select:has(option[value="nord"])').selectOption('nord')
+  assert.equal((await rejectedTheme).status(), 503)
+  await page.getByRole('alert').filter({ hasText: 'Simulated preference save failure' }).waitFor()
+  const persisted = await (await page.request.get(`${origin}/api/preferences`)).json()
+  assert.equal(persisted.theme, 'light', 'Failed save must leave server theme unchanged')
+  await page.unroute('**/api/preferences')
+  await page.reload()
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
+  await page.getByRole('tab').nth(2).click()
   await page.route('**/api/preferences', async route => {
     if (route.request().method() === 'PUT' && route.request().postDataJSON()?.quick1) {
       return route.fulfill({ status: 500, json: { error: 'Simulated quick-action save failure' } })
@@ -198,6 +221,50 @@ try {
   await page.getByRole('alert').filter({ hasText: 'Simulated quick-action save failure' }).waitFor()
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light')
   assert.equal(await page.evaluate(() => document.documentElement.lang), 'it')
+  // Exercise the actual monitor switch, filter, clear and manual-command disclosure.
+  let monitorCalls = 0
+  let clearCalls = 0
+  await page.route('**/api/console/monitor', async route => {
+    monitorCalls++
+    assert.equal(route.request().method(), 'POST')
+    await route.fulfill({ json: { connected: true, sequence: 2, dropped: 1, frames: [
+      JSON.stringify({ method: 'cc2_report', params: { response: 'probe: 1.234' } }),
+      JSON.stringify({ method: 'cc2_report', params: { response: '<script>NOT EXECUTED</script>' } }),
+    ] } })
+  })
+  await page.route('**/api/console/monitor/clear', async route => {
+    clearCalls++
+    await route.fulfill({ json: { connected: true, sequence: 0, dropped: 0, frames: [] } })
+  })
+  await page.locator('#cc2-navigation a[href="#console"]').click()
+  const monitorSwitch = page.getByRole('switch', { name: labels['console.monitor_live'], exact: true })
+  assert.equal(await monitorSwitch.getAttribute('aria-checked'), 'false')
+  await page.waitForTimeout(2700)
+  assert.equal(monitorCalls, 0, 'Off must not renew the capture lease')
+  await monitorSwitch.click()
+  await page.locator('main pre').filter({ hasText: 'probe: 1.234' }).waitFor()
+  assert.ok((await page.locator('main pre').textContent()).includes('<script>NOT EXECUTED</script>'))
+  assert.equal(await page.locator('main pre script').count(), 0)
+  await page.getByPlaceholder(labels['console.filter_output_e_g_error_echo']).fill('probe:')
+  assert.equal((await page.locator('main pre').textContent()).includes('NOT EXECUTED'), false)
+  await page.getByRole('button', { name: labels['console.clear_output'], exact: true }).click()
+  assert.equal(clearCalls, 1)
+  await monitorSwitch.click()
+  await page.waitForTimeout(100)
+  const stoppedCalls = monitorCalls
+  await page.waitForTimeout(2800)
+  assert.equal(monitorCalls, stoppedCalls, 'Off stops monitor requests')
+  await monitorSwitch.click()
+  await page.locator('#cc2-navigation a[href="#job"]').click()
+  await page.waitForTimeout(100)
+  const departedCalls = monitorCalls
+  await page.waitForTimeout(2800)
+  assert.equal(monitorCalls, departedCalls, 'Leaving Console stops monitor requests')
+  await page.locator('#cc2-navigation a[href="#console"]').click()
+  await monitorSwitch.click()
+  await page.locator('main summary').click()
+  assert.ok(await page.locator('#console-command').isVisible())
+  assert.ok(await page.locator('#console-command').isDisabled(), 'Monitoring must not unlock manual commands')
   assert.deepEqual(errors, [])
   assert.deepEqual(outside, [], 'Preview must never request printer ports or external services')
   console.log('PASS: isolated preview, all pages at 9 viewport sizes and desktop sidebar states, scenario controls, tuning reset, history, auto refill, printer refusals, sub-states, blocked hardware actions and local-only requests')

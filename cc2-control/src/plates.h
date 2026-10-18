@@ -754,38 +754,47 @@ static void plates_measure_json(json_builder *b, const plate_measure *m, int wit
     json_builder_printf(b, "}");
 }
 
-static int plates_save(void) {
+static char *plates_encode(const plate_store *store, size_t *length) {
     json_builder b = {malloc(PLATES_FILE_MAX), 0, PLATES_FILE_MAX, 0};
-    if (!b.data) return -1;
+    if (!b.data) return NULL;
     json_builder_printf(&b, "{\"version\":2,\"current\":\"%s\",\"pending\":\"%s\",\"nozzle\":\"%s\",\"nozzles\":[",
-                        plates.current, plates.pending, plates.nozzle);
-    for (int i = 0; i < plates.nozzle_count; ++i) {
+                        store->current, store->pending, store->nozzle);
+    for (int i = 0; i < store->nozzle_count; ++i) {
         if (i) json_builder_printf(&b, ",");
-        plates_nozzle_json(&b, &plates.nozzles[i]);
+        plates_nozzle_json(&b, &store->nozzles[i]);
     }
     json_builder_printf(&b, "],\"plates\":[");
     int written = 0;
-    for (int i = 0; i < plates.count; ++i) {
-        if (!plates.plates[i].measure[0]) continue;
+    for (int i = 0; i < store->count; ++i) {
+        if (!store->plates[i].measure[0]) continue;
         if (written++) json_builder_printf(&b, ",");
-        plates_plate_json(&b, &plates.plates[i]);
+        plates_plate_json(&b, &store->plates[i]);
         json_builder_printf(&b, "}");
     }
     /* Older apps keep reading calibrated plates; unfinished profiles are separate. */
     json_builder_printf(&b, "],\"uncalibrated\":["); written = 0;
-    for (int i = 0; i < plates.count; ++i) {
-        if (plates.plates[i].measure[0]) continue;
+    for (int i = 0; i < store->count; ++i) {
+        if (store->plates[i].measure[0]) continue;
         if (written++) json_builder_printf(&b, ",");
-        plates_plate_json(&b, &plates.plates[i]); json_builder_printf(&b, "}");
+        plates_plate_json(&b, &store->plates[i]); json_builder_printf(&b, "}");
     }
     json_builder_printf(&b, "],\"measures\":[");
-    for (int i = 0; i < plates.measure_count; ++i) {
+    for (int i = 0; i < store->measure_count; ++i) {
         if (i) json_builder_printf(&b, ",");
-        plates_measure_json(&b, &plates.measures[i], 1, -1, -1);
+        plates_measure_json(&b, &store->measures[i], 1, -1, -1);
     }
     json_builder_printf(&b, "]}\n");
-    int result = b.failed ? -1 : plates_replace_file(plates_path, NULL, b.data, b.length, 0644);
-    free(b.data);
+    if (b.failed) { free(b.data); return NULL; }
+    *length = b.length;
+    return b.data;
+}
+
+static int plates_save(void) {
+    size_t length = 0;
+    char *data = plates_encode(&plates, &length);
+    if (!data) return -1;
+    int result = plates_replace_file(plates_path, NULL, data, length, 0644);
+    free(data);
     return result;
 }
 
