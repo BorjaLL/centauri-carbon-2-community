@@ -1,3 +1,6 @@
+#ifndef CC2_COMMUNITY_FIRMWARE_VERSION
+#define CC2_COMMUNITY_FIRMWARE_VERSION "4.4"
+#endif
 #define main cc2_application_main
 #include "../src/main.c"
 #undef main

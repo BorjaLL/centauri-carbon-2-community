@@ -421,7 +421,7 @@ static int bk_parse(const char *text,size_t length,backup_data *out) {
     snprintf(actual,sizeof(actual),"%08x",bk_crc(data,(size_t)(de-data)));
     if(strcmp(checksum,actual) || !bk_keys(data,de,",model,firmware,version,created,sections,") ||
        !bk_text(data,de,"model",model,sizeof(model)) || strcmp(model,"CC2") ||
-       !bk_text(data,de,"firmware",firmware,sizeof(firmware)) || strcmp(firmware,"4.4") ||
+       !bk_text(data,de,"firmware",firmware,sizeof(firmware)) || strcmp(firmware,CC2_COMMUNITY_FIRMWARE_VERSION) ||
        !bk_text(data,de,"version",out->version,sizeof(out->version)) ||
        !*out->version || strspn(out->version,"0123456789.-abcdefghijklmnopqrstuvwxyz")!=strlen(out->version) ||
        !spools_time_member(data,de,"created",&out->created))return 0;

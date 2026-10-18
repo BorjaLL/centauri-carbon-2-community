@@ -150,7 +150,7 @@ static char *bk_export(size_t *length) {
         return NULL;
     }
     json_builder b={data,0,BK_MAX,0};
-    json_builder_printf(&b,"{\"model\":\"CC2\",\"firmware\":\"4.4\",\"version\":\"" CC2_CONTROL_VERSION "\",\"created\":%lld,\"sections\":{",(long long)time(NULL));
+    json_builder_printf(&b,"{\"model\":\"CC2\",\"firmware\":\"" CC2_COMMUNITY_FIRMWARE_VERSION "\",\"version\":\"" CC2_CONTROL_VERSION "\",\"created\":%lld,\"sections\":{",(long long)time(NULL));
     for(int i=0;i<4;i++)json_builder_printf(&b,"%s\"%s\":%.*s",i?",":"",bk_names[i],(int)sizes[i],parts[i]);
     json_builder_printf(&b,"}}");
     bk_free_sections(parts);
