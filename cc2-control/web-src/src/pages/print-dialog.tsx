@@ -457,9 +457,9 @@ const Form = ({ job }: { job: Pending }) => {
                   ? 'print.a_complete_11_11_bed_mesh'
                   : unknown && !calibrating
                     ? 'canvas.state_unknown'
-                  : calibrating
-                    ? 'print.calibration_will_follow_the_g_code'
-                    : 'print.the_printer_will_use_the_saved'
+                    : calibrating
+                      ? 'print.calibration_will_follow_the_g_code'
+                      : 'print.the_printer_will_use_the_saved'
               )}
             </div>
           </fieldset>
