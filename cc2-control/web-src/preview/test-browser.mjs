@@ -6,6 +6,7 @@ import { createServer } from 'vite'
 import { chromium } from 'playwright'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
+const labels = JSON.parse(await readFile(path.join(root, 'public/locales/it.json'), 'utf8'))
 // An accidental proxy would fail the API and browser checks below.
 process.env.CC2_BACKEND = 'http://127.0.0.1:1'
 const server = await createServer({ root, configFile: path.join(root, 'vite.config.ts'), mode: 'demo', server: { port: 0, host: '127.0.0.1' } })
@@ -36,7 +37,8 @@ try {
     infoCalls++
     return route.fulfill({ json: { result: { klippy_connected: orcaState !== 'disconnected' } } })
   })
-  await page.route(url => url.pathname === '/server/database/item' && url.searchParams.get('namespace') === 'lane_data', route => {
+  const laneMatcher = url => url.pathname === '/server/database/item' && url.searchParams.get('namespace') === 'lane_data'
+  await page.route(laneMatcher, route => {
     laneCalls++
     if (orcaState === 'failure') return route.fulfill({ status: 503, json: { error: 'Mock lane_data failure' } })
     const value = orcaState === 'empty' ? {} : orcaState === 'malformed' ? {
@@ -69,7 +71,7 @@ try {
   await orcaTest.click()
   await page.getByRole('alert').filter({ hasText: 'Mock lane_data failure' }).waitFor()
   await page.unroute('**/server/info')
-  await page.unroute(url => url.pathname === '/server/database/item' && url.searchParams.get('namespace') === 'lane_data')
+  await page.unroute(laneMatcher)
   await page.locator('#cc2-navigation a[href="#dashboard"]').click()
   const naturalControl = async () => {
     const layout = await page.locator('.cc2-control-columns').evaluate(e => {
@@ -160,7 +162,6 @@ try {
   }
   await Promise.all([page.waitForEvent('load'), page.locator('#preview-reset').click()])
   assert.equal((await (await page.request.get(`${origin}/__preview/scenario`)).json()).scene, 'printing')
-  const labels = JSON.parse(await readFile(path.join(root, 'public/locales/it.json'), 'utf8'))
   // Print history: rendering needs an idle printer, a rendered video becomes a download.
   const refreshed = page.waitForResponse(r => r.url().endsWith('/api/history/refresh') && r.request().method() === 'POST')
   await page.locator('#cc2-navigation a[href="#history"]').click()
