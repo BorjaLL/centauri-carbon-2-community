@@ -368,8 +368,8 @@ static int bk_preferences(const char *o,const char *end,char out[512]) {
          !strstr(",en,it,fr,es,hu,cs,pl,ru,zh,",lang))) || !bk_text(o,end,"theme",theme_code,sizeof(theme_code)) ||
         !theme_valid(theme_code,strlen(theme_code)) || !spools_bool_member(o,end,"camera_persistent",&camera))return 0;
     for(int i=0;i<4;i++) {
-        char key[8];
-        snprintf(key,sizeof(key),"quick%d",i+1);
+        char key[]="quick1";
+        key[5]=(char)('1'+i);
         if(!bk_text(o,end,key,quick[i],sizeof(quick[i])) || !quick_action_valid(quick[i]))return 0;
     }
     snprintf(out,512,"{\"language\":\"%s\",\"theme\":\"%s\",\"quick1\":\"%s\",\"quick2\":\"%s\",\"quick3\":\"%s\",\"quick4\":\"%s\",\"camera_persistent\":%s}\n",
