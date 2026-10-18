@@ -16,6 +16,31 @@ import { consoleLog, printer, refreshConsole, view } from '@/lib/state'
 
 const I = { size: 16, strokeWidth: 1 }
 const expert = store({ on: false })
+const live = store({ on: false, text: '', dropped: 0, connected: false, error: false })
+async function refreshLive() {
+  if (!live.get().on) return
+  try {
+    const data = await post('/api/console/monitor')
+    if (!live.get().on) return
+    const text = (data.frames as string[])
+      .map(frame => {
+        try {
+          const event = JSON.parse(frame)
+          const message = event.params?.response ?? event.params?.message ?? event.report?.message
+          return typeof message === 'string' ? message : frame
+        } catch {
+          return frame
+        }
+      })
+      .join('\n')
+    live.set({ text, dropped: data.dropped, connected: data.connected, error: false })
+  } catch {
+    live.set({ error: true, connected: false })
+  }
+}
+const refreshConsolePage = () => {
+  if (!live.get().on) return refreshConsole()
+}
 const history: string[] = [] // commands sent in this session, for the arrow-key recall
 
 export async function sendConsole(command: string) {
@@ -42,6 +67,7 @@ const Check = ({ children }: { children: Key }) => (
 
 export const Console = () => {
   const { text } = consoleLog.use()
+  const monitor = live.use()
   const on = expert.use().on
   const d = printer.use().data,
     v = view(d)
@@ -50,9 +76,12 @@ export const Console = () => {
     [cmd, setCmd] = useState(''),
     recall = useRef(-1)
   const screen = useRef<HTMLPreElement>(null)
-  usePoll(refreshConsole, 2500)
+  usePoll(refreshConsolePage, 2500)
+  usePoll(refreshLive, 2500)
   // The placeholder comes from this UI, everything else is printer output and stays as received.
-  const lines = (text ?? t('common.protected_console_ready_waiting')).split(/\r?\n/),
+  const lines = (
+      monitor.on ? monitor.text || t('console.monitor_waiting') : (text ?? t('common.protected_console_ready_waiting'))
+    ).split(/\r?\n/),
     shown = (filter ? lines.filter(l => l.toLowerCase().includes(filter.toLowerCase())) : lines).join('\n')
   useEffect(() => {
     if (auto && screen.current) screen.current.scrollTop = screen.current.scrollHeight
@@ -79,6 +108,11 @@ export const Console = () => {
   }
   const clear = async () => {
     try {
+      if (monitor.on) {
+        await post('/api/console/monitor/clear')
+        live.set({ text: '', dropped: 0 })
+        return
+      }
       await post('/api/console/clear')
       consoleLog.set({ text: '' })
       await refreshConsole()
@@ -87,9 +121,27 @@ export const Console = () => {
     }
   }
   return (
-    <Page title="common.console" sub="console.send_g_code_commands_and_view">
+    <Page title="common.console" sub="console.monitor_description">
       <div class="grid gap-3.5 cc2-xl:grid-cols-[minmax(0,2.3fr)_minmax(330px,1fr)]">
         <Card>
+          <label class="mb-2 flex items-center gap-2">
+            <Switch on={monitor.on} label={t('console.monitor_live')} onClick={() => live.set({ on: !monitor.on })} />
+            {t('console.monitor_live')}
+          </label>
+          <p class="mb-3 text-sm text-muted">{t('console.monitor_hint')}</p>
+          {monitor.on && (
+            <p role="status" class="mb-2 text-sm text-muted">
+              {t(
+                monitor.error
+                  ? 'console.monitor_unreachable'
+                  : monitor.connected
+                    ? 'console.monitor_connected'
+                    : 'console.monitor_disconnected'
+              )}
+              {' · '}
+              {tpl('console.monitor_dropped', { count: monitor.dropped })}
+            </p>
+          )}
           <div class="mb-3 flex flex-wrap items-center gap-2.5">
             <Input
               class="min-w-48 flex-1"
@@ -125,26 +177,29 @@ export const Console = () => {
           >
             {shown}
           </pre>
-          <label htmlFor="console-command" class="mb-2 mt-4 block font-semibold">
-            {t('console.send_g_code_command')}
-          </label>
-          <div class="flex gap-2.5">
-            <Input
-              id="console-command"
-              class="flex-1"
-              disabled={!on}
-              placeholder={t(on ? 'console.enter_g_code_command' : 'console.unlock_console_to_send_g_code')}
-              value={cmd}
-              onInput={e => setCmd(e.currentTarget.value)}
-              onKeyDown={browse}
-              autoComplete="off"
-              spellcheck={false}
-            />
-            <Button disabled={!on} onClick={send}>
-              <Send {...I} />
-              {t('console.send')}
-            </Button>
-          </div>
+          <details class="mt-4" aria-label={t('console.send_g_code_commands_and_view')}>
+            <summary class="cursor-pointer font-semibold">{t('console.send_g_code_command')}</summary>
+            <label htmlFor="console-command" class="mb-2 mt-4 block font-semibold">
+              {t('console.send_g_code_command')}
+            </label>
+            <div class="flex gap-2.5">
+              <Input
+                id="console-command"
+                class="flex-1"
+                disabled={!on}
+                placeholder={t(on ? 'console.enter_g_code_command' : 'console.unlock_console_to_send_g_code')}
+                value={cmd}
+                onInput={e => setCmd(e.currentTarget.value)}
+                onKeyDown={browse}
+                autoComplete="off"
+                spellcheck={false}
+              />
+              <Button disabled={!on} onClick={send}>
+                <Send {...I} />
+                {t('console.send')}
+              </Button>
+            </div>
+          </details>
         </Card>
         <div class="grid content-start gap-3">
           <Card>

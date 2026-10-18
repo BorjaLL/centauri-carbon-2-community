@@ -945,5 +945,13 @@
   "plates.mesh_apply": "Nasadit a aktivovat",
   "plates.mesh_active": "Aktivní síť tiskárny",
   "plates.mesh_scope": "Samotný výběr neodesílá příkazy. Před použitím potvrďte skutečně nasazenou desku. Restart je vyžádán pouze v případě potřeby. Zahájení tisku se nadále řídí zvolenou stranou a možnostmi vyrovnání.",
-  "plates.mesh_confirm": "Potvrďte nasazenou desku: {name}, strana {side}, měření při {temp} °C. Použije se síť a posun Z desky/trysky."
+  "plates.mesh_confirm": "Potvrďte nasazenou desku: {name}, strana {side}, měření při {temp} °C. Použije se síť a posun Z desky/trysky.",
+  "console.monitor_live": "Živý monitor G-code",
+  "console.monitor_description": "Sledujte zprávy tiskárny; ruční příkazy jsou dostupné níže.",
+  "console.monitor_hint": "Zprávy G-code pouze pro čtení, nikoli celý systémový protokol. Uchovává posledních 32 zpráv (každá do 1 KiB); pozastaví se při skrytí nebo zavření stránky.",
+  "console.monitor_waiting": "Čekání na nové zprávy firmwaru…",
+  "console.monitor_connected": "Proud tiskárny připojen",
+  "console.monitor_disconnected": "Proud tiskárny odpojen",
+  "console.monitor_unreachable": "Monitor není dostupný; poslední zprávy zachovány",
+  "console.monitor_dropped": "Vynechané starší, příliš dlouhé nebo nadlimitní zprávy: {count}"
 }

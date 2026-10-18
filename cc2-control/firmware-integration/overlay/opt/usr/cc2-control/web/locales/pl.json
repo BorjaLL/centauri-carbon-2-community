@@ -945,5 +945,13 @@
   "plates.mesh_apply": "Zamontuj i aktywuj",
   "plates.mesh_active": "Aktywna siatka drukarki",
   "plates.mesh_scope": "Sam wybór nie wysyła poleceń. Przed zastosowaniem potwierdź fizycznie zamontowaną płytę. Restart jest wymagany tylko w razie potrzeby. Start druku nadal uwzględnia wybraną stronę i opcje poziomowania.",
-  "plates.mesh_confirm": "Potwierdź zamontowaną płytę: {name}, strona {side}, pomiar przy {temp} °C. Zostaną zastosowane siatka i przesunięcie Z płyty/dyszy."
+  "plates.mesh_confirm": "Potwierdź zamontowaną płytę: {name}, strona {side}, pomiar przy {temp} °C. Zostaną zastosowane siatka i przesunięcie Z płyty/dyszy.",
+  "console.monitor_live": "Monitor G-code na żywo",
+  "console.monitor_description": "Monitoruj komunikaty drukarki; polecenia ręczne są dostępne poniżej.",
+  "console.monitor_hint": "Komunikaty G-code tylko do odczytu, nie pełny dziennik systemowy. Zachowuje ostatnie 32 komunikaty (do 1 KiB każdy); wstrzymuje się po ukryciu lub zamknięciu strony.",
+  "console.monitor_waiting": "Oczekiwanie na nowe komunikaty firmware…",
+  "console.monitor_connected": "Strumień drukarki połączony",
+  "console.monitor_disconnected": "Strumień drukarki rozłączony",
+  "console.monitor_unreachable": "Monitor niedostępny; ostatnie komunikaty zachowane",
+  "console.monitor_dropped": "Pominięte starsze, zbyt długie lub nadmiarowe komunikaty: {count}"
 }

@@ -139,6 +139,25 @@ int main(void){
  message(&c,"{\"method\":\"cc2_status\",\"params\":{\"eventtime\":3,\"status\":{\"filament_switch_sensor filament_sensor\":{\"filament_detected\":null}}}}");
  uds_motion_light(&c,&view);assert(!view.canvas_direct_known);
  uds_close(&c);uds_motion_light(&c,&view);assert(!view.canvas_direct_known);close(pair[1]);
+ /* A passive report never grants telemetry freshness or changes command state. */
+ uds_init(&c);
+ const char *report="{\"method\":\"cc2_report\",\"params\":{\"response\":\"probe: 1.234\"}}";
+ message(&c,report);assert(c.console.count==0);
+ uds_console_lease(&c);message(&c,report);
+ assert(c.console.count==1&&c.console.sequence==1&&!strcmp(c.console.lines[0],report));
+ assert(!uds_fresh(&c)&&c.messages==0);
+ for(int i=0;i<100;i++)message(&c,report);
+ assert(c.console.count==20&&c.console.dropped==81);
+ c.console.rate_start.tv_sec-=2;
+ for(int i=0;i<20;i++)message(&c,report);
+ assert(c.console.count==32&&c.console.dropped==89);
+ c.console.until.tv_sec-=20;message(&c,report);assert(c.console.sequence==40);
+ uds_console_lease(&c);c.console.rate_start.tv_sec-=2;
+ char large[2048];memset(large,'x',sizeof(large));
+ memcpy(large,report,strlen(report)-3);
+ /* A valid oversized response is refused without evicting any retained line. */
+ snprintf(large,sizeof(large),"{\"method\":\"cc2_report\",\"params\":{\"response\":\"%01500d\"}}",1);
+ message(&c,large);assert(c.console.count==32&&c.console.dropped==90);
  puts("PASS UDS initial/delta merge, ordering, scaling, job matching, stale fallback, fragmented frames, silence-only probes and exclude_object state");
  return 0;
 }
