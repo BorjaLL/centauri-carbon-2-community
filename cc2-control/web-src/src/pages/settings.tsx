@@ -292,6 +292,7 @@ export const Settings = () => {
     <div class="cc2-settings mx-auto max-w-4xl">
       <Page title="common.settings" sub="settings.configure_your_cc2_printer_and">
         <Tabs
+          wrap
           items={TABS.map(([Glyph, label]) => ({ id: label, label: t(label), icon: <Glyph {...G} /> }))}
           value={TABS[tab][1]}
           onChange={id => openSettings(TAB_ROUTES[TABS.findIndex(([, label]) => label === id)])}

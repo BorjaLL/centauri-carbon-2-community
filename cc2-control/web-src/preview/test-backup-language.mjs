@@ -170,6 +170,39 @@ try {
   await failedPage.getByRole('heading', { name: en['common.settings'], exact: true }).waitFor()
   assert.ok(Date.now() - began < 5500, 'Failure must reach a usable page within a bounded startup')
   await failed.close()
+  // Every Settings section must be fully visible without horizontal scrolling,
+  // including the longer translated Backup label reported on the real printer.
+  for (const code of ['en', 'it', 'fr', 'es', 'hu', 'cs', 'pl', 'ru', 'zh']) {
+    const context = await browser.newContext({ viewport: { width: 1536, height: 1000 }, reducedMotion: 'reduce' })
+    const tabsPage = await context.newPage()
+    await tabsPage.route('**/api/setup', r => r.fulfill({ json: { configured: true, required: false } }))
+    await tabsPage.route('**/api/preferences', r => r.fulfill({ json: { language: code, theme: 'dark' } }))
+    await tabsPage.goto(origin + '/#settings/backup')
+    await tabsPage.getByRole('tab').nth(5).waitFor()
+    for (const width of [1536, 1024, 768, 390]) {
+      await tabsPage.setViewportSize({ width, height: 1000 })
+      await tabsPage.waitForFunction(() => innerWidth > 900 || parseFloat(getComputedStyle(document.querySelector('main')).marginLeft) === 0)
+      const geometry = await tabsPage.getByRole('tablist').evaluate(bar => {
+        const outer = bar.getBoundingClientRect()
+        return { fits: bar.scrollWidth <= bar.clientWidth + 1, pageFits: document.documentElement.scrollWidth <= innerWidth,
+          tabs: [...bar.querySelectorAll('[role=tab]')].map(button => {
+            const r = button.getBoundingClientRect()
+            return { contained: r.left >= outer.left - 1 && r.right <= outer.right + 1 && r.top >= outer.top - 1 && r.bottom <= outer.bottom + 1,
+              readable: button.scrollWidth <= button.clientWidth + 1 }
+          }) }
+      })
+      assert.equal(geometry.tabs.length, 6)
+      assert.ok(geometry.fits && geometry.pageFits && geometry.tabs.every(t => t.contained && t.readable), `${code}/${width}: clipped Settings tab`)
+      if (code === 'it' && [1536, 390].includes(width))
+        await tabsPage.screenshot({ path: path.join(screenshots, `settings-tabs-it-${width}.png`), fullPage: true, animations: 'disabled' })
+    }
+    await tabsPage.getByRole('tab').nth(0).click()
+    assert.equal(await tabsPage.getByRole('tab').nth(0).getAttribute('aria-selected'), 'true')
+    await tabsPage.getByRole('tab').nth(5).click()
+    assert.equal(await tabsPage.getByRole('tab').nth(5).getAttribute('aria-selected'), 'true')
+    await context.close()
+  }
+  console.log('PASS: all six Settings tabs fully visible and clickable in nine languages at desktop/tablet/mobile widths')
   console.log('PASS: real backup download, chunked browser import, selective/cancelled/refused restore, mobile layout; first-render Italian/Polish/Hungarian, blocked storage and failed requests')
 } finally {
   await browser?.close()
