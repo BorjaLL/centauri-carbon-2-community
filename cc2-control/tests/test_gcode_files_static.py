@@ -78,4 +78,3 @@ for marker in required_web:
     assert marker in web, f"missing dashboard feature: {marker}"
 
 print("PASS: G-code storage, Canvas popup, safety guards and native method 1020 markers are present.")
-
