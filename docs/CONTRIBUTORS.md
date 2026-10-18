@@ -95,3 +95,9 @@ This project also relies on upstream tools and third-party components. Their pro
 **pezso92**: Hungarian refinements and preference-save feedback (#144/#145, integrated #148), and three-state print mesh readiness/manual recheck (#150, integrated #151). Original commits and credit are retained.
 
 **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)** suggested external backup and saved-language startup, and continued real-printer testing as our ultimate beta tester. Earlier Spanish, Hungarian, mesh and punctuation contributors remain credited above.
+
+## CC2 Control 1.2.17
+
+**[pezso92](https://github.com/pezso92)**: original Orca endpoint diagnostics (#155), manual allowlisted diagnostics export (#156) and bounded observed Canvas slot timeline (#157), integrated in #158 with original feature commits and attribution retained.
+
+Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, for continued field feedback; earlier contributors and language credits remain above.
