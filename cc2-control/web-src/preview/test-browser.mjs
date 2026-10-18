@@ -265,6 +265,62 @@ try {
   await page.locator('main summary').click()
   assert.ok(await page.locator('#console-command').isVisible())
   assert.ok(await page.locator('#console-command').isDisabled(), 'Monitoring must not unlock manual commands')
+  // Deliberately place sensitive strings in raw APIs. An exported diagnostic
+  // may only contain the narrow allowlist, never full server responses.
+  let healthFails = false
+  await page.route('**/api/health', route =>
+    healthFails
+      ? route.fulfill({ status: 503, json: { error: 'PRIVATE-HEALTH-ERROR' } })
+      : route.fulfill({ json: {
+          version: '1.2.16', uptime_seconds: 250, mem_total_kb: 111168, mem_available_kb: 30720,
+          mqtt_connected: true, mqtt_registered: true, snapshot_received: true,
+          printer_uuid: 'PRIVATE-UUID', lan_code: 'PRIVATE-LAN-CODE',
+        } })
+  )
+  await page.route('**/api/printer', route =>
+    route.fulfill({ json: {
+      connected: true,
+      file_name: 'PRIVATE-MODEL.gcode', api_key: 'PRIVATE-KEY',
+      extruder: { temperature: 210 }, heater_bed: { temperature: 60 },
+      z_offset: { value: -0.01, pending: false },
+      printer_error: { method: 1020, code: 1009, age: 4, details: 'PRIVATE-DETAIL' },
+    } })
+  )
+  await page.route('**/api/canvas', route =>
+    route.fulfill({ json: {
+      auto_refill: true, private_ip: 'PRIVATE-IP-ADDRESS',
+      result: { canvas_info: { canvas_list: [
+        { connected: 1, tray_list: [{ filament_name: 'PRIVATE-FILAMENT' }, {}] },
+      ] } },
+    } })
+  )
+  await page.locator('#cc2-navigation a[href="#settings"]').click()
+  await page.getByRole('tab').nth(3).click()
+  const diagnosticButton = page.getByRole('button', { name: labels['settings.diagnostics_export'], exact: true })
+  const downloadPromise = page.waitForEvent('download')
+  await diagnosticButton.click()
+  const diagnosticDownload = await downloadPromise
+  assert.match(diagnosticDownload.suggestedFilename(), /^CC2-Control-diagnostics-\d{4}-\d{2}-\d{2}\.json$/)
+  const diagnosticJson = await readFile(await diagnosticDownload.path(), 'utf8')
+  assert.ok(!diagnosticJson.includes('PRIVATE-'), 'Allowlist must exclude all secret-like fields')
+  const diagnostic = JSON.parse(diagnosticJson)
+  assert.equal(diagnostic.format, 'cc2-control-diagnostics')
+  assert.equal(diagnostic.schema_version, 1)
+  assert.deepEqual(diagnostic.sources, { health: 'ok', printer: 'ok', canvas: 'ok' })
+  assert.equal(diagnostic.health.version, '1.2.16')
+  assert.equal(diagnostic.printer.last_error_code, 1009)
+  assert.equal(diagnostic.canvas.connected_modules, 1)
+  assert.equal(diagnostic.canvas.slot_records, 2)
+  healthFails = true
+  const partialDownload = page.waitForEvent('download')
+  await diagnosticButton.click()
+  const partialReport = JSON.parse(await readFile(await (await partialDownload).path(), 'utf8'))
+  assert.equal(partialReport.sources.health, 'unavailable')
+  assert.equal(partialReport.health.version, null)
+  assert.ok(!JSON.stringify(partialReport).includes('PRIVATE-HEALTH-ERROR'))
+  await page.unroute('**/api/health')
+  await page.unroute('**/api/printer')
+  await page.unroute('**/api/canvas')
   assert.deepEqual(errors, [])
   assert.deepEqual(outside, [], 'Preview must never request printer ports or external services')
   console.log('PASS: isolated preview, all pages at 9 viewport sizes and desktop sidebar states, scenario controls, tuning reset, history, auto refill, printer refusals, sub-states, blocked hardware actions and local-only requests')

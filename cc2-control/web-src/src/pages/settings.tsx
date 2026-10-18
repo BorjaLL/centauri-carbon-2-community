@@ -7,8 +7,9 @@ import { Tag } from '@/components/ui/badge'
 import { Input, PasswordInput, Select } from '@/components/ui/field'
 import { Tabs } from '@/components/ui/tabs'
 import { GithubIcon } from '@/components/github-icon'
-import { Activity, Info, Link, Palette, Plug, RefreshCw, Undo2, Archive } from 'lucide-preact'
+import { Activity, Info, Link, Palette, Plug, RefreshCw, Undo2, Archive, FileDown } from 'lucide-preact'
 import { errText, notify, post, request } from '@/lib/api'
+import { collectDiagnostics } from '@/lib/diagnostics'
 import {
   cameraPreferences,
   setPersistentCamera,
@@ -283,6 +284,42 @@ const Appearance = () => {
   )
 }
 
+const DiagnosticsExport = () => {
+  const [busy, setBusy] = useState(false)
+  const download = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      const report = await collectDiagnostics(request)
+      const json = JSON.stringify(report, null, 2) + '\n'
+      if (json.length > 16384) throw Error('Report exceeds safety limit')
+      const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `CC2-Control-diagnostics-${new Date().toLocaleDateString('sv-SE')}.json`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      notify(t('settings.diagnostics_downloaded'))
+    } catch (error) {
+      notify(tpl('settings.diagnostics_failed_error', { error: errText(error) }), 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div class="mt-4 border-t border-edge pt-3">
+      <p class="mb-3 max-w-2xl text-xs text-muted">{t('settings.diagnostics_help')}</p>
+      <Button disabled={busy} onClick={() => void download()}>
+        <FileDown {...G} />
+        {t('settings.diagnostics_export')}
+      </Button>
+    </div>
+  )
+}
+
 export const Settings = () => {
   usePoll(refreshHealth, 5000)
   usePoll(refreshSetup, 5000)
@@ -328,6 +365,7 @@ export const Settings = () => {
                   v={<span class="font-normal">{t('settings.preact_tailwind_css_lucide_icons')}</span>}
                 />
               </div>
+              <DiagnosticsExport />
             </Card>
           )}
         </div>
