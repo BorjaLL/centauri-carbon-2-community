@@ -155,16 +155,15 @@ const Integrations = () => {
       const value = lanes?.result?.value
       if (lanes?.result?.namespace !== 'lane_data' || !value || typeof value !== 'object' || Array.isArray(value))
         throw Error(t('settings.orca_sync_pending'))
-      const count = Object.entries(value).filter(
-        ([key, row]) =>
-          /^lane[1-4]$/.test(key) &&
-          row &&
-          typeof row === 'object' &&
-          !Array.isArray(row) &&
-          typeof row.lane === 'string' &&
-          typeof row.material === 'string' &&
-          typeof row.color === 'string'
-      ).length
+      const count = Object.entries(value).filter(([key, row]) => {
+        if (!/^lane[1-4]$/.test(key) || !row || typeof row !== 'object' || Array.isArray(row)) return false
+        const entry = row as Record<string, unknown>
+        return (
+          typeof entry.lane === 'string' &&
+          typeof entry.material === 'string' &&
+          typeof entry.color === 'string'
+        )
+      }).length
       notify(count ? tpl('settings.orca_sync_ready', { count }) : t('settings.orca_sync_pending'))
     } catch (error) {
       notify(tpl('settings.orca_compatibility_unavailable', { error: errText(error) }), 'error')
