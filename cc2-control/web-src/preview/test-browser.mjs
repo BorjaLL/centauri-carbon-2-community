@@ -17,7 +17,7 @@ try {
   browser = await chromium.launch({ headless: true, ...(process.env.CC2_BROWSER_PATH ? { executablePath: process.env.CC2_BROWSER_PATH, args: ['--no-sandbox', '--disable-gpu', '--disable-software-rasterizer', '--single-process', '--no-zygote'] } : {}) })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const errors = [], outside = []
-  page.on('pageerror', e => errors.push(e.message))
+  page.on('pageerror', e => { errors.push(e.message); console.error(e.stack || e.message) })
   page.on('request', r => {
     if (!r.url().startsWith(`${origin}/`) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) outside.push(r.url())
   })
@@ -103,7 +103,7 @@ try {
       await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
       await page.waitForTimeout(150)
       if (tab === 'job') assert.equal(await page.locator('main .cc2-tuning').count(), 0, 'Job must not duplicate dashboard tuning')
-      assert.ok(await page.locator('main').innerText(), `${width} ${tab}: empty page`)
+      assert.ok(await page.locator('main').innerText(), `${width} ${tab}: empty page; browser errors: ${JSON.stringify(errors)}`)
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)
       assert.equal(overflow, false, `${width} ${tab}: horizontal overflow`)
       if (tab === 'control' && width >= 1280 && height > 500) await naturalControl()
