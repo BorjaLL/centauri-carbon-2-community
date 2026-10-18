@@ -9,6 +9,7 @@ import {
   Folder,
   Grid3x3,
   House,
+  History,
   Info,
   Layers,
   Lightbulb,
@@ -32,6 +33,7 @@ import { CanvasIcon } from '@/components/canvas-icon'
 
 const icons = {
   home: House,
+  history: History,
   control: SlidersHorizontal,
   file: File,
   folder: Folder,
