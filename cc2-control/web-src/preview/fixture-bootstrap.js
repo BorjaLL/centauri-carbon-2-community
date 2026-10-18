@@ -49,7 +49,8 @@
         const busy=state.status!==1
         const load=fresh&&!busy&&kind==='present'&&!state.headLoaded&&state.activeTray===-1
         const unload=fresh&&!busy&&kind==='loaded'
-        return {slot:t.tray_id,state:kind,load,unload,reason_load:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='loaded'?'already_loaded':kind==='transition'?'transition':load?'none':'head_occupied',reason_unload:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='transition'?'transition':unload?'none':'not_loaded'}
+        const transitionReason=state.headLoaded&&state.activeTray===-1?'unassigned_head':'transition'
+        return {slot:t.tray_id,state:kind,load,unload,reason_load:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='loaded'?'already_loaded':kind==='transition'?transitionReason:load?'none':'head_occupied',reason_unload:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='transition'?transitionReason:unload?'none':'not_loaded'}
       }),telemetry:{result:{canvas_info:{canvas_list:[{canvas_id:0,connected:1,tray_list:state.trays}]}}}})
     if (path === '/api/printer') return reply(printer())
     if (path === '/api/health') return reply({ service: 'cc2-control', version: '1.2.3', mqtt_connected: state.connected })

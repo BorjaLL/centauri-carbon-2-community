@@ -992,5 +992,8 @@
   "canvas.timeline_hint": "Jen v této relaci: změny stavů pozic hlášené tiskárnou. Nejde o detekci pohybu filamentu ani chyby čištění.",
   "canvas.timeline_empty": "Zatím nebyla zaznamenána žádná změna pozice.",
   "canvas.timeline_change": "Pozice {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Vymazat historii"
+  "canvas.timeline_clear": "Vymazat historii",
+  "canvas.reason_unassigned_head": "Filament zjištěn v hlavě · pozice nepřiřazena",
+  "canvas.recovery_title": "Stav Canvas je třeba obnovit",
+  "canvas.recovery_hint": "Po restartu může v hlavě zůstat filament bez přiřazené pozice Canvas. Na displeji ELEGOO ověřte poslední použitou pozici a dokončete její zavedení standardním postupem; může dojít k dalšímu pročištění. Nezavádějte jiný filament. Pokud pozici neznáte nebo používáte externí cívku, zkontrolujte cestu filamentu a postupujte podle displeje. Ovládání se odblokuje, až tiskárna oznámí konzistentní stav."
 }

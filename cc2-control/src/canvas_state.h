@@ -4,15 +4,15 @@
 #include "canvas_json.h"
 #include <time.h>
 enum canvas_slot_kind { CV_UNKNOWN,CV_EMPTY,CV_PRESENT,CV_LOADED,CV_TRANSITION };
-enum canvas_reason { CR_NONE,CR_UNAVAILABLE,CR_EMPTY,CR_BUSY,CR_HEAD_OCCUPIED,CR_NOT_LOADED,CR_ALREADY_LOADED,CR_TRANSITION };
+enum canvas_reason { CR_NONE,CR_UNAVAILABLE,CR_EMPTY,CR_BUSY,CR_HEAD_OCCUPIED,CR_NOT_LOADED,CR_ALREADY_LOADED,CR_TRANSITION,CR_UNASSIGNED_HEAD };
 typedef struct {int state,load,unload,reason_load,reason_unload;} canvas_slot_view;
 static inline const char *canvas_kind_name(int state) {
  static const char *names[]={"unknown","empty","present","loaded","transition"};
  return state>=0&&state<=CV_TRANSITION?names[state]:names[0];
 }
 static inline const char *canvas_reason_name(int reason) {
- static const char *names[]={"none","unavailable","empty","busy","head_occupied","not_loaded","already_loaded","transition"};
- return reason>=0&&reason<=CR_TRANSITION?names[reason]:names[1];
+ static const char *names[]={"none","unavailable","empty","busy","head_occupied","not_loaded","already_loaded","transition","unassigned_head"};
+ return reason>=0&&reason<=CR_UNASSIGNED_HEAD?names[reason]:names[1];
 }
 /* MQTT Canvas is a retained delta cache within one live session; the existing
  * disconnect path clears it. Do not add full Canvas UDS subscriptions/polling.
@@ -69,7 +69,11 @@ static inline canvas_slot_view canvas_slot_policy(const mqtt_client *m,int slot)
  int status=canvas_reported_status(m,slot),active=m->canvas_direct_active,head=m->canvas_head_loaded;
  if(status<0||active<-1||active>3)return v;
  if((head&&active==-1)||(!head&&active!=-1)){
-  v.state=CV_TRANSITION;v.reason_load=v.reason_unload=CR_TRANSITION;return v;
+  /* Distinguish a head-presence report without a known Canvas channel. This
+   * can occur after reboot with filament still in the head. It does not prove
+   * which slot feeds the head (or rule out external filament). Keep both
+   * commands blocked; the new reason only enables accurate recovery guidance. */
+  v.state=CV_TRANSITION;v.reason_load=v.reason_unload=head?CR_UNASSIGNED_HEAD:CR_TRANSITION;return v;
  }
  if(status==0&&active!=slot)v.state=CV_EMPTY;
  else if(status==1&&active!=slot)v.state=CV_PRESENT;

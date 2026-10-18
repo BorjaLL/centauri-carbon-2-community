@@ -179,6 +179,7 @@ export const Canvas = () => {
     not_loaded: 'canvas.reason_not_loaded',
     already_loaded: 'canvas.reason_already_loaded',
     transition: 'canvas.reason_transition',
+    unassigned_head: 'canvas.reason_unassigned_head',
   }
   const reason = (key?: string) => t(reasons[key || ''] || 'canvas.reason_unavailable')
   const sync = async () => {
@@ -377,6 +378,12 @@ export const Canvas = () => {
           </Card>
           <Card>
             <CardHead icon="settings" title={ok ? 'canvas.canvas_controls' : 'canvas.controls_unavailable'} />
+            {ok && idle && controls.some(c => c.reason_load === 'unassigned_head') && (
+              <div role="status" data-canvas-recovery class="mb-3 rounded-md border border-edge bg-field p-3 text-sm">
+                <p class="font-semibold">{t('canvas.recovery_title')}</p>
+                <p class="mt-2 text-muted">{t('canvas.recovery_hint')}</p>
+              </div>
+            )}
             <div class="grid gap-2">
               {ctl.map(([Glyph, label, fn, allowed, why]) => (
                 <Button

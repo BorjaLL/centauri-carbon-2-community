@@ -972,5 +972,8 @@
   "canvas.timeline_hint": "Solo en esta sesión: cambios de estado de las ranuras informados por la impresora. No detecta el movimiento físico del filamento ni fallos de purga.",
   "canvas.timeline_empty": "Todavía no se registraron cambios de ranura.",
   "canvas.timeline_change": "Ranura {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Borrar historial"
+  "canvas.timeline_clear": "Borrar historial",
+  "canvas.reason_unassigned_head": "Filamento detectado en el cabezal · ranura sin asociar",
+  "canvas.recovery_title": "Es necesario restablecer el estado de Canvas",
+  "canvas.recovery_hint": "Tras un reinicio puede quedar filamento en el cabezal sin una ranura Canvas asociada. En la pantalla ELEGOO, comprueba la última ranura utilizada y completa su carga con el procedimiento nativo; puede realizarse una purga adicional. No cargues otro filamento. Si desconoces la ranura o utilizas una bobina externa, revisa el recorrido del filamento y sigue las instrucciones de la pantalla. Los controles se habilitan cuando la impresora comunica un estado coherente."
 }
