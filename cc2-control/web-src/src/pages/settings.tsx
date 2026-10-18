@@ -158,11 +158,7 @@ const Integrations = () => {
       const count = Object.entries(value).filter(([key, row]) => {
         if (!/^lane[1-4]$/.test(key) || !row || typeof row !== 'object' || Array.isArray(row)) return false
         const entry = row as Record<string, unknown>
-        return (
-          typeof entry.lane === 'string' &&
-          typeof entry.material === 'string' &&
-          typeof entry.color === 'string'
-        )
+        return typeof entry.lane === 'string' && typeof entry.material === 'string' && typeof entry.color === 'string'
       }).length
       notify(count ? tpl('settings.orca_sync_ready', { count }) : t('settings.orca_sync_pending'))
     } catch (error) {
