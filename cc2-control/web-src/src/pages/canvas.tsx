@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { ask } from '@/lib/confirm'
-import { ArrowBigDown, ArrowBigUp, Check, Info, Palette, RefreshCw, Repeat, BrushCleaning, History, Trash2 } from 'lucide-preact'
+import { ArrowBigDown, ArrowBigUp, Check, Info, Palette, RefreshCw, Repeat, BrushCleaning, Trash2 } from 'lucide-preact'
 import { cn } from '@/lib/utils'
 import { Card, CardHead, Page } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
