@@ -3620,6 +3620,7 @@ static void idle_motors_tick(const mqtt_client *mqtt,console_state *console){
 
 #include "app_updates.h"
 #include "app_update_catalog.h"
+#include "backup.h"
 
 #define HTTP_PENDING_MAX 8
 typedef struct {
@@ -3673,7 +3674,10 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
         app_update_fail(fd, 409, "Application update is running; printer changes are paused");
         return 0;
     }
-    if (strcmp(method, "GET") == 0 && strcmp(path, "/api/app-update/status") == 0) {
+    if ((strcmp(method,"GET")==0 && strcmp(path,"/api/backup/export")==0) ||
+        (strcmp(method,"POST")==0 && !strncmp(path,"/api/backup/import/",19))) {
+        bk_response(fd,path,request,body,body_len,mqtt,console);
+    } else if (strcmp(method, "GET") == 0 && strcmp(path, "/api/app-update/status") == 0) {
         app_update_status_response(fd, mqtt, console);
     } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/app-update/upload") == 0) {
         return header_end ? app_update_upload_start(fd, request, used, (size_t)(body-request), mqtt, console, NULL) : 0;
@@ -3893,6 +3897,7 @@ int main(int argc, char **argv) {
     console_init(&console,"/tmp/elegoo_uds");
     recovery_console=&console;
     uds_init(&telemetry);
+    if(!bk_recover()){fprintf(stderr,"Application restore recovery failed; refusing to load mixed libraries\n");console_destroy(&console);return 1;}
     plates_load();
     if (!plates_available) fprintf(stderr, "Plate library disabled: %s (%s)\n", plates_error, plates_path);
     spools_load();
@@ -3932,6 +3937,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<HTTP_PENDING_MAX;i++)pending[i].fd=-1;
     while (running) {
         recovery_tick();
+        bk_tick();
         mqtt_tick(&mqtt);
         object_query_path = uds_path;
         uds_tick(&telemetry,uds_path);
@@ -4009,6 +4015,7 @@ int main(int argc, char **argv) {
     }
     for(int i=0;i<HTTP_PENDING_MAX;i++)if(pending[i].fd>=0)close(pending[i].fd);
     free(pending);
+    bk_discard();
     spools_flush();
     object_query_close();
     uds_close(&telemetry);

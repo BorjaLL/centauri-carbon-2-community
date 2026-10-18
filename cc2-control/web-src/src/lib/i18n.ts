@@ -27,6 +27,7 @@ export const detectLanguage = () =>
 // Every UI string is an identifier from public/locales/en.json (the source language, bundled); other locales load on demand.
 export type Key = keyof typeof en
 const source: Record<string, string> = en
+const sourceKeys = new Set(Object.keys(source))
 
 export const i18n = store({ lang: ls.get('cc2-language') || detectLanguage(), dict: {} as Record<string, string> })
 // Palettes are defined in index.css; the backend only stores the identifier (see preferences_theme in main.c).
@@ -52,18 +53,44 @@ export async function setPersistentCamera(persistent: boolean) {
 }
 
 const cache: Record<string, Record<string, string>> = {}
-async function loadLocale(code: string) {
-  if (cache[code]) return cache[code]
+const localeRequests = new Map<string, Promise<Record<string, string> | null>>()
+async function boundedJson(path: string) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), 1800)
   try {
-    const r = await fetch(`/i18n/${code}.json`, { cache: 'no-store' })
-    if (r.ok) {
-      cache[code] = await r.json()
-      return cache[code]
-    }
-  } catch {
-    /* handled below */
+    const response = await fetch(path, { cache: 'no-store', signal: controller.signal })
+    if (!response.ok) throw Error(`HTTP ${response.status}`)
+    const text = await response.text()
+    if (text.length > 262144) throw Error('Response too large')
+    return JSON.parse(text)
+  } finally {
+    clearTimeout(timer)
   }
-  return null
+}
+async function loadLocale(code: string): Promise<Record<string, string> | null> {
+  if (cache[code]) return cache[code]
+  const pending = localeRequests.get(code)
+  if (pending) return pending
+  const loading = (async () => {
+    try {
+      const data: unknown = await boundedJson(`/i18n/${code}.json`)
+      if (!data || Array.isArray(data) || typeof data !== 'object') return null
+      const dict: Record<string, string> = Object.create(null)
+      for (const [key, value] of Object.entries(data)) {
+        if (!sourceKeys.has(key) || typeof value !== 'string' || !value || value.length > 8192) return null
+        dict[key] = value
+      }
+      if (!Object.keys(dict).length) return null
+      cache[code] = dict
+      return dict
+    } catch {
+      return null
+    } finally {
+      localeRequests.delete(code)
+    }
+  })()
+  localeRequests.set(code, loading)
+  return loading
 }
 
 // A key missing from the active locale falls back to English.
@@ -94,7 +121,7 @@ function persist(prefs: { language?: string; theme?: string }) {
 }
 
 export async function setLanguage(code: string, save = false) {
-  const lang = LANGUAGE_NAMES[code] ? code : 'en'
+  const lang = Object.keys(LANGUAGE_NAMES).includes(code) ? code : 'en'
   const dict = lang === 'en' ? {} : await loadLocale(lang)
   if (!dict) {
     notify(tpl('common.translation_unavailable_lang', { lang }))
@@ -116,7 +143,7 @@ export function setTheme(mode: string, save = false) {
 
 export async function loadUiPreferences() {
   try {
-    const p = await (await fetch('/api/preferences', { cache: 'no-store' })).json()
+    const p = await boundedJson('/api/preferences')
     cameraPreferences.set({ persistent: p.camera_persistent === true })
     setTheme(p.theme)
     setQuickFromServer(p.quick_actions)
@@ -124,5 +151,8 @@ export async function loadUiPreferences() {
   } catch {
     setTheme(theme.get().mode)
     await setLanguage(i18n.get().lang)
+  } finally {
+    // On a first visit there is no previous dictionary to retain after failure.
+    if (i18n.get().lang !== 'en' && !Object.keys(i18n.get().dict).length) await setLanguage('en')
   }
 }

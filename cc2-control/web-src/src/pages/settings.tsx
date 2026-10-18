@@ -7,7 +7,7 @@ import { Tag } from '@/components/ui/badge'
 import { Input, PasswordInput, Select } from '@/components/ui/field'
 import { Tabs } from '@/components/ui/tabs'
 import { GithubIcon } from '@/components/github-icon'
-import { Activity, Info, Link, Palette, Plug, RefreshCw, Undo2 } from 'lucide-preact'
+import { Activity, Info, Link, Palette, Plug, RefreshCw, Undo2, Archive } from 'lucide-preact'
 import { errText, notify, post, request } from '@/lib/api'
 import {
   cameraPreferences,
@@ -28,6 +28,7 @@ import { ls } from '@/lib/store'
 import { usePoll } from '@/lib/poll'
 import { health, nav, openSettings, type SettingsTab, refreshHealth, refreshSetup } from '@/lib/state'
 import { Updates } from './Updates'
+import { Backup } from './Backup'
 
 const TABS = [
   [Link, 'settings.connection'],
@@ -35,8 +36,9 @@ const TABS = [
   [Palette, 'settings.appearance'],
   [Info, 'settings.about'],
   [RefreshCw, 'updates.title'],
+  [Archive, 'backup.title'],
 ] as const
-const TAB_ROUTES: SettingsTab[] = ['connection', 'integrations', 'appearance', 'about', 'updates']
+const TAB_ROUTES: SettingsTab[] = ['connection', 'integrations', 'appearance', 'about', 'updates', 'backup']
 const G = { size: 16, strokeWidth: 1 }
 const Dot = () => <i class="inline-block size-2 rounded-full bg-current align-middle" />
 const Field = ({ label, help, htmlFor, children }: { label: Key; help?: Key; htmlFor?: string; children: any }) => (
@@ -290,6 +292,7 @@ export const Settings = () => {
     <div class="cc2-settings mx-auto max-w-4xl">
       <Page title="common.settings" sub="settings.configure_your_cc2_printer_and">
         <Tabs
+          wrap
           items={TABS.map(([Glyph, label]) => ({ id: label, label: t(label), icon: <Glyph {...G} /> }))}
           value={TABS[tab][1]}
           onChange={id => openSettings(TAB_ROUTES[TABS.findIndex(([, label]) => label === id)])}
@@ -299,6 +302,7 @@ export const Settings = () => {
           {tab === 1 && <Integrations />}
           {tab === 2 && <Appearance />}
           {tab === 4 && <Updates />}
+          {tab === 5 && <Backup />}
           {tab === 3 && (
             <Card>
               <CardHead icon="info" title="settings.about" />
