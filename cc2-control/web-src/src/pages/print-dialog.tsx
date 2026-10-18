@@ -17,7 +17,8 @@ type Pending = {
   tools: number[]
   // mm: the slicer's filament length for the tool, when the file states it.
   filaments: { tool: number; color: string; material: string; mm?: number }[]
-  meshAvailable: { A: boolean; B: boolean }
+  meshAvailable: MeshAvailability
+  meshError: string | null
   trays: any[]
   connected: boolean
   spools: SpoolLibrary | null
@@ -26,6 +27,29 @@ type Pending = {
   bedTemp: number | null
   nozzleDiameter: number | null
 }
+type MeshAvailability = { A: boolean | null; B: boolean | null }
+type MeshReadiness = { availability: MeshAvailability; error: string | null }
+
+// A failed or malformed mesh read is UNKNOWN, never evidence that no mesh exists.
+// This is a read-only request; retrying must not start calibration or a print.
+async function readMeshReadiness(): Promise<MeshReadiness> {
+  try {
+    const data = await request('/api/mesh')
+    const profiles = meshRoot(data)?.profiles
+    if (!profiles || typeof profiles !== 'object' || Array.isArray(profiles))
+      return { availability: { A: null, B: null }, error: t('state.unknown') }
+    return {
+      availability: { A: Boolean(profiles.default), B: Boolean(profiles.default1) },
+      error: null,
+    }
+  } catch (error) {
+    return {
+      availability: { A: null, B: null },
+      error: errText(error),
+    }
+  }
+}
+
 const pending = store({ job: null as Pending | null })
 let activeGeneration = 0,
   lastSeen = 0,
@@ -48,23 +72,23 @@ export async function startFile(storage: string, path: string) {
   fileAnalysisPending = true
   notify(t('print.analysing_file'))
   try {
-    const [inspection, canvasData, meshData, library, plateLibrary] = await Promise.all([
+    const [inspection, canvasData, meshReadiness, library, plateLibrary] = await Promise.all([
       post('/api/gcode-files/inspect', `${storage}\n${path}`),
       request('/api/canvas').catch(() => ({ available: false })),
-      request('/api/mesh').catch(() => null),
+      readMeshReadiness(),
       printer.get().data?.spools?.enabled ? request('/api/spools').catch(() => null) : null,
       request('/api/plates').catch(() => null),
     ])
     const tools: number[] = Array.isArray(inspection.tools) && inspection.tools.length ? inspection.tools : [0]
-    const model = canvasModel(canvasData),
-      profiles = meshRoot(meshData)?.profiles || {}
+    const model = canvasModel(canvasData)
     pending.set({
       job: {
         storage,
         path,
         tools,
         filaments: Array.isArray(inspection.filaments) ? inspection.filaments : [],
-        meshAvailable: { A: Boolean(profiles.default), B: Boolean(profiles.default1) },
+        meshAvailable: meshReadiness.availability,
+        meshError: meshReadiness.error,
         trays: model?.trays || [],
         connected: Boolean(model?.connected),
         spools: library?.available && library.enabled ? library : null,
@@ -130,6 +154,9 @@ const Form = ({ job }: { job: Pending }) => {
   const [calibrate, setCalibrate] = useState(false)
   const [timelapse, setTimelapse] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [meshAvailable, setMeshAvailable] = useState(job.meshAvailable)
+  const [meshError, setMeshError] = useState(job.meshError)
+  const [meshChecking, setMeshChecking] = useState(false)
   const [note, setNote] = useState(
     t(
       job.connected
@@ -140,8 +167,9 @@ const Form = ({ job }: { job: Pending }) => {
     )
   )
   const tray = (i: number) => job.trays.find(x => x && Number(x.tray_id) === i)
-  const available = job.meshAvailable[side],
-    forced = !available,
+  const available = meshAvailable[side],
+    unknown = available === null,
+    forced = available === false,
     calibrating = forced || calibrate
   // The mounted plate's measurement for a print on its saved mesh (nearest to the file's bed temperature unless
   // chosen) and the nozzle on the printer (the installed one, or the only one matching the file's diameter).
@@ -180,6 +208,18 @@ const Form = ({ job }: { job: Pending }) => {
     return s?.spool && s.need !== null && s.need > s.spool.remaining
   })
 
+  const recheckMesh = async () => {
+    if (busy || meshChecking) return
+    setMeshChecking(true)
+    try {
+      const next = await readMeshReadiness()
+      setMeshAvailable(next.availability)
+      setMeshError(next.error)
+    } finally {
+      setMeshChecking(false)
+    }
+  }
+
   const close = () => {
     if (busy) return
     const g = activeGeneration
@@ -189,7 +229,9 @@ const Form = ({ job }: { job: Pending }) => {
   }
   const submit = async (e: Event) => {
     e.preventDefault()
-    if (busy) return
+    if (busy || meshChecking) return
+    if (unknown && !calibrating)
+      return setNote(tpl('bed.mesh_unavailable_error', { error: meshError || t('state.unknown') }))
     if (useCanvas && job.tools.some(tool => !map[tool])) return setNote(t('print.choose_a_canvas_slot_for_every'))
     const mapping = useCanvas ? job.tools.map(tool => `${tool}:${map[tool]}`).join(',') : ''
     if (multi && !mapping) return setNote(t('print.a_multicolour_file_requires_canvas'))
@@ -337,9 +379,22 @@ const Form = ({ job }: { job: Pending }) => {
                 {t(s === 'A' ? 'print.side_a' : 'print.side_b')}
               </label>
             ))}
-            <div class="text-xs text-amber">
-              {t(available ? 'print.a_saved_mesh_is_available_for' : 'print.this_build_plate_side_has_no')}
-            </div>
+            {unknown ? (
+              <div class="grid gap-2 text-xs text-amber" data-mesh-readiness="unknown">
+                <span role="status">
+                  {tpl('bed.mesh_unavailable_error', { error: meshError || t('state.unknown') })}
+                </span>
+                <div>
+                  <Button type="button" disabled={busy || meshChecking} onClick={recheckMesh}>
+                    {t('files.refresh')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div class="text-xs text-amber" data-mesh-readiness={available ? 'saved' : 'missing'}>
+                {t(available ? 'print.a_saved_mesh_is_available_for' : 'print.this_build_plate_side_has_no')}
+              </div>
+            )}
             {plateHere && !calibrating && (
               <label class="mt-2 grid gap-1 text-xs">
                 {tpl('print.plate_mesh', { name: plateHere.name })}
@@ -391,7 +446,7 @@ const Form = ({ job }: { job: Pending }) => {
               <input
                 type="checkbox"
                 checked={calibrating}
-                disabled={forced}
+                disabled={forced || busy || meshChecking}
                 onChange={e => setCalibrate(e.currentTarget.checked)}
               />{' '}
               {t('print.calibrate_bed_before_printing')}
@@ -400,6 +455,8 @@ const Form = ({ job }: { job: Pending }) => {
               {t(
                 forced
                   ? 'print.a_complete_11_11_bed_mesh'
+                  : unknown && !calibrating
+                    ? 'canvas.state_unknown'
                   : calibrating
                     ? 'print.calibration_will_follow_the_g_code'
                     : 'print.the_printer_will_use_the_saved'
@@ -423,7 +480,7 @@ const Form = ({ job }: { job: Pending }) => {
           <Button onClick={close} disabled={busy}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" variant="primary" disabled={busy}>
+          <Button type="submit" variant="primary" disabled={busy || meshChecking || (unknown && !calibrating)}>
             {t('print.start_print')}
           </Button>
         </div>
