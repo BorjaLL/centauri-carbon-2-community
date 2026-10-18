@@ -197,8 +197,10 @@ try {
         await tabsPage.screenshot({ path: path.join(screenshots, `settings-tabs-it-${width}.png`), fullPage: true, animations: 'disabled' })
     }
     await tabsPage.getByRole('tab').nth(0).click()
+    await tabsPage.waitForFunction(() => document.querySelectorAll('[role=tab]')[0]?.getAttribute('aria-selected') === 'true')
     assert.equal(await tabsPage.getByRole('tab').nth(0).getAttribute('aria-selected'), 'true')
     await tabsPage.getByRole('tab').nth(5).click()
+    await tabsPage.waitForFunction(() => document.querySelectorAll('[role=tab]')[5]?.getAttribute('aria-selected') === 'true')
     assert.equal(await tabsPage.getByRole('tab').nth(5).getAttribute('aria-selected'), 'true')
     await context.close()
   }
