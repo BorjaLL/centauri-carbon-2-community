@@ -456,8 +456,10 @@
   "settings.mqtt_connection": "MQTT Connection",
   "settings.network_and_device_access_settings": "Network and device access settings",
   "settings.octo_klipper_test_endpoint": "Octo/Klipper test endpoint",
-  "settings.orca_compatibility_ready_text": "Orca compatibility ready: {text}",
   "settings.orca_compatibility_unavailable": "Orca compatibility unavailable: {error}",
+  "settings.orca_sync_ready": "CC2 Moonraker responds with {count} Canvas slot records. Set OrcaSlicer's printer agent to Moonraker.",
+  "settings.orca_sync_pending": "CC2 Moonraker responds, but no Canvas slot records are available. Check Canvas status and try again.",
+  "settings.orca_sync_disconnected": "CC2 Moonraker responds, but the printer connection is not ready.",
   "settings.orcaslicer_compatibility": "OrcaSlicer Compatibility",
   "settings.panda_breath_compatibility": "Panda Breath Compatibility",
   "settings.panda_endpoint_available": "Panda Breath compatibility endpoint is available.",
@@ -981,5 +983,14 @@
   "backup.restored": "Selected data restored. Check physical associations before using restored plates or spools.",
   "backup.download_started": "Backup download started.",
   "backup.cancelled": "Backup preview cancelled.",
-  "backup.working": "Working…"
+  "backup.working": "Working…",
+  "settings.diagnostics_export": "Download diagnostics",
+  "settings.diagnostics_help": "Create a read-only snapshot of connection, resource and error counters. Files, device IDs, network addresses and credentials are excluded. Review the JSON before sharing.",
+  "settings.diagnostics_downloaded": "Diagnostic report downloaded.",
+  "settings.diagnostics_failed_error": "Could not create the diagnostic report: {error}",
+  "canvas.timeline_title": "Observed Canvas changes",
+  "canvas.timeline_hint": "This session only: recent slot state transitions reported by the printer. Not a mechanical filament-movement or purge-failure detector.",
+  "canvas.timeline_empty": "No slot changes recorded yet.",
+  "canvas.timeline_change": "Slot {slot}: {from} → {to}",
+  "canvas.timeline_clear": "Clear history"
 }

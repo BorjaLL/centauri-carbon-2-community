@@ -456,8 +456,10 @@
   "settings.mqtt_connection": "Připojení MQTT",
   "settings.network_and_device_access_settings": "Nastavení sítě a přístupu k zařízení",
   "settings.octo_klipper_test_endpoint": "Testovací endpoint Octo/Klipper",
-  "settings.orca_compatibility_ready_text": "Kompatibilita s Orca připravena: {text}",
   "settings.orca_compatibility_unavailable": "Kompatibilita s Orca nedostupná: {error}",
+  "settings.orca_sync_ready": "Rozhraní CC2 Moonraker odpovídá a poskytuje údaje o {count} pozicích Canvas. V OrcaSlicer nastavte agenta tiskárny na Moonraker.",
+  "settings.orca_sync_pending": "Rozhraní CC2 Moonraker odpovídá, ale údaje o pozicích Canvas nejsou dostupné. Zkontrolujte stav Canvas a zkuste to znovu.",
+  "settings.orca_sync_disconnected": "Rozhraní CC2 Moonraker odpovídá, ale připojení k tiskárně ještě není připravené.",
   "settings.orcaslicer_compatibility": "Kompatibilita s OrcaSlicer",
   "settings.panda_breath_compatibility": "Kompatibilita s Panda Breath",
   "settings.panda_endpoint_available": "Endpoint kompatibility s Panda Breath je dostupný.",
@@ -981,5 +983,14 @@
   "backup.restored": "Vybraná data obnovena. Před použitím ověřte fyzická přiřazení.",
   "backup.download_started": "Stahování zálohy zahájeno.",
   "backup.cancelled": "Náhled zrušen.",
-  "backup.working": "Probíhá operace…"
+  "backup.working": "Probíhá operace…",
+  "settings.diagnostics_export": "Stáhnout diagnostiku",
+  "settings.diagnostics_help": "Vytvoří snímek připojení, prostředků a chyb pouze pro čtení. Soubory, ID zařízení, síťové adresy a hesla nejsou zahrnuty. Před sdílením zkontrolujte JSON.",
+  "settings.diagnostics_downloaded": "Diagnostická zpráva byla stažena.",
+  "settings.diagnostics_failed_error": "Nelze vytvořit diagnostickou zprávu: {error}",
+  "canvas.timeline_title": "Pozorované změny Canvas",
+  "canvas.timeline_hint": "Jen v této relaci: změny stavů pozic hlášené tiskárnou. Nejde o detekci pohybu filamentu ani chyby čištění.",
+  "canvas.timeline_empty": "Zatím nebyla zaznamenána žádná změna pozice.",
+  "canvas.timeline_change": "Pozice {slot}: {from} → {to}",
+  "canvas.timeline_clear": "Vymazat historii"
 }

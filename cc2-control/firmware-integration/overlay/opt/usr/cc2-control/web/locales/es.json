@@ -456,8 +456,10 @@
   "settings.mqtt_connection": "Conexion MQTT",
   "settings.network_and_device_access_settings": "Configuracion de red y acceso a dispositivos",
   "settings.octo_klipper_test_endpoint": "Punto final de prueba Octo/Klipper",
-  "settings.orca_compatibility_ready_text": "Compatibilidad con Orca lista: {text}",
   "settings.orca_compatibility_unavailable": "Compatibilidad con Orca no disponible: {error}",
+  "settings.orca_sync_ready": "CC2 Moonraker responde y ofrece datos de {count} ranuras Canvas. Configura Moonraker como agente de impresora en OrcaSlicer.",
+  "settings.orca_sync_pending": "CC2 Moonraker responde, pero no hay datos de las ranuras Canvas. Comprueba el estado de Canvas y vuelve a intentarlo.",
+  "settings.orca_sync_disconnected": "CC2 Moonraker responde, pero la conexión con la impresora aún no está lista.",
   "settings.orcaslicer_compatibility": "Compatibilidad con OrcaSlicer",
   "settings.panda_breath_compatibility": "Compatibilidad con Panda Breath",
   "settings.panda_endpoint_available": "El punto final de compatibilidad con Panda Breath esta disponible.",
@@ -961,5 +963,14 @@
   "backup.restored": "Datos seleccionados restaurados. Comprueba las asociaciones físicas antes de usarlos.",
   "backup.download_started": "Descarga de la copia iniciada.",
   "backup.cancelled": "Vista previa cancelada.",
-  "backup.working": "Operación en curso…"
+  "backup.working": "Operación en curso…",
+  "settings.diagnostics_export": "Descargar diagnóstico",
+  "settings.diagnostics_help": "Genera una instantánea de solo lectura de conexión, recursos y errores. No incluye archivos, identificadores, direcciones de red ni contraseñas. Revisa el JSON antes de compartirlo.",
+  "settings.diagnostics_downloaded": "Informe de diagnóstico descargado.",
+  "settings.diagnostics_failed_error": "No se pudo crear el informe de diagnóstico: {error}",
+  "canvas.timeline_title": "Cambios observados de Canvas",
+  "canvas.timeline_hint": "Solo en esta sesión: cambios de estado de las ranuras informados por la impresora. No detecta el movimiento físico del filamento ni fallos de purga.",
+  "canvas.timeline_empty": "Todavía no se registraron cambios de ranura.",
+  "canvas.timeline_change": "Ranura {slot}: {from} → {to}",
+  "canvas.timeline_clear": "Borrar historial"
 }

@@ -456,8 +456,10 @@
   "settings.mqtt_connection": "Соединение MQTT",
   "settings.network_and_device_access_settings": "Сеть и доступ к устройству",
   "settings.octo_klipper_test_endpoint": "Тестовый эндпоинт Octo/Klipper",
-  "settings.orca_compatibility_ready_text": "Совместимость с Orca готова: {text}",
   "settings.orca_compatibility_unavailable": "Совместимость с Orca недоступна: {error}",
+  "settings.orca_sync_ready": "CC2 Moonraker отвечает и предоставляет данные {count} слотов Canvas. Выберите агент принтера Moonraker в OrcaSlicer.",
+  "settings.orca_sync_pending": "CC2 Moonraker отвечает, но данные слотов Canvas недоступны. Проверьте состояние Canvas и повторите попытку.",
+  "settings.orca_sync_disconnected": "CC2 Moonraker отвечает, но соединение с принтером ещё не готово.",
   "settings.orcaslicer_compatibility": "Совместимость с OrcaSlicer",
   "settings.panda_breath_compatibility": "Совместимость с Panda Breath",
   "settings.panda_endpoint_available": "Эндпоинт совместимости Panda Breath доступен.",
@@ -947,5 +949,14 @@
   "backup.restored": "Выбранные данные восстановлены. Перед использованием проверьте физические назначения.",
   "backup.download_started": "Скачивание копии начато.",
   "backup.cancelled": "Просмотр копии отменён.",
-  "backup.working": "Выполняется операция…"
+  "backup.working": "Выполняется операция…",
+  "settings.diagnostics_export": "Скачать диагностику",
+  "settings.diagnostics_help": "Создаёт снимок соединения, ресурсов и ошибок только для чтения. Файлы, ID устройства, сетевые адреса и пароли не включаются. Проверьте JSON перед отправкой.",
+  "settings.diagnostics_downloaded": "Диагностический отчёт скачан.",
+  "settings.diagnostics_failed_error": "Не удалось создать диагностический отчёт: {error}",
+  "canvas.timeline_title": "Наблюдаемые изменения Canvas",
+  "canvas.timeline_hint": "Только в этой сессии: изменения состояния слотов, сообщённые принтером. Не определяет реальное движение филамента или ошибки очистки.",
+  "canvas.timeline_empty": "Изменения слотов пока не зафиксированы.",
+  "canvas.timeline_change": "Слот {slot}: {from} → {to}",
+  "canvas.timeline_clear": "Очистить историю"
 }

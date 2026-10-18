@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { ask } from '@/lib/confirm'
-import { ArrowBigDown, ArrowBigUp, Check, Info, Palette, RefreshCw, Repeat, BrushCleaning } from 'lucide-preact'
+import { ArrowBigDown, ArrowBigUp, Check, Info, Palette, RefreshCw, Repeat, BrushCleaning, Trash2 } from 'lucide-preact'
 import { cn } from '@/lib/utils'
 import { Card, CardHead, Page } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { control, errText, notify, post } from '@/lib/api'
 import { type Key, t, tpl } from '@/lib/i18n'
 import { poll, usePoll } from '@/lib/poll'
 import { canvas, canvasColour, canvasHex, refreshCanvas } from '@/lib/canvas'
+import { canvasTimeline, clearCanvasTimeline } from '@/lib/canvas-events'
 import { presets, printer } from '@/lib/state'
 import { findSpool, g, openChooser, refreshSpools, spoolLabel, spools } from '@/lib/spools'
 
@@ -132,6 +133,7 @@ const MaterialDialog = ({ slot, onClose }: { slot: number; onClose: () => void }
 
 export const Canvas = () => {
   const { model, controls, autoRefill, slot, optimistic, checked } = canvas.use()
+  const { events } = canvasTimeline.use()
   const library = spools.use().data
   const tracking = Boolean(library?.available && library.enabled)
   const [dialog, setDialog] = useState(false)
@@ -448,6 +450,37 @@ export const Canvas = () => {
           </Card>
         </div>
       </div>
+      <Card data-canvas-timeline>
+        <CardHead
+          icon="history"
+          title="canvas.timeline_title"
+          end={
+            <Button disabled={!events.length} onClick={clearCanvasTimeline}>
+              <Trash2 {...I} />
+              {t('canvas.timeline_clear')}
+            </Button>
+          }
+        />
+        <p class="mb-3 text-xs text-muted">{t('canvas.timeline_hint')}</p>
+        {events.length ? (
+          <ol class="grid max-h-64 gap-2 overflow-y-auto" aria-live="polite">
+            {events.map(event => (
+              <li key={event.id} data-canvas-event class="rounded-md border border-edge px-3 py-2 text-sm">
+                <span class="mr-3 font-mono text-xs text-muted">{new Date(event.time).toLocaleTimeString()}</span>
+                {tpl('canvas.timeline_change', {
+                  slot: event.slot + 1,
+                  from: t(stateLabels[event.from]),
+                  to: t(stateLabels[event.to]),
+                })}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p data-canvas-timeline-empty class="text-sm text-muted">
+            {t('canvas.timeline_empty')}
+          </p>
+        )}
+      </Card>
       {dialog && (
         <MaterialDialog
           slot={slot}
