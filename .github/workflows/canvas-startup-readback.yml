@@ -1,0 +1,24 @@
+name: Canvas startup readback diagnostic
+on:
+  push:
+    branches: [test/canvas-startup-readback]
+    paths: [experimental/canvas-startup-readback/**, .github/workflows/canvas-startup-readback.yml]
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 experimental/canvas-startup-readback/test_probe.py
+      - run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: Build fixed read-only ARM utility
+        run: |
+          mkdir -p diagnostic-output
+          arm-linux-gnueabihf-gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -static experimental/canvas-startup-readback/probe.c -o diagnostic-output/cc2-canvas-startup-readback -lm
+          file diagnostic-output/cc2-canvas-startup-readback
+          cd diagnostic-output && sha256sum cc2-canvas-startup-readback > SHA256SUMS
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: cc2-canvas-startup-readback
+          path: diagnostic-output/*
