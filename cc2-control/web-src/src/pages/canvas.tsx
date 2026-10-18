@@ -476,7 +476,9 @@ export const Canvas = () => {
             ))}
           </ol>
         ) : (
-          <p data-canvas-timeline-empty class="text-sm text-muted">{t('canvas.timeline_empty')}</p>
+          <p data-canvas-timeline-empty class="text-sm text-muted">
+            {t('canvas.timeline_empty')}
+          </p>
         )}
       </Card>
       {dialog && (
