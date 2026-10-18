@@ -3,6 +3,29 @@
 This file records user-visible project changes. Signed artifacts and exact
 checksums remain attached to each GitHub release.
 
+## CC2 Control 1.2.16 — 2026-10-18
+
+**[Download CC2 Control 1.2.16](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.16-V4.4)** · [English guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
+
+**Only Community Firmware V4.4/V4.4.1, ELEGOO base 02.01.01.07.** Updates CC2 Control while retaining firmware, callback and configuration. No factory reset or intermediate app release is required.
+
+| New in 1.2.16 | What changes |
+| --- | --- |
+| Backup and selective restore | Export preferences, material presets, saved plate/nozzle meshes and spool inventory/history to your computer. Preview and select categories before restoring. Credentials, firmware, G-code/video and official A/B meshes outside the library are excluded. Verify imported hardware mappings; spool tracking starts disabled. |
+| Saved-language startup | Load the saved language before the meaningful interface render, with bounded requests and fallback. No offline application cache added. |
+| Hungarian and preferences | 42 refinements and failed-save feedback by **pezso92**; language menu ordered alphabetically. |
+| Optional Console monitor | Bounded passive G-code reports over the existing connection. Manual commands retain their guards. It is not the full system log. |
+| Print mesh status | Saved, confirmed missing and unknown states, with a read-only Refresh, by **pezso92**. Failed reads no longer silently select calibration; A/B status is independent. |
+| Settings layout | All six tabs remain readable and wrap on narrow screens. |
+
+Install from **Settings → Updates → Stable**, enter the configured **LAN code** from the display under **Settings → LAN only**, download/verify and confirm installation separately. The LAN code differs from the SSH password. Use a connected idle printer, nozzle/bed ≤50 °C, heater targets zero and live view paused. After completion use Ctrl+F5. Notifications and downloads never install unattended. Alternatively upload the signed `.cc2update`; extract the computer installer ZIP only if needed.
+
+**Included PRs:** #144/#145 → [#148](https://github.com/Neme77/centauri-carbon-2-community/pull/148), [#147](https://github.com/Neme77/centauri-carbon-2-community/pull/147), [#149](https://github.com/Neme77/centauri-carbon-2-community/pull/149), #150 → [#151](https://github.com/Neme77/centauri-carbon-2-community/pull/151). Original commits and attribution retained. All eight checks passed; the maintainer confirmed the cumulative features, signed update, Settings layout and final print popup. Published payload is identical to accepted R4; no new long-duration-print qualification is claimed.
+
+**Thanks to [pezso92](https://github.com/pezso92)** for Hungarian, preference-save feedback and print mesh readiness. Special thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, for the backup/language ideas, first error 803 report and tireless tests. Retains Spanish by **asiersan**, punctuation by **Surfoo**, mesh work by **beanbo** and all previous credits. Experimental Canvas ejection remains excluded.
+
+**Italiano:** backup/ripristino selettivo, avvio nella lingua salvata, correzioni ungheresi e del salvataggio di **pezso92**, lingue ordinate, monitor Console opzionale, popup mesh con stato sconosciuto e Aggiorna di **pezso92**, barra Impostazioni corretta. Solo V4.4/V4.4.1; firmware e callback invariati. **DamiBFryta, il beta tester definitivo**, grazie per idee e prove! Aggiornare dal pannello con codice LAN e conferma separata; nessun reset necessario.
+
 ## CC2 Control 1.2.15 — 2026-10-17
 
 **[Download CC2 Control 1.2.15](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.15-V4.4)** · [English update guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
