@@ -3,9 +3,7 @@
 export type DiagnosticRequest = (path: string) => Promise<unknown>
 
 const object = (value: unknown): Record<string, unknown> =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {}
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 const field = (value: unknown, key: string): unknown => object(value)[key]
 const flag = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null)
 const number = (value: unknown): number | null =>

@@ -291,7 +291,7 @@ const DiagnosticsExport = () => {
     setBusy(true)
     try {
       const report = await collectDiagnostics(request)
-      const json = JSON.stringify(report, null, 2) + '\n'
+      const json = `${JSON.stringify(report, null, 2)}\n`
       if (json.length > 16384) throw Error('Report exceeds safety limit')
       const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
       const url = URL.createObjectURL(blob)
