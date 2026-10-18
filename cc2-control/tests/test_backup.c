@@ -228,6 +228,8 @@ static void api_guards_and_preview(const char *backup,size_t length) {
     puts("PASS backup API: LAN, hot/printing/stale/busy guards, ordered chunks, server preview, edit conflict, selective restore and expiry");
 }
 int main(void) {
+    char directory[]="./backup-XXXXXX";
+    assert(mkdtemp(directory)&&!chdir(directory));
     assert(bk_crc("123456789",9)==0xcbf43926U);
     const char *bad_json[]={"{\"a\":1,\"a\":2}","{\"a\":01}","{\"a\":NaN}","{\"a\":1e999}","{\"a\":1,}","[1,]","{\"a\":]}","{\"a\":\"\\ud800\"}","{\"\\u0061\":1}","{} trailing"};
     for(size_t i=0;i<sizeof(bad_json)/sizeof(bad_json[0]);i++)assert(!bk_json(bad_json[i],strlen(bad_json[i])));
