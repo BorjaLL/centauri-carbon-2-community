@@ -128,7 +128,7 @@ try {
       localStorage.setItem('cc2-language', 'en')
       window.__firstHeadings = []
       new MutationObserver(() => {
-        const heading = document.querySelector('main h1')?.textContent
+        const heading = document.querySelector('main h2')?.textContent
         if (heading) window.__firstHeadings.push(heading)
       }).observe(document, { childList: true, subtree: true, characterData: true })
     })
