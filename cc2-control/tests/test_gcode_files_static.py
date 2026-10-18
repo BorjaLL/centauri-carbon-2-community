@@ -58,7 +58,11 @@ required_web = (
     "`${tool}:${map[tool]}`",
     "print.importing_usb_g_code_to_internal",
     "plateSide",
-    "profiles.default1",
+    "readSide('default1')",
+    "available === null",
+    "available === false",
+    "unknown && !calibrating",
+    "const recheckMesh = async",
     "meshAvailable",
     "calibrating ? 'calibrate' : 'saved'",
     "temp(meta.nozzle_temperature, 500)",
@@ -74,3 +78,4 @@ for marker in required_web:
     assert marker in web, f"missing dashboard feature: {marker}"
 
 print("PASS: G-code storage, Canvas popup, safety guards and native method 1020 markers are present.")
+
