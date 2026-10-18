@@ -89,3 +89,9 @@ Our sincere thanks also go to **Barry Green**, **Michael Husbyn**, **[Jiří Hei
 ## Open-source and vendor acknowledgements
 
 This project also relies on upstream tools and third-party components. Their provenance, licenses and notices remain in [NOTICE.md](../NOTICE.md) and [Source documentation](SOURCE.md); these community credits do not imply ownership of vendor firmware.
+
+## CC2 Control 1.2.16
+
+**pezso92**: Hungarian refinements and preference-save feedback (#144/#145, integrated #148), and three-state print mesh readiness/manual recheck (#150, integrated #151). Original commits and credit are retained.
+
+**[DamiBFryta](https://www.reddit.com/user/DamiBFryta/)** suggested external backup and saved-language startup, and continued real-printer testing as our ultimate beta tester. Earlier Spanish, Hungarian, mesh and punctuation contributors remain credited above.
