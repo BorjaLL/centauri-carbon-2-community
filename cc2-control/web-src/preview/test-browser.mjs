@@ -100,6 +100,7 @@ try {
     for (const tab of ['dashboard', 'control', 'job', 'files', 'history', 'bed', 'canvas', 'spools', 'console', 'settings']) {
       if (await page.locator('#cc2-menu-toggle').isVisible()) await page.locator('#cc2-menu-toggle').click()
       await page.locator(`a[href="#${tab}"]`).click()
+      await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
       await page.waitForTimeout(150)
       if (tab === 'job') assert.equal(await page.locator('main .cc2-tuning').count(), 0, 'Job must not duplicate dashboard tuning')
       assert.ok(await page.locator('main').innerText(), `${width} ${tab}: empty page`)
@@ -119,6 +120,7 @@ try {
     assert.equal(await page.locator('header').evaluate(e => Math.round(e.getBoundingClientRect().height)), 60)
     for (const tab of ['dashboard', 'control', 'job', 'files', 'history', 'bed', 'canvas', 'spools', 'console', 'settings']) {
       await page.locator(`a[href="#${tab}"]`).click()
+      await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
       await page.waitForTimeout(150)
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${width} collapsed ${tab}: overflow`)
       if (tab === 'control' && width >= 1280) await naturalControl()
@@ -133,6 +135,7 @@ try {
   await page.locator('#cc2-navigation button[aria-expanded]').click()
   for (const tab of ['dashboard', 'control', 'job', 'files', 'history', 'bed', 'canvas', 'spools', 'console', 'settings']) {
     await page.locator(`a[href="#${tab}"]`).click()
+    await page.waitForFunction(() => document.querySelector('main')?.textContent.trim())
     await page.waitForTimeout(200)
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `Collapsed sidebar: ${tab} overflow`)
     if (shots) await page.screenshot({ path: path.join(shots, `1440-collapsed-${tab}.png`), fullPage: true })
