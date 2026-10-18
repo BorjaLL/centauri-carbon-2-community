@@ -29,6 +29,40 @@ try {
   assert.equal((await page.request.post(`${origin}/api/gcode-files/upload?name=demo.gcode`, { data: 'G28' })).status(), 403)
   assert.equal((await page.request.post(`${origin}/api/console/command`, { data: 'G28' })).status(), 403)
   assert.equal((await page.request.post(`${origin}/api/setup`, { data: '123456' })).status(), 403)
+  // Simulated healthy, missing and disconnected Moonraker/Canvas responses.
+  let orcaState = 'ready'
+  let infoCalls = 0, laneCalls = 0
+  await page.route('**/server/info', route => {
+    infoCalls++
+    return route.fulfill({ json: { result: { klippy_connected: orcaState !== 'disconnected' } } })
+  })
+  await page.route(url => url.pathname === '/server/database/item' && url.searchParams.get('namespace') === 'lane_data', route => {
+    laneCalls++
+    if (orcaState === 'failure') return route.fulfill({ status: 503, json: { error: 'Mock lane_data failure' } })
+    const value = orcaState === 'empty' ? {} : {
+      lane1: { lane: '0', material: 'PLA', color: '#FF0000' },
+      lane2: { lane: '1', material: 'PETG', color: '#FFFFFF' },
+    }
+    return route.fulfill({ json: { result: { namespace: 'lane_data', value } } })
+  })
+  await page.locator('#cc2-navigation a[href="#settings"]').click()
+  await page.getByRole('tab').nth(1).click()
+  const orcaTest = page.getByRole('button', { name: labels['settings.test_orca'], exact: true })
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_ready'].replace('{count}', '2'), { exact: true }).waitFor()
+  assert.equal(infoCalls, 1)
+  assert.equal(laneCalls, 1)
+  orcaState = 'empty'
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_pending'], { exact: true }).waitFor()
+  orcaState = 'disconnected'
+  await orcaTest.click()
+  await page.getByText(labels['settings.orca_sync_disconnected'], { exact: true }).waitFor()
+  assert.equal(laneCalls, 2, 'Disconnected printer must not request Canvas lanes')
+  orcaState = 'failure'
+  await orcaTest.click()
+  await page.getByRole('alert').filter({ hasText: 'Mock lane_data failure' }).waitFor()
+  await page.locator('#cc2-navigation a[href="#dashboard"]').click()
   const naturalControl = async () => {
     const layout = await page.locator('.cc2-control-columns').evaluate(e => {
       const groups = [...e.children]

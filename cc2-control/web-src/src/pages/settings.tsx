@@ -143,6 +143,33 @@ const Connection = () => {
 }
 
 const Integrations = () => {
+  // Test the actual Moonraker and Canvas sync endpoints, not only the app version.
+  const testOrca = async () => {
+    try {
+      const info = await request('/server/info')
+      if (info?.result?.klippy_connected !== true) {
+        notify(t('settings.orca_sync_disconnected'), 'error')
+        return
+      }
+      const lanes = await request('/server/database/item?namespace=lane_data')
+      const value = lanes?.result?.value
+      if (lanes?.result?.namespace !== 'lane_data' || !value || typeof value !== 'object' || Array.isArray(value))
+        throw Error(t('settings.orca_sync_pending'))
+      const count = Object.entries(value).filter(
+        ([key, row]) =>
+          /^lane[1-4]$/.test(key) &&
+          row &&
+          typeof row === 'object' &&
+          !Array.isArray(row) &&
+          typeof row.lane === 'string' &&
+          typeof row.material === 'string' &&
+          typeof row.color === 'string'
+      ).length
+      notify(count ? tpl('settings.orca_sync_ready', { count }) : t('settings.orca_sync_pending'))
+    } catch (error) {
+      notify(tpl('settings.orca_compatibility_unavailable', { error: errText(error) }), 'error')
+    }
+  }
   const ping = async (url: string, ok: Key, fail: Key, parse?: (r: any) => string) => {
     try {
       const r = await fetch(url)
@@ -176,16 +203,7 @@ const Integrations = () => {
       <div class={row}>
         <b>{t('settings.orcaslicer_compatibility')}</b>
         <span class="text-muted">{t('settings.octo_klipper_test_endpoint')}</span>
-        <Button
-          onClick={() =>
-            ping(
-              '/api/version',
-              'settings.orca_compatibility_ready_text',
-              'settings.orca_compatibility_unavailable',
-              v => v.text
-            )
-          }
-        >
+        <Button onClick={testOrca}>
           <Activity {...G} />
           {t('settings.test_orca')}
         </Button>
