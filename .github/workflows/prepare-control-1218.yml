@@ -1,0 +1,25 @@
+name: Prepare CC2 Control 1.2.18 release sources
+on:
+  push:
+    branches: [release/cc2-control-1.2.18]
+    paths: [.github/workflows/prepare-control-1218.yml]
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Synchronize versioned source snapshot and exact references
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          test "$(cat cc2-control/VERSION)" = "1.2.18"
+          python3 experimental/pr128-integration/sync_source.py
+          git add builder/current/components/cc2-control/source/source.zip builder/current/prepare.py builder/current/core/firmware_builder.py builder/current/launch_helpers/run_build.py
+          git commit -m "Pin builder sources for CC2 Control 1.2.18"
+          python3 -m unittest discover -s builder/current/tests -p 'test_*.py'
+          git push origin HEAD:refs/heads/release/cc2-control-1.2.18
+
