@@ -900,7 +900,7 @@
   "updates.no_update": "Aucune mise à jour compatible plus récente publiée.",
   "updates.check_failed": "Échec de la vérification GitHub. Vérifiez Internet puis réessayez.",
   "updates.bootstrap": "Installez une fois depuis votre ordinateur le paquet CC2 Control intégrant la mise à jour.",
-  "updates.requirements": "Nécessite Community Firmware V4.4, connexion récente, imprimante inactive, buse et plateau ≤50 °C et consignes nulles. Mettez la vidéo en pause avant l’installation.",
+  "updates.requirements": "Nécessite Community Firmware V4.4/V4.4.1, connexion récente, imprimante inactive, buse et plateau ≤50 °C et consignes nulles. Mettez la vidéo en pause avant l’installation.",
   "updates.download": "Télécharger et vérifier",
   "updates.prepare_confirm": "Télécharger ou envoyer ce paquet pour vérification ? L’application ne sera pas encore installée.",
   "updates.verified": "Paquet vérifié",
@@ -992,8 +992,5 @@
   "canvas.timeline_hint": "Cette session uniquement : transitions d'état des emplacements signalées par l'imprimante. Ne détecte ni le mouvement physique du filament ni les problèmes de purge.",
   "canvas.timeline_empty": "Aucun changement d'emplacement enregistré.",
   "canvas.timeline_change": "Emplacement {slot} : {from} → {to}",
-  "canvas.timeline_clear": "Effacer l'historique",
-  "canvas.reason_unassigned_head": "Filament détecté dans la tête · emplacement non associé",
-  "canvas.recovery_title": "État Canvas à rétablir",
-  "canvas.recovery_hint": "Après un redémarrage, du filament peut rester dans la tête sans emplacement Canvas associé. Sur l’écran ELEGOO, vérifiez le dernier emplacement utilisé et terminez son chargement avec la procédure native ; une purge supplémentaire peut avoir lieu. Ne chargez pas un autre filament. Si l’emplacement est inconnu ou si vous utilisez une bobine externe, vérifiez le trajet du filament et suivez les instructions de l’écran. Les commandes se réactivent lorsque l’imprimante signale un état cohérent."
+  "canvas.timeline_clear": "Effacer l'historique"
 }

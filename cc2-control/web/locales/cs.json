@@ -900,7 +900,7 @@
   "updates.no_update": "Novější kompatibilní aktualizace není zveřejněna.",
   "updates.check_failed": "Kontrola GitHubu selhala. Ověřte připojení k Internetu a zkuste to znovu.",
   "updates.bootstrap": "Nejprve z počítače nainstalujte balíček CC2 Control s aktualizačním modulem.",
-  "updates.requirements": "Vyžaduje Community Firmware V4.4, aktuální připojení, nečinnou tiskárnu, trysku a podložku ≤50 °C a nulové cílové teploty. Před instalací pozastavte video.",
+  "updates.requirements": "Vyžaduje Community Firmware V4.4/V4.4.1, aktuální připojení, nečinnou tiskárnu, trysku a podložku ≤50 °C a nulové cílové teploty. Před instalací pozastavte video.",
   "updates.download": "Stáhnout a ověřit",
   "updates.prepare_confirm": "Stáhnout nebo nahrát balíček k ověření? Aplikace ještě nebude nainstalována.",
   "updates.verified": "Balíček ověřen",
@@ -992,8 +992,5 @@
   "canvas.timeline_hint": "Jen v této relaci: změny stavů pozic hlášené tiskárnou. Nejde o detekci pohybu filamentu ani chyby čištění.",
   "canvas.timeline_empty": "Zatím nebyla zaznamenána žádná změna pozice.",
   "canvas.timeline_change": "Pozice {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Vymazat historii",
-  "canvas.reason_unassigned_head": "Filament zjištěn v hlavě · pozice nepřiřazena",
-  "canvas.recovery_title": "Stav Canvas je třeba obnovit",
-  "canvas.recovery_hint": "Po restartu může v hlavě zůstat filament bez přiřazené pozice Canvas. Na displeji ELEGOO ověřte poslední použitou pozici a dokončete její zavedení standardním postupem; může dojít k dalšímu pročištění. Nezavádějte jiný filament. Pokud pozici neznáte nebo používáte externí cívku, zkontrolujte cestu filamentu a postupujte podle displeje. Ovládání se odblokuje, až tiskárna oznámí konzistentní stav."
+  "canvas.timeline_clear": "Vymazat historii"
 }

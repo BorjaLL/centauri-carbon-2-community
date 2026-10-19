@@ -900,7 +900,7 @@
   "updates.no_update": "Jelenleg nincs újabb közzétett kompatibilis frissítés.",
   "updates.check_failed": "Nem sikerült ellenőrizni a GitHubon elérhető frissítéseket. Ellenőrizd az internetkapcsolatot, majd próbáld újra.",
   "updates.bootstrap": "Először telepítsd számítógépről a frissítéskezelőt is tartalmazó CC2 Control-csomagot.",
-  "updates.requirements": "A telepítéshez Community Firmware V4.4, működő kapcsolat a nyomtatóval (friss állapotadatokkal), tétlen nyomtató, legfeljebb 50 °C-os fúvóka és tárgyasztal, valamint 0 °C-ra állított fűtési célhőmérsékletek szükségesek. Előtte szüneteltesd az élőképet.",
+  "updates.requirements": "A telepítéshez Community Firmware V4.4/V4.4.1, működő kapcsolat a nyomtatóval (friss állapotadatokkal), tétlen nyomtató, legfeljebb 50 °C-os fúvóka és tárgyasztal, valamint 0 °C-ra állított fűtési célhőmérsékletek szükségesek. Előtte szüneteltesd az élőképet.",
   "updates.download": "Letöltés és ellenőrzés",
   "updates.prepare_confirm": "Letöltöd vagy feltöltöd a csomagot ellenőrzésre? Ez még nem telepíti az alkalmazást.",
   "updates.verified": "A csomag ellenőrizve",
@@ -992,8 +992,5 @@
   "canvas.timeline_hint": "Csak ebben a munkamenetben: a nyomtató által jelzett rekeszállapot-változások. Nem ismeri fel a fizikai filamentmozgást vagy a purge-hibát.",
   "canvas.timeline_empty": "Még nem történt rögzített rekeszállapot-változás.",
   "canvas.timeline_change": "{slot}. rekesz: {from} → {to}",
-  "canvas.timeline_clear": "Előzmények törlése",
-  "canvas.reason_unassigned_head": "Filament érzékelve a fejben · nincs hozzárendelt rekesz",
-  "canvas.recovery_title": "A Canvas állapotát helyre kell állítani",
-  "canvas.recovery_hint": "Újraindítás után filament maradhat a fejben hozzárendelt Canvas-rekesz nélkül. Az ELEGOO kijelzőjén ellenőrizze az utoljára használt rekeszt, majd fejezze be annak betöltését a gyári eljárással; további öblítés történhet. Ne töltsön be másik filamentet. Ha a rekesz ismeretlen vagy külső tekercset használ, ellenőrizze a filament útját, és kövesse a kijelző utasításait. A vezérlők akkor válnak elérhetővé, amikor a nyomtató következetes állapotot jelez."
+  "canvas.timeline_clear": "Előzmények törlése"
 }
