@@ -1,0 +1,49 @@
+name: Integrate reviewed locale contributions
+on:
+  push:
+    branches: [integrate/update-copy-locales]
+    paths: [.github/workflows/integrate-locales.yml]
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Preserve the reviewed pezso92 contribution commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin pull/163/head
+          test "$(git rev-parse FETCH_HEAD)" = "d7c77d1fecf18d2067fab5e6ec6ca53f335b84c5"
+          git merge --no-ff --no-edit FETCH_HEAD
+          git fetch origin pull/164/head
+          test "$(git rev-parse FETCH_HEAD)" = "5ca50db0440babc9f9aa24ece36807ca033976e5"
+          git merge --no-ff --no-edit FETCH_HEAD
+      - name: Check and rebuild the production UI
+        working-directory: cc2-control/web-src
+        run: npm ci && npm run check && npm run build
+      - name: Commit synchronized application sources
+        run: |
+          cp -a cc2-control/web/. cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web/
+          git add cc2-control/web cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web
+          git commit -m "Synchronize generated UI for pezso92 contributions #163 and #164"
+      - name: Regenerate the canonical source snapshot and exact builder pins
+        run: |
+          python3 experimental/pr128-integration/sync_source.py
+          git add builder/current/components/cc2-control/source/source.zip builder/current/prepare.py builder/current/core/firmware_builder.py builder/current/launch_helpers/run_build.py
+          git commit -m "Pin builder snapshot to integrated locale sources"
+      - name: Verify canonical builder and localization guards
+        run: |
+          python3 -m unittest discover -s builder/current/tests -p 'test_*.py'
+          python3 cc2-control/tests/test_web_sync_static.py
+          python3 cc2-control/tests/test_locales_static.py
+          python3 cc2-control/tests/test_locale_coverage_static.py
+          test "$(cat cc2-control/VERSION)" = "1.2.17"
+      - name: Push only the integration branch
+        run: git push origin HEAD:refs/heads/integrate/update-copy-locales
