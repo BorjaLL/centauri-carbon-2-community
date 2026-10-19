@@ -135,6 +135,8 @@ User-defined material presets are stored under `/opt/usr/cc2-control`.
 
 **Canvas → Canvas controls → Auto refill** shows and changes the Canvas setting that continues a print from another slot holding the same filament when a spool runs out (vendor method 2004). The switch appears only after the printer has reported the setting, and it changes only when the printer reports the new value.
 
+**Canvas → Canvas controls → Pull-back after cut** sets how far the Canvas pulls a filament back after cutting it (`[canvas_dev] unload_fila_dist`, 60–350 mm). Raise it when the tip parks inside a shared tube or an aftermarket 4-in-1 adapter. The value is stored as an override in the printer's `autosave.cfg`, so the vendor configuration is not edited, and **Use printer default** removes it. The printer reads it when it starts, so after saving CC2 Control offers to restart the printer (idle only, about a minute and a half); otherwise it applies at the next restart.
+
 The G-code library lists printable files from internal memory and USB storage, including nested folders and thumbnails where available. USB jobs are validated and imported before the printer's native print-start workflow is used.
 
 ## Spools

@@ -42,6 +42,7 @@ Example response:
     "persistent_ui_preferences": true,
     "print_history": true,
     "canvas_auto_refill": true,
+    "canvas_unload_distance": true,
     "bed_plates": true
   },
   "endpoints": {
@@ -105,6 +106,27 @@ code returned to CC2 Control's own requests, or `null`:
 - `POST /api/canvas/auto-refill` with body `on` or `off` sends method 2004. It answers `409` while the printer
   has not reported the setting. After the printer accepts the change, CC2 Control requests the Canvas state
   again so the new value is read back from the printer.
+
+## Canvas pull-back after the cut
+
+`[canvas_dev] unload_fila_dist` is how far the Canvas pulls a cut filament back from the toolhead. The firmware
+reads it at start-up from the printer configuration followed by `autosave.cfg`, where a later value wins.
+CC2 Control stores its value as a `[canvas_dev]` override in the SAVE_CONFIG block of `autosave.cfg` and never
+edits the vendor configuration. The firmware's SAVE_CONFIG keeps that section.
+
+- `GET /api/canvas/unload` returns `{"editable":bool,"min":60,"max":350,"configured":mm|null,"override":mm|null,
+  "pending_restart":bool,"restart":"none"|"restarting"|"printer_busy"|"launch_failed"|"reboot_failed"}`.
+  `configured` comes from the printer configuration and `override` from `autosave.cfg`. `editable` is false
+  when `autosave.cfg` has a layout CC2 Control does not edit (no SAVE_CONFIG marker, carriage returns, or a
+  duplicate section or key). A failed restart is reported once.
+- `POST /api/canvas/unload` with body `60`–`350` (whole millimetres) sets the override, and with body `default`
+  removes it. The firmware refuses to start with a value outside 60–350, so other values answer `400`. It
+  answers `409` unless the printer is idle with fresh telemetry and nothing else in progress. The old file is
+  kept as `autosave_backup.cfg`, as the firmware's own SAVE_CONFIG keeps it, and the reply is the new state.
+  A change stays `pending_restart` until the system boots again.
+- `POST /api/canvas/unload/restart` with body `RESTART` reboots the printer to apply a pending change. It is
+  guarded like a build-plate mount: the reboot is cancelled if the printer is no longer idle when it would
+  start.
 
 ## Print history and time-lapse videos
 
