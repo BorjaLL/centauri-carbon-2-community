@@ -9,7 +9,9 @@ static uintptr_t decoded(uintptr_t site,uint32_t word){
     return site+8+(intptr_t)immediate*4;
 }
 int main(void){
-    uintptr_t sites[]={0x163cd4,0x162e60,0x3000000};
+    unsigned char enabled=0; initialize_enabled(&enabled); assert(enabled==1);
+    assert(ENABLE_SITE==0x162f28);
+    uintptr_t sites[]={0x163cd4,0x162f28,0x3000000};
     for(size_t i=0;i<sizeof(sites)/sizeof(sites[0]);i++){
         uintptr_t destinations[]={sites[i]+8,0x1000000,0x1200000,0x2000000};
         for(size_t j=0;j<sizeof(destinations)/sizeof(destinations[0]);j++){

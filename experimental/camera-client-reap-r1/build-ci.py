@@ -19,7 +19,7 @@ run(['gcc',*flags,'test_patch_math.c','reap_core.c','sha256_file.c','-ldl','-o',
 run([out/'test-patch'])
 zig=Path(os.environ['CC2_ZIG'])
 arm=[zig,'cc','-target','arm-linux-gnueabihf.2.23','-mcpu=cortex_a7','-marm',*flags]
-library=out/'libcc2-camera-reap-r1.so'
+library=out/'libcc2-camera-reap-r2.so'
 run([*arm,'-fPIC','-shared','camera_reap.c','reap_core.c','sha256_file.c','-ldl','-o',library])
 runtime_check=out/'cc2-camera-reap-check'
 run([*arm,'runtime_check.c','-ldl','-o',runtime_check])
@@ -58,7 +58,7 @@ result={'library_sha256':expected,'qualified_camera_sha256':'ec5633b17de329d5b18
         'activation':'temporary only; no persistent startup change','lan_enable_once':'explicitly enabled by trial launcher for a fresh process'}
 (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n')
 package=out/'package';package.mkdir(exist_ok=True)
-for name in ('libcc2-camera-reap-r1.so','cc2-camera-reap-check','trial.sh','README.it.md','README.en.md','validation.json','required-symbol-versions.txt'):
+for name in ('libcc2-camera-reap-r2.so','cc2-camera-reap-check','trial.sh','README.it.md','README.en.md','validation.json','required-symbol-versions.txt'):
     shutil.copyfile(out/name,package/name)
 (package/'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in sorted(package.iterdir()) if p.name!='SHA256SUMS'))
 print(json.dumps(result,indent=2))

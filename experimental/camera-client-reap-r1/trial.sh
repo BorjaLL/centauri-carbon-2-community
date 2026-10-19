@@ -5,7 +5,7 @@ umask 077
 BASE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 QUALIFIED=ec5633b17de329d5b18c3f8d8de6ebf389391a04193536d976ba167022d07b99
 MARKER=/tmp/cc2-camera-reap.status
-LIB="$BASE/libcc2-camera-reap-r1.so"
+LIB="$BASE/libcc2-camera-reap-r2.so"
 camera_pid() {
     PID=$(pidof ai_camera 2>/dev/null || true)
     case "$PID" in ''|*' '*) echo 'STOP: exactly one ai_camera process is required.' >&2; return 1;; esac
@@ -27,7 +27,7 @@ idle() {
     [ "$AGE" -le 15 ] || { echo 'STOP: stale printer state.' >&2; return 1; }
 }
 check() {
-    case "$BASE" in /tmp/cc2-camera-reap-r1) ;; *) echo 'STOP: extract only to /tmp/cc2-camera-reap-r1.' >&2; return 1;; esac
+    case "$BASE" in /tmp/cc2-camera-reap-r2) ;; *) echo 'STOP: extract only to /tmp/cc2-camera-reap-r2.' >&2; return 1;; esac
     (cd "$BASE" && sha256sum -c SHA256SUMS)
     CC2_CAMERA_REAP_TRIAL=0 LD_PRELOAD="$LIB" "$BASE/cc2-camera-reap-check"
     camera_pid

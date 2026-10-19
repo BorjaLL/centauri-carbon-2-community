@@ -28,7 +28,7 @@ jobs:
           "$RUNNER_TEMP/camera-tools/bin/python" experimental/camera-client-reap-r1/build-ci.py
       - uses: actions/upload-artifact@v6
         with:
-          name: cc2-camera-client-reap-r1
+          name: cc2-camera-client-reap-r2
           path: experimental/camera-client-reap-r1/output/package/
           if-no-files-found: error
           retention-days: 14

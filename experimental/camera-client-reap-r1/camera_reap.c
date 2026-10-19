@@ -13,7 +13,7 @@
 
 #define CAMERA_HASH "ec5633b17de329d5b18c3f8d8de6ebf389391a04193536d976ba167022d07b99"
 #define SPAWN_SITE ((uintptr_t)0x163cd4)
-#define ENABLE_SITE ((uintptr_t)0x162e60)
+#define ENABLE_SITE ((uintptr_t)0x162f28)
 #define HANDLE_ADDRESS ((uintptr_t)0x163eb4)
 #define REMOVE_ADDRESS ((uintptr_t)0x1645dc)
 #define STATUS "/tmp/cc2-camera-reap.status"
@@ -42,7 +42,7 @@ static void fail(const char *why) {
 static void status_write(void) {
     char data[512];
     int n=snprintf(data,sizeof(data),
-        "trial=R1 pid=%ld patched=1 enable_lan_once=%d spawned=%lu reaped=%lu rejected=%lu retained=%lu last_error=%d executable_sha256=%s\n",
+        "trial=R2 pid=%ld patched=1 enable_lan_once=%d spawned=%lu reaped=%lu rejected=%lu retained=%lu last_error=%d executable_sha256=%s\n",
         (long)getpid(),enable_once,stats.spawned,stats.reaped,stats.rejected,
         (unsigned long)stats.retained,stats.last_error,CAMERA_HASH);
     int fd=open(STATUS,O_CREAT|O_TRUNC|O_WRONLY|O_NOFOLLOW,0600);
@@ -76,7 +76,7 @@ static void client_spawn(cc2_thread_vector *v,const uint32_t member[2],void *con
     if(pthread_mutex_unlock(&invocation_lock))fail("invocation unlock");
 }
 /* A manual ai_camera restart otherwise starts LAN streaming paused. This
- * separately opted-in constructor hook enables it once. Later vendor
+ * separately opted-in constructor final-store hook enables it once, after the native final reset. Later vendor
  * pause/resume and restart behavior is not overridden. */
 static void initialize_enabled(unsigned char *flag){__atomic_store_n(flag,1,__ATOMIC_SEQ_CST);}
 static void *trampoline_page(long page_size) {
@@ -118,7 +118,7 @@ __attribute__((constructor)) static void activate(void) {
     if(cc2_sha256_file("/proc/self/exe",hash)||strcmp(hash,CAMERA_HASH))fail("executable checksum");
     if(*(const uint32_t *)0x1297cc!=0xeb00e6f3u||
        *(const uint32_t *)SPAWN_SITE!=0xeb00080cu||
-       *(const uint32_t *)ENABLE_SITE!=0xeb0009fbu||
+       *(const uint32_t *)ENABLE_SITE!=0xebfc6be8u||
        *(const uint32_t *)HANDLE_ADDRESS!=0xe92d4810u||
        *(const uint32_t *)0x1631c4!=0xe51b3018u)fail("native code guards");
     symbol(&vector_new,sizeof(vector_new),"_ZnwjRKSt9nothrow_t");
@@ -142,7 +142,7 @@ __attribute__((constructor)) static void activate(void) {
     if(mprotect(tramp,(size_t)page_size,PROT_READ|PROT_EXEC))fail("trampoline execute protection");
     const char *restore=getenv("CC2_CAMERA_REAP_ENABLE_LAN");
     enable_once=restore&&!strcmp(restore,"1");
-    if(enable_once)patch_call(ENABLE_SITE,0xeb0009fbu,(uintptr_t)tramp+8,page_size);
+    if(enable_once)patch_call(ENABLE_SITE,0xebfc6be8u,(uintptr_t)tramp+8,page_size);
     patch_call(SPAWN_SITE,0xeb00080cu,(uintptr_t)tramp,page_size);
     status_write();
     unsetenv("CC2_CAMERA_REAP_TRIAL");

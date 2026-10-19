@@ -1,4 +1,4 @@
-# Camera client-thread reclamation — trial R1
+# Camera client-thread reclamation — trial R2
 
 Experimental ai_camera-only trial for Community Firmware V4.4/V4.4.1, official base 02.01.01.07. This does not update CC2 Control.
 
@@ -13,26 +13,30 @@ The native four-active-client limit is unchanged. The trial retains at most eigh
 ## First phase
 
 1. Printer connected and idle, no print/update running. Pause live viewing and close other camera viewers.
-2. Extract only to /tmp/cc2-camera-reap-r1.
-3. Run: sh /tmp/cc2-camera-reap-r1/trial.sh check
+2. Extract only to /tmp/cc2-camera-reap-r2.
+3. Run: sh /tmp/cc2-camera-reap-r2/trial.sh check
 4. Share the result before activation. Check does not restart any process.
 
 ## Activation after checking
 
-Run: sh /tmp/cc2-camera-reap-r1/trial.sh start
+Run: sh /tmp/cc2-camera-reap-r2/trial.sh start
 
 Only ai_camera is restarted. The camera executable on disk, printer services, callback patch and Wi-Fi settings are unchanged. The library patches two calls in the new process's memory after checking the full executable hash and native instructions.
 
 An activation marker does not qualify video, Matrix/RTC or AI. Open the stream normally and report the result, then run:
 
-sh /tmp/cc2-camera-reap-r1/trial.sh status
+sh /tmp/cc2-camera-reap-r2/trial.sh status
 
 Compare spawned/reaped/retained and VmSize across a few ordinary open/close operations. Do not start with a reconnect stress loop. This is not qualified for long prints or unattended use.
 
 ## Rollback
 
-While idle: sh /tmp/cc2-camera-reap-r1/trial.sh rollback-reboot
+While idle: sh /tmp/cc2-camera-reap-r2/trial.sh rollback-reboot
 
 Alternatively reboot the idle printer normally. No persistent startup configuration is changed, so the trial does not return after reboot. If trial startup fails, retain ai_camera-trial.log and reboot while idle; do not retry automatically.
 
 The package includes only original patch sources and binaries built from them, no vendor firmware/camera executable, credentials or private keys. Host/emulated ARM tests do not replace hardware acceptance. Slow Wi-Fi transmission remains a separate investigation.
+
+## R2
+
+R2 fixes the startup hook from R1: the early initialization was overwritten by a final native store to false. The opt-in hook now replaces that final store. Offline execution of the full native constructor reproduces the R1 failure and leaves the flag enabled with R2; camera/SDK behavior still requires printer validation.
