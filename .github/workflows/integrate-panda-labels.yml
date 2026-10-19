@@ -1,0 +1,40 @@
+name: Synchronize Panda Breath display names
+on:
+  push:
+    branches: [integrate/pandabreath-validation]
+    paths: [.github/workflows/integrate-panda-labels.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Validate names, rebuild UI, exercise integration settings
+        working-directory: cc2-control/web-src
+        run: |
+          npm ci
+          npm run check
+          npm run build
+          npx playwright install --with-deps chromium
+          node preview/test-pandabreath.mjs
+      - name: Synchronize generated sources and builder snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp -a cc2-control/web/. cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web/
+          git add cc2-control/web cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web
+          git commit -m "Rebuild consistent Panda Breath and Dragon Breath display names"
+          python3 experimental/pr128-integration/sync_source.py
+          git add builder/current/components/cc2-control/source/source.zip builder/current/prepare.py builder/current/core/firmware_builder.py builder/current/launch_helpers/run_build.py
+          git commit -m "Pin builder snapshot after integration label correction"
+          python3 -m unittest discover -s builder/current/tests -p 'test_*.py'
+          python3 cc2-control/tests/test_web_sync_static.py
+          git push origin HEAD:refs/heads/integrate/pandabreath-validation
+

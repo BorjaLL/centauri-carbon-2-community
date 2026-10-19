@@ -1008,7 +1008,7 @@
   "settings.save_address": "Zapisz adres",
   "settings.pandabreath_address_saved": "Zapisano adres {name}",
   "settings.pandabreath_address_invalid": "Wpisz nazwę hosta lub adres IP, bez http:// (na przykład {host}).",
-  "common.dragonbreath": "DragonBreath",
-  "settings.pandabreath_dragonbreath": "Oprogramowanie DragonBreath",
-  "settings.pandabreath_dragonbreath_description": "Włącz, jeśli Panda Breath działa na otwartym oprogramowaniu DragonBreath. Zmienia nazwę na DragonBreath, a domyślny adres na dragonbreath.local."
+  "common.dragonbreath": "Dragon Breath",
+  "settings.pandabreath_dragonbreath": "Oprogramowanie Dragon Breath",
+  "settings.pandabreath_dragonbreath_description": "Włącz, jeśli Panda Breath działa na otwartym oprogramowaniu Dragon Breath. Zmienia nazwę na Dragon Breath, a domyślny adres na dragonbreath.local."
 }

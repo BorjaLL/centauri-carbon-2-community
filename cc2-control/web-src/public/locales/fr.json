@@ -1008,7 +1008,7 @@
   "settings.save_address": "Enregistrer l'adresse",
   "settings.pandabreath_address_saved": "Adresse du {name} enregistrée",
   "settings.pandabreath_address_invalid": "Saisissez un nom d'hôte ou une adresse IP, sans http:// (par exemple {host}).",
-  "common.dragonbreath": "DragonBreath",
-  "settings.pandabreath_dragonbreath": "Firmware DragonBreath",
-  "settings.pandabreath_dragonbreath_description": "Activez si le Panda Breath utilise le firmware libre DragonBreath. Le nom devient DragonBreath et l'adresse par défaut dragonbreath.local."
+  "common.dragonbreath": "Dragon Breath",
+  "settings.pandabreath_dragonbreath": "Firmware Dragon Breath",
+  "settings.pandabreath_dragonbreath_description": "Activez si le Panda Breath utilise le firmware libre Dragon Breath. Le nom devient Dragon Breath et l'adresse par défaut dragonbreath.local."
 }

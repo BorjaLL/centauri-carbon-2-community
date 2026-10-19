@@ -1008,7 +1008,7 @@
   "settings.save_address": "Save address",
   "settings.pandabreath_address_saved": "{name} address saved",
   "settings.pandabreath_address_invalid": "Enter a host name or IP address, without http:// (for example {host}).",
-  "common.dragonbreath": "DragonBreath",
-  "settings.pandabreath_dragonbreath": "DragonBreath firmware",
-  "settings.pandabreath_dragonbreath_description": "Turn on if the Panda Breath runs the open DragonBreath firmware. Changes the name to DragonBreath and the default address to dragonbreath.local."
+  "common.dragonbreath": "Dragon Breath",
+  "settings.pandabreath_dragonbreath": "Dragon Breath firmware",
+  "settings.pandabreath_dragonbreath_description": "Turn on if the Panda Breath runs the open Dragon Breath firmware. Changes the name to Dragon Breath and the default address to dragonbreath.local."
 }

@@ -998,7 +998,7 @@
   "canvas.recovery_hint": "重启后，耗材可能仍在打印头中，但未关联 Canvas 料槽。请在 ELEGOO 屏幕上核实上次使用的料槽，并通过原生流程完成该料槽的进料；可能会有额外清料。请勿装入其他耗材。如果料槽未知或使用外置料盘，请检查耗材路径并遵循屏幕提示。当打印机报告一致的状态后，控制按钮会自动恢复。",
   "common.pandabreath": "Panda Breath",
   "settings.pandabreath_address": "{name} 地址",
-  "common.dragonbreath": "DragonBreath",
+  "common.dragonbreath": "Dragon Breath",
   "settings.pandabreath_page_description": "在菜单中添加 {name} 腔体加热器控制页面。设置保存在此浏览器中。",
   "settings.save_address": "保存地址",
   "pandabreath.frame_note": "直接从 {host} 加载：此浏览器必须与 {name} 位于同一网络。如果页面空白，请在设置 → 集成中检查地址。",
@@ -1008,7 +1008,7 @@
   "settings.pandabreath_address_invalid": "请输入主机名或 IP 地址，不含 http://（例如 {host}）。",
   "settings.pandabreath_address_saved": "已保存 {name} 地址",
   "pandabreath.disabled": "{name} 页面已关闭。",
-  "settings.pandabreath_dragonbreath": "DragonBreath 固件",
+  "settings.pandabreath_dragonbreath": "Dragon Breath 固件",
   "pandabreath.open_integrations": "在设置 → 集成中启用",
-  "settings.pandabreath_dragonbreath_description": "如果 Panda Breath 使用开源 DragonBreath 固件，请启用此选项。名称将更改为 DragonBreath，默认地址将更改为 dragonbreath.local。"
+  "settings.pandabreath_dragonbreath_description": "如果 Panda Breath 使用开源 Dragon Breath 固件，请启用此选项。名称将更改为 Dragon Breath，默认地址将更改为 dragonbreath.local。"
 }
