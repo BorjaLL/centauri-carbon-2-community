@@ -21,6 +21,11 @@ zig=Path(os.environ['CC2_ZIG'])
 arm=[zig,'cc','-target','arm-linux-gnueabihf.2.23','-mcpu=cortex_a7','-marm',*flags]
 library=out/'libcc2-camera-reap-r1.so'
 run([*arm,'-fPIC','-shared','camera_reap.c','reap_core.c','sha256_file.c','-ldl','-o',library])
+runtime_check=out/'cc2-camera-reap-check'
+run([*arm,'runtime_check.c','-ldl','-o',runtime_check])
+run(['qemu-arm','-L','/usr/arm-linux-gnueabihf','-E','CC2_CAMERA_REAP_TRIAL=0','-E',f'LD_PRELOAD={library}',runtime_check])
+wrong=subprocess.run(['qemu-arm','-L','/usr/arm-linux-gnueabihf','-E','CC2_CAMERA_REAP_TRIAL=1','-E',f'LD_PRELOAD={library}',runtime_check],capture_output=True,text=True,timeout=10)
+assert wrong.returncode==126 and 'executable path is not qualified' in wrong.stderr,wrong
 run([*arm,'reap_core.c','test_reap.c','-o',out/'test-reap-arm'])
 run(['qemu-arm','-L','/usr/arm-linux-gnueabihf',out/'test-reap-arm'])
 run([*arm,'test_patch_math.c','reap_core.c','sha256_file.c','-ldl','-o',out/'test-patch-arm'])
@@ -36,7 +41,7 @@ with library.open('rb') as f:
     elf=ELFFile(f)
     assert elf.elfclass==32 and elf.header['e_machine']=='EM_ARM' and elf.header['e_type']=='ET_DYN'
     assert elf.header['e_flags']&0x400
-    versions=subprocess.check_output(['arm-linux-gnueabihf-readelf','-V',str(library)],text=True)
+    versions=subprocess.check_output(['arm-linux-gnueabihf-readelf','-V',str(library)],text=True)+subprocess.check_output(['arm-linux-gnueabihf-readelf','-V',str(runtime_check)],text=True)
     required=[tuple(map(int,x.split('.'))) for x in re.findall(r'GLIBC_(\d+\.\d+(?:\.\d+)?)',versions)]
     assert required and max(required)<=(2,23),versions
     (out/'required-symbol-versions.txt').write_text(versions)
@@ -48,11 +53,12 @@ result={'library_sha256':expected,'qualified_camera_sha256':'ec5633b17de329d5b18
         'real_libstdcxx_abi_host':True,'real_libstdcxx_abi_arm_qemu':True,
         'asan_ubsan':True,'sha256_host_and_arm':True,
         'branch_math_and_wrong_executable_refusal_host_and_arm':True,
+        'inert_preload_and_runtime_symbol_checker_arm_qemu':True,
         'printer_qualified':False,'camera_streaming_qualified':False,
         'activation':'temporary only; no persistent startup change','lan_enable_once':'explicitly enabled by trial launcher for a fresh process'}
 (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n')
 package=out/'package';package.mkdir(exist_ok=True)
-for name in ('libcc2-camera-reap-r1.so','trial.sh','README.it.md','README.en.md','validation.json','required-symbol-versions.txt'):
+for name in ('libcc2-camera-reap-r1.so','cc2-camera-reap-check','trial.sh','README.it.md','README.en.md','validation.json','required-symbol-versions.txt'):
     shutil.copyfile(out/name,package/name)
 (package/'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in sorted(package.iterdir()) if p.name!='SHA256SUMS'))
 print(json.dumps(result,indent=2))

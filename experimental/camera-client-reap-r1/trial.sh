@@ -12,6 +12,8 @@ camera_pid() {
     case "$PID" in *[!0-9]*) return 1;; esac
 }
 qualified() {
+    REAL=$(readlink "/proc/$PID/exe")
+    [ "$REAL" = /opt/bin/ai_camera ] || { echo 'STOP: unexpected camera executable path.' >&2; return 1; }
     for FILE in /opt/bin/ai_camera "/proc/$PID/exe"; do
         HASH=$(sha256sum "$FILE" | awk '{print $1}')
         [ "$HASH" = "$QUALIFIED" ] || { echo 'STOP: unqualified camera executable.' >&2; return 1; }
@@ -27,6 +29,7 @@ idle() {
 check() {
     case "$BASE" in /tmp/cc2-camera-reap-r1) ;; *) echo 'STOP: extract only to /tmp/cc2-camera-reap-r1.' >&2; return 1;; esac
     (cd "$BASE" && sha256sum -c SHA256SUMS)
+    CC2_CAMERA_REAP_TRIAL=0 LD_PRELOAD="$LIB" "$BASE/cc2-camera-reap-check"
     camera_pid
     qualified
     idle
