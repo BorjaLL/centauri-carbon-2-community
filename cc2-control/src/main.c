@@ -295,6 +295,7 @@ static void system_info_response(int fd, const mqtt_client *mqtt) {
             "\"persistent_ui_preferences\":true,"
             "\"print_history\":true,"
             "\"canvas_auto_refill\":true,"
+            "\"canvas_unload_distance\":true,"
             "\"bed_plates\":true,"
             "\"spool_tracking\":true"
         "},"
@@ -3031,6 +3032,7 @@ static void mesh_response(int fd) {
 
 #include "plates.h"
 #include "spools.h"
+#include "canvas_unload.h"
 
 static void serve_index(int fd, const char *web_root) {
     char path[PATH_MAX_LOCAL];
@@ -3735,6 +3737,12 @@ static int handle_client(int fd,char *request,size_t used,const char *web_root,m
         canvas_refresh_response(fd, mqtt);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/canvas/auto-refill")==0) {
         canvas_auto_refill_response(fd,mqtt,body,body_len);
+    } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/canvas/unload")==0) {
+        canvas_unload_response(fd);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/canvas/unload")==0) {
+        canvas_unload_save_response(fd,mqtt,body,body_len);
+    } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/canvas/unload/restart")==0) {
+        canvas_unload_restart_response(fd,mqtt,body,body_len);
     } else if (strcmp(method,"GET")==0 && strcmp(path,"/api/history")==0) {
         history_response(fd, mqtt);
     } else if (strcmp(method,"POST")==0 && strcmp(path,"/api/history/refresh")==0) {

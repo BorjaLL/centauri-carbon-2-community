@@ -82,6 +82,8 @@ export function previewPlugin(): Plugin {
   let cameraViewer: string | null = null
   let deleted = new Set<string>()
   let autoRefill = false
+  // Canvas pull-back: the printer's configured value and the autosave.cfg override, pending until a restart.
+  let unload = { configured: 85, override: null as number | null, pending: false }
   let videos: Record<string, number> = {}
   // Build-plate library: which simulated plate mesh each printer side slot holds, as /api/plates reports it.
   const plateMesh = (tilt: number) => ({
@@ -340,10 +342,21 @@ export function previewPlugin(): Plugin {
       log: spoolLog,
     }
   }
+  const unloadState = () => ({
+    ok: true,
+    editable: true,
+    min: 60,
+    max: 350,
+    configured: unload.configured,
+    override: unload.override,
+    pending_restart: unload.pending,
+    restart: 'none',
+  })
   const reset = () => {
     speed = 100
     flow = 100
     autoRefill = false
+    unload = { configured: 85, override: null, pending: false }
     videos = {}
     deleted = new Set()
     cameraViewer = null
@@ -603,6 +616,8 @@ export function previewPlugin(): Plugin {
                 error_code: 0,
                 reply: { id: 1036, method: 1036, result: { error_code: 0, history_task_list: tasks() } },
               })
+            case '/api/canvas/unload':
+              return reply(unloadState())
             case '/api/canvas':
               return reply({
                 auto_refill: autoRefill,
@@ -649,6 +664,8 @@ export function previewPlugin(): Plugin {
           '/api/control',
           '/api/preferences',
           '/api/canvas/auto-refill',
+          '/api/canvas/unload',
+          '/api/canvas/unload/restart',
           '/api/history/refresh',
           '/api/history/delete',
           '/api/camera/claim',
@@ -719,6 +736,23 @@ export function previewPlugin(): Plugin {
                 return reply({ error: 'Invalid history entry' }, 400)
               for (const id of ids) deleted.add(id)
               return reply({ accepted: true, method: 1038, count: ids.length, simulated: true }, 202)
+            }
+            if (path === '/api/canvas/unload' && req.method === 'POST') {
+              const text = body.trim()
+              const value = text === 'default' ? null : /^\d{2,3}$/.test(text) ? Number(text) : Number.NaN
+              if (value !== null && !(value >= 60 && value <= 350))
+                return reply({ ok: false, error: 'Enter a whole number of millimetres from 60 to 350' }, 400)
+              if (scene !== 'idle') return reply({ ok: false, error: 'The printer must be idle' }, 409)
+              if (value !== unload.override) unload = { ...unload, override: value, pending: true }
+              return reply(unloadState())
+            }
+            if (path === '/api/canvas/unload/restart' && req.method === 'POST') {
+              if (body.trim() !== 'RESTART')
+                return reply({ ok: false, error: 'Explicit restart confirmation required' }, 400)
+              if (!unload.pending)
+                return reply({ ok: false, error: 'No saved pull-back distance is waiting for a restart' }, 409)
+              unload = { ...unload, pending: false } // the preview "restarts" at once
+              return reply({ ok: true, restarting: true, simulated: true }, 202)
             }
             if (path === '/api/canvas/auto-refill' && req.method === 'POST') {
               if (!['on', 'off'].includes(body.trim())) return reply({ error: 'Use on or off' }, 400)

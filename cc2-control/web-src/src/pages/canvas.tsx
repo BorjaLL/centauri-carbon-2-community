@@ -8,6 +8,7 @@ import { Pip, Tag } from '@/components/ui/badge'
 import { Select } from '@/components/ui/field'
 import { Dialog } from '@/components/ui/dialog'
 import { Row } from '@/components/shared'
+import { CanvasUnload } from './canvas-unload'
 import { control, errText, notify, post } from '@/lib/api'
 import { type Key, t, tpl } from '@/lib/i18n'
 import { poll, usePoll } from '@/lib/poll'
@@ -437,6 +438,7 @@ export const Canvas = () => {
               </Button>
               <p class="mt-2 text-[13px] text-muted">{t('canvas.auto_refill_hint')}</p>
             </div>
+            <CanvasUnload idle={idle} />
           </Card>
           <Card>
             <CardHead icon="light" title="canvas.what_still_works" />
