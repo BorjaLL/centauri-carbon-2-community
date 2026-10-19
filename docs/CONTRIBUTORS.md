@@ -101,3 +101,7 @@ This project also relies on upstream tools and third-party components. Their pro
 **[pezso92](https://github.com/pezso92)**: original Orca endpoint diagnostics (#155), manual allowlisted diagnostics export (#156) and bounded observed Canvas slot timeline (#157), integrated in #158 with original feature commits and attribution retained.
 
 Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, for continued field feedback; earlier contributors and language credits remain above.
+
+## Additional localization contributions
+
+**[pezso92](https://github.com/pezso92)** completed 88 missing Spanish, Russian and Simplified Chinese interface strings ([#164](https://github.com/Neme77/centauri-carbon-2-community/pull/164)) and clarified the updater's Community Firmware V4.4/V4.4.1 requirements in all nine languages ([#163](https://github.com/Neme77/centauri-carbon-2-community/pull/163)). The original contribution commits are preserved. Existing Spanish, Russian, Chinese and other translator credits above remain unchanged.
