@@ -1008,7 +1008,7 @@
   "settings.save_address": "Cím mentése",
   "settings.pandabreath_address_saved": "{name} cím mentve",
   "settings.pandabreath_address_invalid": "Adj meg egy gépnevet vagy IP-címet, http:// nélkül (például {host}).",
-  "common.dragonbreath": "DragonBreath",
-  "settings.pandabreath_dragonbreath": "DragonBreath firmware",
-  "settings.pandabreath_dragonbreath_description": "Kapcsold be, ha a Panda Breath a nyílt DragonBreath firmware-t futtatja. A név DragonBreath lesz, az alapértelmezett cím pedig dragonbreath.local."
+  "common.dragonbreath": "Dragon Breath",
+  "settings.pandabreath_dragonbreath": "Dragon Breath firmware",
+  "settings.pandabreath_dragonbreath_description": "Kapcsold be, ha a Panda Breath a nyílt Dragon Breath firmware-t futtatja. A név Dragon Breath lesz, az alapértelmezett cím pedig dragonbreath.local."
 }
