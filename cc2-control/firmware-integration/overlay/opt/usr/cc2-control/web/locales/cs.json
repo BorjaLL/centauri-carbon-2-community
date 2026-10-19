@@ -992,5 +992,17 @@
   "canvas.timeline_hint": "Jen v této relaci: změny stavů pozic hlášené tiskárnou. Nejde o detekci pohybu filamentu ani chyby čištění.",
   "canvas.timeline_empty": "Zatím nebyla zaznamenána žádná změna pozice.",
   "canvas.timeline_change": "Pozice {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Vymazat historii"
+  "canvas.timeline_clear": "Vymazat historii",
+  "common.pandabreath": "Panda Breath",
+  "pandabreath.description": "Ovládání topení komory, poskytované zařízením Panda Breath ve vaší síti (původní firmware nebo DragonBreath).",
+  "pandabreath.disabled": "Stránka Panda Breath je vypnutá.",
+  "pandabreath.open_integrations": "Zapněte ji v Nastavení → Integrace",
+  "pandabreath.open_in_new_tab": "Otevřít na nové kartě",
+  "pandabreath.frame_note": "Načítá se přímo z {host}: tento prohlížeč musí být ve stejné síti jako Panda Breath. Pokud stránka zůstane prázdná, zkontrolujte adresu v Nastavení → Integrace.",
+  "settings.pandabreath_page": "Stránka Panda Breath",
+  "settings.pandabreath_page_description": "Přidá do nabídky stránku s ovládáním topení komory Panda Breath. Uloženo v tomto prohlížeči.",
+  "settings.pandabreath_address": "Adresa Panda Breath",
+  "settings.save_address": "Uložit adresu",
+  "settings.pandabreath_address_saved": "Adresa Panda Breath uložena",
+  "settings.pandabreath_address_invalid": "Zadejte název hostitele nebo IP adresu, bez http:// (například dragonbreath.local)."
 }

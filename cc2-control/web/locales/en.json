@@ -992,5 +992,17 @@
   "canvas.timeline_hint": "This session only: recent slot state transitions reported by the printer. Not a mechanical filament-movement or purge-failure detector.",
   "canvas.timeline_empty": "No slot changes recorded yet.",
   "canvas.timeline_change": "Slot {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Clear history"
+  "canvas.timeline_clear": "Clear history",
+  "common.pandabreath": "Panda Breath",
+  "pandabreath.description": "Chamber heater controls, served by the Panda Breath on your network (stock or DragonBreath firmware).",
+  "pandabreath.disabled": "The Panda Breath page is turned off.",
+  "pandabreath.open_integrations": "Turn it on in Settings → Integrations",
+  "pandabreath.open_in_new_tab": "Open in new tab",
+  "pandabreath.frame_note": "Loaded directly from {host}: this browser must be on the same network as the Panda Breath. If the page stays blank, check the address in Settings → Integrations.",
+  "settings.pandabreath_page": "Panda Breath page",
+  "settings.pandabreath_page_description": "Adds a menu page with the controls of a Panda Breath chamber heater. Saved in this browser.",
+  "settings.pandabreath_address": "Panda Breath address",
+  "settings.save_address": "Save address",
+  "settings.pandabreath_address_saved": "Panda Breath address saved",
+  "settings.pandabreath_address_invalid": "Enter a host name or IP address, without http:// (for example dragonbreath.local)."
 }
