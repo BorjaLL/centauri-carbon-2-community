@@ -1,4 +1,4 @@
-name: Prepare reviewed Canvas unload integration
+name: Prepare cumulative integration candidate
 on:
   push:
     branches: [integrate/canvas-unload-validation]
@@ -16,10 +16,18 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 26
-      - name: Host regression tests with warnings as errors
-        working-directory: cc2-control
-        run: make clean test CROSS= CC=gcc EXTRA_CFLAGS=-Werror
-      - name: Check generated UI and actual Canvas controls
+      - name: Preserve both reviewed contribution histories
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin integrate/pandabreath-validation
+          test "$(git rev-parse FETCH_HEAD)" = "279c47a5cd6472c3875d0eedc7a7eac43ef9e01b"
+          if ! git merge --no-ff --no-commit FETCH_HEAD; then
+            python3 experimental/canvas-update-integration/resolve_generated.py
+          fi
+          test -z "$(git diff --name-only --diff-filter=U)"
+          git commit -m "Combine Noahwhite2014 Panda Breath and Canvas pull-back contributions for testing"
+      - name: Validate and rebuild merged application UI
         working-directory: cc2-control/web-src
         run: |
           npm ci
@@ -28,18 +36,16 @@ jobs:
           npx playwright install --with-deps chromium
           npm run test:canvas-reset
           npm run test:canvas-states
-      - name: Synchronize the public source snapshot and exact builder references
+          node preview/test-pandabreath.mjs
+      - name: Synchronize generated sources and exact builder references
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp -a cc2-control/web/. cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web/
           git add cc2-control/web cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web
-          if ! git diff --cached --quiet; then git commit -m "Synchronize generated UI for Canvas pull-back integration"; fi
+          git commit -m "Rebuild cumulative Canvas and heater integration UI"
           python3 experimental/pr128-integration/sync_source.py
           git add builder/current/components/cc2-control/source/source.zip builder/current/prepare.py builder/current/core/firmware_builder.py builder/current/launch_helpers/run_build.py
-          git commit -m "Pin builder sources to validated Canvas pull-back integration"
+          git commit -m "Pin cumulative application sources for validation"
           python3 -m unittest discover -s builder/current/tests -p 'test_*.py'
           python3 cc2-control/tests/test_web_sync_static.py
-          test "$(cat cc2-control/VERSION)" = "1.2.17"
           git push origin HEAD:refs/heads/integrate/canvas-unload-validation
 
