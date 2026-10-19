@@ -62,6 +62,11 @@ try {
   await page.goto(server.resolvedUrls.local[0] + '#settings')
   await page.getByRole('tab', { name: 'Updates', exact: true }).click()
   await page.getByText('Compatible update available: 1.2.9', { exact: true }).waitFor()
+  // Show both supported Community Firmware generations, in every translated catalog.
+  for (const lang of ['en', 'hu', 'cs', 'es', 'fr', 'it', 'pl', 'ru', 'zh']) {
+    const dict = JSON.parse(await readFile(path.join(root, `public/locales/${lang}.json`)))
+    assert.match(dict['updates.requirements'], /V4\.4\/V4\.4\.1/, lang + ' update requirements are out of date')
+  }
   assert.equal(checks, 1)
   assert.equal(await page.getByText('WRONG FIRMWARE — must be hidden').count(), 0)
   const download = page.getByRole('button', { name: 'Download and verify', exact: true })
@@ -108,6 +113,7 @@ try {
     await page.locator('main select:has(option[value="hu"])').selectOption(language)
     await page.waitForFunction(code => document.documentElement.lang === code, language)
     await page.getByRole('tab', { name: dict['updates.title'], exact: true }).click()
+    await page.getByText(dict['updates.requirements'], { exact: true }).waitFor()
     await page.getByText(localized[language], { exact: true }).waitFor()
     if (language !== 'en') assert.equal(await page.getByText(localized.en, { exact: true }).count(), 0)
     assert.equal(checks, 2, 'changing the UI language must not fetch another catalog')
