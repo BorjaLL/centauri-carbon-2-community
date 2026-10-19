@@ -55,19 +55,45 @@ static int canvas_unload_autosave(const char *text, size_t length, canvas_unload
     if (!marker) return -1;
     for (size_t pos = (size_t)(marker - text); pos < length;) {
         size_t eol = autosave_line_end(text, length, pos), next = eol < length ? eol + 1 : length;
+        /* Equivalent INI headers with noncanonical SAVE_CONFIG spacing are
+         * ambiguous to edit. Refuse them instead of appending a second section. */
+        if (eol - pos >= 3 && !memcmp(text + pos, "#*#", 3)) {
+            const char *section = text + pos + 3;
+            size_t n = eol - pos - 3;
+            while (n && isspace((unsigned char)*section)) { section++; n--; }
+            while (n && isspace((unsigned char)section[n - 1])) n--;
+            if (n == 12 && !memcmp(section, "[canvas_dev]", 12) &&
+                (eol - pos != header_len || memcmp(text + pos, header, header_len))) return -1;
+        }
         if (eol - pos != header_len || memcmp(text + pos, header, header_len)) { pos = next; continue; }
         if (e->found) return -1;
         e->found = 1; e->start = pos;
         size_t line = next;
         while (line < length) {
             size_t line_eol = autosave_line_end(text, length, line), after = line_eol < length ? line_eol + 1 : length;
+            if (line_eol - line >= 3 && !memcmp(text + line, "#*#", 3)) {
+                const char *payload = text + line + 3;
+                while (payload < text + line_eol && isspace((unsigned char)*payload)) payload++;
+                if (payload < text + line_eol && *payload == '[') break;
+                if ((size_t)(text + line_eol - payload) > key_len &&
+                    !memcmp(payload, CANVAS_UNLOAD_KEY, key_len)) {
+                    const char *delimiter = payload + key_len;
+                    while (delimiter < text + line_eol && isspace((unsigned char)*delimiter)) delimiter++;
+                    if (delimiter < text + line_eol && (*delimiter == '=' || *delimiter == ':') &&
+                        (line_eol - line < 4 || memcmp(text + line, "#*# ", 4) || payload != text + line + 4))
+                        return -1;
+                }
+            }
             if (line_eol - line < 5 || memcmp(text + line, "#*# ", 4) || text[line + 4] == '[') break;
             e->keys++;
             const char *key = text + line + 4, *sep = memchr(key, '=', line_eol - line - 4);
             if (!sep) sep = memchr(key, ':', line_eol - line - 4);
+            const char *original_key = key;
+            while (sep && key < sep && isspace((unsigned char)*key)) key++;
             size_t name_len = sep ? (size_t)(sep - key) : 0;
             while (name_len && isspace((unsigned char)key[name_len - 1])) name_len--;
             if (name_len == key_len && !memcmp(key, CANVAS_UNLOAD_KEY, key_len)) {
+                if (key != original_key) return -1;
                 if (e->has_value || !canvas_unload_number(sep + 1, (size_t)(text + line_eol - sep - 1), &e->value))
                     return -1;
                 e->has_value = 1; e->value_start = line; e->value_end = after;
@@ -245,14 +271,19 @@ static void canvas_unload_save_response(int fd, const mqtt_client *mqtt, const c
     int unchanged = again && again_length == length && !memcmp(again, file, length);
     free(again); free(file);
     if (!unchanged) { free(updated); plates_fail(fd, 409, "The printer changed its configuration meanwhile; try again"); return; }
+    /* Record the restart requirement before changing persistent configuration.
+     * If /tmp or boot-id access fails, the configuration must stay untouched. */
+    int already_pending = canvas_unload_pending();
+    if (!canvas_unload_boot_id(boot, sizeof(boot)) ||
+        plates_replace_file(canvas_unload_pending_path, NULL, boot, strlen(boot), 0644) != 0) {
+        free(updated); plates_fail(fd, 500, "Cannot record the required printer restart; configuration unchanged"); return;
+    }
     if (!autosave_backup_path(backup, sizeof(backup)) ||
         plates_replace_file(printer_autosave_path, backup, updated, new_length, autosave_mode()) != 0) {
+        if (!already_pending) unlink(canvas_unload_pending_path);
         free(updated); plates_fail(fd, 500, "Cannot write the printer configuration"); return;
     }
     free(updated);
-    if (!canvas_unload_boot_id(boot, sizeof(boot)) ||
-        plates_replace_file(canvas_unload_pending_path, NULL, boot, strlen(boot), 0644) != 0)
-        fprintf(stderr, "Canvas pull-back: saved, but cannot record that a restart is pending\n");
     canvas_unload_state(fd, 200);
 }
 
@@ -268,3 +299,5 @@ static void canvas_unload_restart_response(int fd, mqtt_client *mqtt, const char
     reboot_pending = 1; reboot_launched = 0; reboot_due = recovery_clock() + 2; reboot_error = "none";
     plates_reply(fd, 202, "{\"ok\":true,\"restarting\":true}\n");
 }
+
+

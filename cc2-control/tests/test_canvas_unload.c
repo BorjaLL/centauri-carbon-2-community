@@ -142,6 +142,21 @@ static void test_rewrite(void) {
     assert(!rewrite("#*# <---------------------- SAVE_CONFIG ---------------------->\n"
                     "#*# [canvas_dev]\n#*# unload_fila_dist = lots\n", 120));
     /* A section before the marker is the printer configuration's, not the SAVE_CONFIG block's. */
+    const char *ambiguous[] = {
+        "#*# [canvas_dev] \n#*# unload_fila_dist = 100\n",
+        "#*#  [canvas_dev]\n#*# unload_fila_dist = 100\n",
+        "#*#[canvas_dev]\n#*# unload_fila_dist = 100\n",
+        "#*# [canvas_dev]\n#*#  unload_fila_dist = 100\n",
+        "#*# [canvas_dev]\n#*#\tunload_fila_dist = 100\n",
+        "#*# [canvas_dev]\n#*#unload_fila_dist = 100\n",
+        "#*# [canvas_dev]\n#*# unload_fila_dist = 100\n#*#  [canvas_dev]\n#*# unload_fila_dist = 90\n",
+    };
+    for (size_t i = 0; i < sizeof(ambiguous) / sizeof(*ambiguous); ++i) {
+        char file[512];
+        snprintf(file, sizeof(file), "%s%s", AUTOSAVE, ambiguous[i]);
+        assert(!rewrite(file, 120));
+        assert(!rewrite(file, 0));
+    }
     added = rewrite("[canvas_dev]\nunload_fila_dist = 80\n#*# <---------------------- SAVE_CONFIG ---------------------->\n", 90);
     assert(added && strstr(added, "[canvas_dev]\nunload_fila_dist = 80\n") && strstr(added, "#*# unload_fila_dist = 90\n"));
     free(added);
@@ -211,6 +226,27 @@ static void test_http(void) {
            strstr(response, "\"pending_restart\":true"));
     char *restored = read_all("autosave.cfg"); assert(!strcmp(restored, AUTOSAVE)); free(restored);
 
+    /* Failure to persist restart tracking must never change autosave.cfg. */
+    unlink("canvas-unload-pending");
+    canvas_unload_pending_path = "missing-directory/pending";
+    assert(call(SAVE, &mqtt, "200") == 500 && strstr(response, "configuration unchanged"));
+    restored = read_all("autosave.cfg"); assert(!strcmp(restored, AUTOSAVE)); free(restored);
+    canvas_unload_pending_path = "canvas-unload-pending";
+    boot_id_path = "missing-boot-id";
+    assert(call(SAVE, &mqtt, "200") == 500 && strstr(response, "configuration unchanged"));
+    restored = read_all("autosave.cfg"); assert(!strcmp(restored, AUTOSAVE)); free(restored);
+    boot_id_path = "boot_id";
+
+    /* If the configuration commit fails, remove only a newly-created marker.
+     * Preserve an existing pending change, which still needs a reboot. */
+    assert(!mkdir("autosave.cfg.cc2-new", 0700));
+    assert(call(SAVE, &mqtt, "200") == 500);
+    assert(access("canvas-unload-pending", F_OK) != 0);
+    write_file("canvas-unload-pending", "boot-two");
+    assert(call(SAVE, &mqtt, "200") == 500 && canvas_unload_pending());
+    assert(!rmdir("autosave.cfg.cc2-new"));
+    restored = read_all("autosave.cfg"); assert(!strcmp(restored, AUTOSAVE)); free(restored);
+
     /* An unreadable configuration is reported as unknown. */
     unlink("printer_dsp.cfg");
     assert(call(GET, &mqtt, NULL) == 200 && strstr(response, "\"configured\":null"));
@@ -224,3 +260,5 @@ int main(void) {
          "range/idle checks, backup, pending restart by boot id, guarded reboot");
     return 0;
 }
+
+
