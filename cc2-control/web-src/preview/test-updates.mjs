@@ -115,8 +115,11 @@ try {
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 })
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'local file input overflow ' + width)
-    if (width === 390 && process.env.CC2_SCREENSHOTS)
+    if (width === 390 && process.env.CC2_SCREENSHOTS) {
+      await localFile.evaluate(input => input.scrollIntoView({ block: 'center' }))
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       await localFile.screenshot({ path: path.join(process.env.CC2_SCREENSHOTS, 'update-file-mobile.png') })
+    }
   }
   await page.setViewportSize({ width: 1440, height: 1000 })
   assert.equal(checks, 1)

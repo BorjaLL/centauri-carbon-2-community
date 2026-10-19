@@ -36,7 +36,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add cc2-control/web
-          git commit -m "Rebuild update file chooser styling"
+          git diff --cached --quiet || git commit -m "Rebuild update file chooser styling"
           python3 experimental/pr128-integration/sync_source.py
           git add builder/current
           git commit -m "Synchronize builder sources for update chooser fix"
