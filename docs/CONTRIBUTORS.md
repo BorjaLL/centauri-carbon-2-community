@@ -105,3 +105,7 @@ Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate 
 ## Additional localization contributions
 
 **[pezso92](https://github.com/pezso92)** completed 88 missing Spanish, Russian and Simplified Chinese interface strings ([#164](https://github.com/Neme77/centauri-carbon-2-community/pull/164)) and clarified the updater's Community Firmware V4.4/V4.4.1 requirements in all nine languages ([#163](https://github.com/Neme77/centauri-carbon-2-community/pull/163)). The original contribution commits are preserved. Existing Spanish, Russian, Chinese and other translator credits above remain unchanged.
+
+## Optional Panda Breath integration
+
+**[Noahwhite2014](https://github.com/Noahwhite2014)** contributed the optional Panda Breath / DragonBreath embedded control page ([#166](https://github.com/Neme77/centauri-carbon-2-community/pull/166)), including browser-local preferences, the firmware selector, documentation and initial translations. Original contribution commits and authorship are preserved. Real-device tests reported by the contributor are distinguished from automated integration checks.
