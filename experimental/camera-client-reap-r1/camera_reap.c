@@ -23,11 +23,19 @@ static void *(*vector_new)(size_t,const void *);
 static void (*vector_delete)(void *);
 static const void *nothrow_token;
 static int enable_once;
+static void best_effort_write(int fd,const char *data,size_t length) {
+    while(length) {
+        ssize_t n=write(fd,data,length);
+        if(n>0){data+=n;length-=(size_t)n;}
+        else if(n<0&&errno==EINTR)continue;
+        else break;
+    }
+}
 static void fail(const char *why) {
     static const char prefix[]="Camera reap trial refused: ";
-    (void)write(2,prefix,sizeof(prefix)-1);
-    (void)write(2,why,strlen(why));
-    (void)write(2,"\n",1);
+    best_effort_write(2,prefix,sizeof(prefix)-1);
+    best_effort_write(2,why,strlen(why));
+    best_effort_write(2,"\n",1);
     _exit(126);
 }
 static void status_write(void) {
@@ -38,7 +46,7 @@ static void status_write(void) {
         (unsigned long)stats.retained,stats.last_error,CAMERA_HASH);
     int fd=open(STATUS,O_CREAT|O_TRUNC|O_WRONLY|O_NOFOLLOW,0600);
     if(fd<0)return;
-    if(n>0&&(size_t)n<sizeof(data))(void)write(fd,data,(size_t)n);
+    if(n>0&&(size_t)n<sizeof(data))best_effort_write(fd,data,(size_t)n);
     (void)close(fd);
 }
 static void symbol(void *destination,size_t size,const char *name) {
