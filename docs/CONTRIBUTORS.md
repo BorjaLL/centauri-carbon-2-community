@@ -113,3 +113,9 @@ Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate 
 ## Panda Breath integration
 
 **[Noahwhite2014](https://github.com/Noahwhite2014)** contributed the optional Panda Breath / Dragon Breath interface ([#166](https://github.com/Neme77/centauri-carbon-2-community/pull/166), integrated in [#167](https://github.com/Neme77/centauri-carbon-2-community/pull/167)). Original contribution history and feature attribution are preserved. Thanks to Barry for real-device feedback.
+
+## CC2 Control 1.2.18
+
+**[Noahwhite2014](https://github.com/Noahwhite2014)**: original Panda Breath / Dragon Breath interface (#166/#167) and native Canvas post-cut pull-back setting (#168), integrated and validated through #169. **[pezso92](https://github.com/pezso92)**: localization and update-requirement refinements (#163/#164/#165). Original commits and existing language credits are retained.
+
+Thanks to **Barry** for Panda Breath field feedback and **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, for persistent field testing and precise reports. Thanks to all contributors, translators and testers named above.

@@ -49,7 +49,29 @@ The exact R3 image passed its signed build and maintainer installation/connectio
 
 **Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
-## CC2 Control 1.2.17 — Orca checks, diagnostics and Canvas observations
+## CC2 Control 1.2.18 — Canvas and Panda Breath
+
+**[Download CC2 Control 1.2.18](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.18-V4.4)** · [English update guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
+
+**Only Community Firmware V4.4/V4.4.1, ELEGOO base 02.01.01.07.** Update the application directly from an earlier compatible CC2 Control version. Existing preferences and libraries are retained; no firmware reinstall or factory reset is required.
+
+| New in this update | What it does | Credit |
+| --- | --- | --- |
+| Canvas pull-back after the cut | Set the native 60–350 mm distance with backup, restore-default and restart now/later. Requires an idle printer; applies after restart. | **Noahwhite2014**, [#168](https://github.com/Neme77/centauri-carbon-2-community/pull/168) |
+| Panda Breath / Dragon Breath page | Optional interface in Settings → Integrations, embedding the heater's own web page. Saved addresses are retained; the browser must reach the device. This does not use MQTT. | **Noahwhite2014**, [#166](https://github.com/Neme77/centauri-carbon-2-community/pull/166)/[#167](https://github.com/Neme77/centauri-carbon-2-community/pull/167) |
+| Canvas recovery guidance | Explains native display recovery when a reboot leaves filament in the head without an assigned slot. No automatic slot selection, heating or feeding. | [#162](https://github.com/Neme77/centauri-carbon-2-community/pull/162) |
+| Language refinements | Completes 88 Spanish, Russian and Simplified Chinese strings and clarifies updater compatibility in nine languages. | **pezso92**, [#163](https://github.com/Neme77/centauri-carbon-2-community/pull/163)/[#164](https://github.com/Neme77/centauri-carbon-2-community/pull/164), integrated [#165](https://github.com/Neme77/centauri-carbon-2-community/pull/165) |
+
+Integrated in [#169](https://github.com/Neme77/centauri-carbon-2-community/pull/169), preserving original contribution commits. Includes stricter configuration parsing, restart-tracking/write-failure guards, matching translations and builder sources, and consistent Panda Breath / Dragon Breath display names. Cumulative R6 printer test passed; the release changes only the version and matching build references from those accepted functional sources ([#170](https://github.com/Neme77/centauri-carbon-2-community/pull/170)).
+
+**Install:** Settings → Updates → Stable → Check for updates. Enter the printer's **LAN access code** from the display, download/verify and confirm installation separately. Use a connected, idle, cold printer (nozzle/bed ≤50 °C), targets zero and live view paused. Wait for completion, then Ctrl+F5. Checking needs no code; installation does. The LAN code is different from the SSH password. Alternatively upload the signed `.cc2update`; extract the installer ZIP on the computer.
+
+Thanks to **Noahwhite2014**, **pezso92**, **Barry** for Panda Breath field feedback and **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**. All previous author/language credits remain in [Community credits](docs/CONTRIBUTORS.md), including Spanish by **asiersan**, Hungarian by **pezso92**, punctuation by **Surfoo**, and mesh/plate work by **beanbo**.
+
+**Italiano:** ritiro Canvas dopo il taglio e pagina opzionale Panda Breath / Dragon Breath di **Noahwhite2014**, guida al recupero Canvas dopo il riavvio e completamenti delle traduzioni di **pezso92**. Solo V4.4/V4.4.1; preferenze e librerie conservate. Aggiornare dal pannello con codice LAN e conferma separata; lo ZIP si estrae sul computer. Grazie a Barry e a **DamiBFryta, il nostro beta tester definitivo**, e a tutti i collaboratori!
+
+
+## Previous application update — CC2 Control 1.2.17 — Orca checks, diagnostics and Canvas observations
 
 **[Download CC2 Control 1.2.17](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.17-V4.4)** · [English guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
 
