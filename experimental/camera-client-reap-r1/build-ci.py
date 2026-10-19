@@ -15,12 +15,16 @@ run(['g++','-O2','-std=c++17','-Wall','-Wextra','-Werror','-pthread','test_abi.c
 run([out/'test-abi'])
 run(['gcc',*flags,'-fPIC','-shared','sha256_file.c','-o',out/'hash-test.so'])
 run([sys.executable,'test_hash.py',out/'hash-test.so'])
+run(['gcc',*flags,'test_patch_math.c','reap_core.c','sha256_file.c','-ldl','-o',out/'test-patch'])
+run([out/'test-patch'])
 zig=Path(os.environ['CC2_ZIG'])
 arm=[zig,'cc','-target','arm-linux-gnueabihf.2.23','-mcpu=cortex_a7','-marm',*flags]
 library=out/'libcc2-camera-reap-r1.so'
 run([*arm,'-fPIC','-shared','camera_reap.c','reap_core.c','sha256_file.c','-ldl','-o',library])
 run([*arm,'reap_core.c','test_reap.c','-o',out/'test-reap-arm'])
 run(['qemu-arm','-L','/usr/arm-linux-gnueabihf',out/'test-reap-arm'])
+run([*arm,'test_patch_math.c','reap_core.c','sha256_file.c','-ldl','-o',out/'test-patch-arm'])
+run(['qemu-arm','-L','/usr/arm-linux-gnueabihf',out/'test-patch-arm'])
 run(['arm-linux-gnueabihf-gcc',*flags,'-c','reap_core.c','-o',out/'reap-core-arm.o'])
 run(['arm-linux-gnueabihf-g++','-O2','-std=c++17','-Wall','-Wextra','-Werror','-pthread','test_abi.cpp',out/'reap-core-arm.o','-o',out/'test-abi-arm'])
 run(['qemu-arm','-L','/usr/arm-linux-gnueabihf',out/'test-abi-arm'])
@@ -43,6 +47,7 @@ result={'library_sha256':expected,'qualified_camera_sha256':'ec5633b17de329d5b18
         'glibc_max_required':'.'.join(map(str,max(required))),'host_threads':1200,'arm_emulated_threads':1200,
         'real_libstdcxx_abi_host':True,'real_libstdcxx_abi_arm_qemu':True,
         'asan_ubsan':True,'sha256_host_and_arm':True,
+        'branch_math_and_wrong_executable_refusal_host_and_arm':True,
         'printer_qualified':False,'camera_streaming_qualified':False,
         'activation':'temporary only; no persistent startup change','lan_enable_once':'explicitly enabled by trial launcher for a fresh process'}
 (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n')
