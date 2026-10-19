@@ -28,6 +28,7 @@ try {
   const input = page.locator('#pandabreath-host')
   assert.equal(await input.inputValue(), 'pandabreath.local')
   await firmware.click()
+  await page.waitForFunction(() => document.querySelector('#pandabreath-host')?.value === 'dragonbreath.local')
   assert.equal(await input.inputValue(), 'dragonbreath.local')
   assert.equal(await menu().textContent(), 'DragonBreath')
   await input.fill('heater.local:8082')
