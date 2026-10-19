@@ -109,3 +109,7 @@ Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate 
 ## Canvas pull-back configuration
 
 **[Noahwhite2014](https://github.com/Noahwhite2014)** contributed the Canvas post-cut pull-back setting ([#168](https://github.com/Neme77/centauri-carbon-2-community/pull/168)), including the configuration integration, translated interface, tests and real-printer validation. Original contribution commit and feature attribution are preserved.
+
+## Panda Breath integration
+
+**[Noahwhite2014](https://github.com/Noahwhite2014)** contributed the optional Panda Breath / Dragon Breath interface ([#166](https://github.com/Neme77/centauri-carbon-2-community/pull/166), integrated in [#167](https://github.com/Neme77/centauri-carbon-2-community/pull/167)). Original contribution history and feature attribution are preserved. Thanks to Barry for real-device feedback.
