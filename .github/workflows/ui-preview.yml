@@ -46,6 +46,8 @@ jobs:
         run: npm run test:languages
       - name: Verify Canvas reset confirmation and empty-slot rendering
         run: npm run test:canvas-reset
+      - name: Verify Canvas state eligibility and reboot recovery guidance
+        run: npm run test:canvas-states
       - name: Verify numeric fan input and Control panel layout
         run: npm run test:fans
       - name: Verify material names and themed preheat selector

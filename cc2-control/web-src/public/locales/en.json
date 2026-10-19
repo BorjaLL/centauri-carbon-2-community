@@ -992,5 +992,8 @@
   "canvas.timeline_hint": "This session only: recent slot state transitions reported by the printer. Not a mechanical filament-movement or purge-failure detector.",
   "canvas.timeline_empty": "No slot changes recorded yet.",
   "canvas.timeline_change": "Slot {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Clear history"
+  "canvas.timeline_clear": "Clear history",
+  "canvas.reason_unassigned_head": "Filament detected in the head · slot unassigned",
+  "canvas.recovery_title": "Canvas state needs recovery",
+  "canvas.recovery_hint": "After a restart, filament may remain in the head without an associated Canvas slot. On the ELEGOO display, verify the last-used slot and complete its native loading procedure; extra purging may occur. Do not load another filament. If the slot is unknown or you use an external spool, inspect the filament path and follow the display instructions. Controls unlock when the printer reports a consistent state."
 }

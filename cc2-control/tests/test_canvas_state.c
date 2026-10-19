@@ -26,7 +26,18 @@ int main(void){
  m.canvas_head_loaded=0;v=canvas_slot_policy(&m,1);assert(v.state==CV_TRANSITION&&!v.load&&!v.unload);
  m.canvas_direct_active=-1;
  snapshot(&m,"[{\"tray_id\":1,\"status\":1}]");
- m.canvas_head_loaded=1;assert(canvas_slot_policy(&m,1).state==CV_TRANSITION);
+ m.canvas_head_loaded=1;
+ v=canvas_slot_policy(&m,1);
+ assert(v.state==CV_TRANSITION&&!v.load&&!v.unload);
+ assert(v.reason_load==CR_UNASSIGNED_HEAD&&v.reason_unload==CR_UNASSIGNED_HEAD);
+ assert(!strcmp(canvas_reason_name(v.reason_load),"unassigned_head"));
+ assert(!control_build_script("canvas:load:1",&m,command,sizeof(command),reason,sizeof(reason)));
+ assert(!control_build_script("canvas:unload:1",&m,command,sizeof(command),reason,sizeof(reason)));
+ /* Native recovery must restore a real channel/status; remembering a slot
+  * or selecting its UI card does not provide that confirmation. */
+ m.canvas_direct_active=1;snapshot(&m,"[{\"tray_id\":1,\"status\":2}]");
+ v=canvas_slot_policy(&m,1);assert(v.state==CV_LOADED&&!v.load&&v.unload&&v.reason_unload==CR_NONE);
+ m.canvas_direct_active=-1;snapshot(&m,"[{\"tray_id\":1,\"status\":1}]");
  m.canvas_head_loaded=0;m.machine_status=2;assert(!canvas_slot_policy(&m,1).load);
  m.machine_status=1;m.canvas_direct_idle=0;assert(!canvas_slot_policy(&m,1).load);
  m.canvas_direct_idle=1;m.last_message-=60;assert(canvas_slot_policy(&m,1).state==CV_UNKNOWN);
