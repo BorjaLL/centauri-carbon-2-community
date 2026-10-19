@@ -992,5 +992,8 @@
   "canvas.timeline_hint": "Tylko w tej sesji: zmiany stanu gniazd zgłaszane przez drukarkę. Nie wykrywa fizycznego ruchu filamentu ani błędów czyszczenia.",
   "canvas.timeline_empty": "Nie zarejestrowano jeszcze zmian gniazd.",
   "canvas.timeline_change": "Gniazdo {slot}: {from} → {to}",
-  "canvas.timeline_clear": "Wyczyść historię"
+  "canvas.timeline_clear": "Wyczyść historię",
+  "canvas.reason_unassigned_head": "Wykryto filament w głowicy · nieprzypisany slot",
+  "canvas.recovery_title": "Stan Canvas wymaga przywrócenia",
+  "canvas.recovery_hint": "Po ponownym uruchomieniu filament może pozostać w głowicy bez przypisanego slotu Canvas. Na ekranie ELEGOO sprawdź ostatnio używany slot i dokończ jego ładowanie standardową procedurą; może nastąpić dodatkowe przepłukanie. Nie ładuj innego filamentu. Jeśli slot jest nieznany lub używasz zewnętrznej szpuli, sprawdź drogę filamentu i postępuj zgodnie z instrukcjami na ekranie. Przyciski odblokują się, gdy drukarka zgłosi spójny stan."
 }
