@@ -19,6 +19,7 @@
 #define STATUS "/tmp/cc2-camera-reap.status"
 static cc2_reap_ops ops;
 static cc2_reap_stats stats;
+static pthread_mutex_t invocation_lock=PTHREAD_MUTEX_INITIALIZER;
 static void *(*vector_new)(size_t,const void *);
 static void (*vector_delete)(void *);
 static const void *nothrow_token;
@@ -69,8 +70,10 @@ static void reject_client(void *object,int fd) {
 static void client_spawn(cc2_thread_vector *v,const uint32_t member[2],void *const *object,const int *fd) {
     if((uintptr_t)*object+0x24!=(uintptr_t)v||member[0]!=HANDLE_ADDRESS||member[1]!=0||*fd<0)
         fail("qualified call ABI changed");
+    if(pthread_mutex_lock(&invocation_lock))fail("invocation lock");
     (void)cc2_reap_spawn(v,*object,*fd,&ops,&stats);
     status_write();
+    if(pthread_mutex_unlock(&invocation_lock))fail("invocation unlock");
 }
 /* A manual ai_camera restart otherwise starts LAN streaming paused. This
  * separately opted-in constructor hook enables it once. Later vendor

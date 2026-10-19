@@ -1,6 +1,9 @@
 #define _GNU_SOURCE
 #include "reap_core.h"
 #include <assert.h>
+#ifdef NDEBUG
+#error These qualification tests require active assertions.
+#endif
 #include <errno.h>
 #include <stdatomic.h>
 #include <stdio.h>

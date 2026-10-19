@@ -3,6 +3,9 @@
 #endif
 #include "reap_core.h"
 #include <cassert>
+#ifdef NDEBUG
+#error These qualification tests require active assertions.
+#endif
 #include <cstdlib>
 #include <new>
 #include <thread>

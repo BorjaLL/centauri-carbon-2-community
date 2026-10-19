@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parent
 os.chdir(root)
 out=root/'output';out.mkdir(exist_ok=True)
 def run(args,**kw):subprocess.run(list(map(str,args)),check=True,timeout=180,**kw)
-flags=['-O2','-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-pthread']
+flags=['-O2','-UNDEBUG','-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-pthread']
 run(['gcc',*flags,'reap_core.c','test_reap.c','-o',out/'test-reap'])
 run([out/'test-reap'])
 run(['gcc',*flags,'-fsanitize=address,undefined','-fno-omit-frame-pointer','reap_core.c','test_reap.c','-o',out/'test-reap-asan'])

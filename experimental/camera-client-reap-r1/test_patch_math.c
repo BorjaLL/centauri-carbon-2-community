@@ -1,5 +1,8 @@
 #include "camera_reap.c"
 #include <assert.h>
+#ifdef NDEBUG
+#error These qualification tests require active assertions.
+#endif
 #include <sys/wait.h>
 static uintptr_t decoded(uintptr_t site,uint32_t word){
     int32_t immediate=(int32_t)(word<<8)>>8;
