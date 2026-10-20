@@ -4,6 +4,7 @@
     status: 1,
     reject: false,
     commands: [],
+    unload: { configured: 85, override: null, pending: false, restarts: 0 },
     headLoaded: false, activeTray: -1, canvasFresh: true,
     fans: { part: 0, aux: 0, box: 0 },
     trays: [0, 1, 2, 3].map(i => ({tray_id:i,status:i===1||i===2?1:0,filament_color:['','#66BB6A','#48A7FA','#F5F5F5'][i],filament_name:['','PETG','PETG','PLA'][i],filament_type:['','PETG','PETG','PLA'][i]})),
@@ -52,6 +53,23 @@
         const transitionReason=state.headLoaded&&state.activeTray===-1?'unassigned_head':'transition'
         return {slot:t.tray_id,state:kind,load,unload,reason_load:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='loaded'?'already_loaded':kind==='transition'?transitionReason:load?'none':'head_occupied',reason_unload:!fresh?'unavailable':busy?'busy':kind==='empty'?'empty':kind==='transition'?transitionReason:unload?'none':'not_loaded'}
       }),telemetry:{result:{canvas_info:{canvas_list:[{canvas_id:0,connected:1,tray_list:state.trays}]}}}})
+    if (path === '/api/canvas/unload/restart' && options.method === 'POST') {
+      if (String(options.body) !== 'RESTART') return reply({ ok: false, error: 'Explicit restart confirmation required' }, 400)
+      if (!state.unload.pending || state.status !== 1) return reply({ ok: false, error: 'The printer must be idle' }, 409)
+      state.unload.restarts++
+      return reply({ ok: true, restarting: true }, 202)
+    }
+    if (path === '/api/canvas/unload') {
+      const u = state.unload
+      if (options.method === 'POST') {
+        const text = String(options.body).trim()
+        const value = text === 'default' ? null : /^\d{2,3}$/.test(text) ? Number(text) : NaN
+        if (value !== null && !(value >= 60 && value <= 350)) return reply({ ok: false, error: 'Enter a whole number of millimetres from 60 to 350' }, 400)
+        if (state.status !== 1) return reply({ ok: false, error: 'The printer must be idle' }, 409)
+        if (value !== u.override) Object.assign(u, { override: value, pending: true })
+      }
+      return reply({ ok: true, editable: true, min: 60, max: 350, configured: u.configured, override: u.override, pending_restart: u.pending, restart: 'none' })
+    }
     if (path === '/api/printer') return reply(printer())
     if (path === '/api/health') return reply({ service: 'cc2-control', version: '1.2.3', mqtt_connected: state.connected })
     if (path === '/api/setup') return reply({ required: false, configured: true, mqtt_connected: state.connected })

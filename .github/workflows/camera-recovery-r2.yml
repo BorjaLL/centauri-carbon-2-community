@@ -1,7 +1,11 @@
 name: Experimental camera recovery R2
 on:
   push:
-    branches: [test/camera-recovery-r2]
+    branches: [test/camera-persistent-r2, develop]
+    paths:
+      - experimental/camera-recovery-r2/**
+      - .github/workflows/camera-recovery-r2.yml
+  pull_request:
     paths:
       - experimental/camera-recovery-r2/**
       - .github/workflows/camera-recovery-r2.yml

@@ -6,14 +6,31 @@ import { fixture, launchOptions, root } from './fixture.mjs'
 // Deterministic limits and discontinuities supplement the actual UI path below.
 const logicServer = await createServer({ root, configFile: false, server: { middlewareMode: true } })
 try {
-  const { observeCanvasSlots: observe, canvasTimeline: history, clearCanvasTimeline: clear } =
+  const { observeCanvasSlots: observe, observedPrinterPhase: phase, canvasTimeline: history, clearCanvasTimeline: clear } =
     await logicServer.ssrLoadModule('/src/lib/canvas-events.ts')
   const state = value => [{ slot: 0, state: value }]
+  const reading = (status, sub_status = 0) => ({
+    ok: true, at: 1000, data: { connected: true, machine: { status, sub_status } },
+  })
+  assert.equal(phase(reading(1), 1500), 'idle')
+  assert.equal(phase(reading(2), 1500), 'printing')
+  assert.equal(phase(reading(2, 2502), 1500), 'paused')
+  assert.equal(phase(reading(2, 2505), 1500), 'paused')
+  assert.equal(phase(reading(13), 1500), 'unknown', 'filament operation is not printing')
+  assert.equal(phase(reading(2), 6001), 'unknown', 'stale state must be unknown')
+  assert.equal(phase(reading(2), 999), 'unknown', 'future readback must be unknown')
+  assert.equal(phase({ ...reading(2), ok: false }, 1500), 'unknown')
+  assert.equal(phase({ ...reading(2), data: { connected: false, machine: { status: 2 } } }, 1500), 'unknown')
+  assert.equal(phase(null, 1500), 'unknown')
   observe(true, state('empty'), 1)
   assert.equal(history.get().events.length, 0, 'first read only sets the baseline')
   for (let i = 0; i < 40; i++) observe(true, state(i % 2 ? 'empty' : 'present'), i + 2)
   assert.equal(history.get().events.length, 24, 'more than 24 actual changes evict oldest events')
   assert.equal(history.get().events[0].time, 41)
+  // Phase annotations are fixed enums; no filenames, material names or secrets.
+  observe(true, state('present'), 42, 'printing')
+  assert.equal(history.get().events[0].phase, 'printing')
+  assert.equal(history.get().events.length, 24, 'phase annotation retains the existing history bound')
   clear()
   observe(false, [], 50)
   observe(true, state('loaded'), 51)
@@ -53,6 +70,8 @@ try {
   const timeline = page.locator('[data-canvas-timeline]')
   await timeline.locator('[data-canvas-event]').filter({ hasText: 'Present · unloaded from head → Loaded to head' }).waitFor()
   assert.ok((await timeline.locator('[data-canvas-event]').count()) <= 24, 'Timeline is bounded')
+  await timeline.locator('[data-canvas-printer-phase]').first().waitFor()
+  assert.match(await timeline.locator('[data-canvas-printer-phase]').first().textContent(), /Printer \(recent status\): (Idle|Printing|Paused|Unknown)/)
   assert.equal(await load.isDisabled(), true)
   assert.equal(await unload.isDisabled(), false)
   await card(2).getByRole('button', { name: 'Select slot', exact: true }).click()

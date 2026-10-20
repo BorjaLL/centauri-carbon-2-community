@@ -278,3 +278,31 @@ input[type=range], input[type=checkbox], input[type=radio], progress { accent-co
   .cc2-header-status > div { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .cc2-portrait-brand { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 }
+
+/* The whole native file input opens the chooser: make that full hit area visible. */
+.cc2-update-file {
+  min-height: 44px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 6px;
+  background: var(--field);
+  color: var(--text);
+  cursor: pointer;
+}
+.cc2-update-file::file-selector-button {
+  margin-inline-end: 10px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: 6px 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  cursor: inherit;
+}
+.cc2-update-file:not(:disabled):hover::file-selector-button {
+  border-color: var(--cyan);
+}
+.cc2-update-file:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}

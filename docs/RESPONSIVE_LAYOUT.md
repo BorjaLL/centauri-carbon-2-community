@@ -29,3 +29,11 @@ Desktop Control keeps three columns at 1280 px and above regardless of sidebar
 state. A touch tablet at 1366 px keeps the previous content-sized two columns.
 Narrow portrait and short landscape navigation are covered. These checks do not
 replace visual validation in OrcaSlicer or on physical desktop/mobile devices.
+
+Page header actions are no longer hidden below a desktop viewport breakpoint. The
+shared Page header wraps below its content-width threshold, preserves translated
+long titles and aligns actions with the heading at wider widths. The optional
+Panda Breath / Dragon Breath direct-link fallback stays visible and keyboard
+accessible on phones, with a comfortable touch target and a visible focus
+outline. This only changes layout and links in the browser, never printer
+commands, camera sessions or heater state.

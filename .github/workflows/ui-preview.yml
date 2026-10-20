@@ -48,6 +48,8 @@ jobs:
         run: npm run test:canvas-reset
       - name: Verify Canvas state eligibility and reboot recovery guidance
         run: npm run test:canvas-states
+      - name: Verify optional Panda Breath page and address validation
+        run: node preview/test-pandabreath.mjs
       - name: Verify numeric fan input and Control panel layout
         run: npm run test:fans
       - name: Verify material names and themed preheat selector

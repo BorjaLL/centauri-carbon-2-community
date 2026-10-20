@@ -1,11 +1,15 @@
 name: Experimental camera client reclamation
 on:
   push:
-    branches: [test/camera-client-reap-r1]
+    branches: [test/camera-persistent-r2, develop]
     paths:
       - experimental/camera-client-reap-r1/**
       - .github/workflows/camera-client-reap-r1.yml
   workflow_dispatch:
+  pull_request:
+    paths:
+      - experimental/camera-client-reap-r1/**
+      - .github/workflows/camera-client-reap-r1.yml
 permissions:
   contents: read
 jobs:

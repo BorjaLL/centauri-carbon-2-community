@@ -1,7 +1,11 @@
 name: Persistent camera R2 startup checks
 on:
   push:
-    branches: [test/camera-persistent-r2]
+    branches: [test/camera-persistent-r2, develop]
+    paths:
+      - experimental/camera-persistent-r2/**
+      - .github/workflows/camera-persistent-r2.yml
+  pull_request:
     paths:
       - experimental/camera-persistent-r2/**
       - .github/workflows/camera-persistent-r2.yml

@@ -27,7 +27,7 @@
     "test:printer-reports": "node preview/test-printer-reports.mjs",
     "test:control-calibrations": "node preview/test-control-calibrations.mjs",
     "test:fans": "node preview/test-fan-inputs.mjs",
-    "test:canvas-reset": "node preview/test-canvas-reset.mjs && node preview/test-canvas-presence.mjs",
+    "test:canvas-reset": "node preview/test-canvas-reset.mjs && node preview/test-canvas-presence.mjs && node preview/test-canvas-unload.mjs",
     "test:languages": "node preview/test-polish-czech.mjs",
     "test:hungarian": "node preview/test-hungarian.mjs",
     "test:spanish": "node preview/test-spanish.mjs",
