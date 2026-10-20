@@ -13,7 +13,7 @@ import { control, errText, notify, post } from '@/lib/api'
 import { type Key, t, tpl } from '@/lib/i18n'
 import { poll, usePoll } from '@/lib/poll'
 import { canvas, canvasColour, canvasHex, refreshCanvas } from '@/lib/canvas'
-import { canvasTimeline, clearCanvasTimeline } from '@/lib/canvas-events'
+import { canvasTimeline, clearCanvasTimeline, type ObservedPrinterPhase } from '@/lib/canvas-events'
 import { presets, printer } from '@/lib/state'
 import { findSpool, g, openChooser, refreshSpools, spoolLabel, spools } from '@/lib/spools'
 
@@ -172,6 +172,12 @@ export const Canvas = () => {
     transition: 'canvas.state_transition',
     unknown: 'canvas.state_unknown',
   } as const
+  const phaseLabels: Record<ObservedPrinterPhase, Key> = {
+    idle: 'state.idle',
+    printing: 'state.printing',
+    paused: 'substate.paused',
+    unknown: 'state.unknown',
+  }
   const reasons: Record<string, Key> = {
     unavailable: 'canvas.reason_unavailable',
     empty: 'canvas.reason_empty',
@@ -481,6 +487,9 @@ export const Canvas = () => {
                   from: t(stateLabels[event.from]),
                   to: t(stateLabels[event.to]),
                 })}
+                <small data-canvas-printer-phase class="mt-1 block text-xs text-muted">
+                  {tpl('canvas.timeline_printer_context', { state: t(phaseLabels[event.phase]) })}
+                </small>
               </li>
             ))}
           </ol>

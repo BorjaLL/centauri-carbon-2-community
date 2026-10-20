@@ -46,12 +46,12 @@ export const Page = ({
   children: ComponentChildren
 }) => (
   <>
-    <div class="mb-4 flex items-center justify-between gap-3">
-      <div>
-        <h2 class="text-2xl font-semibold">{t(title)}</h2>
-        {sub && <p class="text-muted">{t(sub)}</p>}
+    <div class="mb-4 flex min-w-0 flex-col gap-3 cc2-sm:flex-row cc2-sm:items-start cc2-sm:justify-between">
+      <div class="min-w-0">
+        <h2 class="text-2xl font-semibold [overflow-wrap:anywhere]">{t(title)}</h2>
+        {sub && <p class="text-muted [overflow-wrap:anywhere]">{t(sub)}</p>}
       </div>
-      <div class="hidden gap-2 md:flex">{tags}</div>
+      {tags !== undefined && <div class="flex min-w-0 flex-wrap items-center gap-2 cc2-sm:justify-end">{tags}</div>}
     </div>
     {children}
   </>
