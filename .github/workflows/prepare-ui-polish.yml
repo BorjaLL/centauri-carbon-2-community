@@ -1,0 +1,41 @@
+name: Prepare cumulative UI polish trial
+on:
+  push:
+    branches: [test/ui-polish-175-177]
+    paths: [.github/workflows/prepare-ui-polish.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: cc2-control/web-src/package-lock.json
+      - run: npm ci
+        working-directory: cc2-control/web-src
+      - run: npm run check && npm run build
+        working-directory: cc2-control/web-src
+      - run: npx playwright install --with-deps chromium
+        working-directory: cc2-control/web-src
+      - name: Canvas single-flight, observed phases and mobile heater link
+        run: node preview/test-canvas-unload.mjs && npm run test:canvas-states && node preview/test-pandabreath.mjs
+        working-directory: cc2-control/web-src
+      - name: Commit rebuilt UI and synchronize canonical builder sources
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp -a cc2-control/web/. cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web/
+          git add cc2-control/web cc2-control/firmware-integration/overlay
+          git commit -m "Rebuild pezso92's cumulative Canvas and mobile UI fixes"
+          python3 experimental/pr128-integration/sync_source.py
+          git add builder/current
+          git commit -m "Synchronize canonical builder sources for UI trial"
+          python3 -m unittest discover -s builder/current/tests -p 'test_*.py'
+          python3 cc2-control/tests/test_web_sync_static.py
+          git push origin HEAD:refs/heads/test/ui-polish-175-177
