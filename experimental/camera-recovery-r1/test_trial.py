@@ -2,7 +2,7 @@
 import hashlib,os,subprocess,tempfile
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
-IDLE='{"connected":true,"last_message_age":2,"machine":{"status":1}}'
+IDLE='{"connected":true,"last_message_age":2,"machine":{"status":1,"status_name":"Idle"}}'
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 with tempfile.TemporaryDirectory() as directory:
     root=Path(directory);base=root/'package';base.mkdir();stubs=root/'stubs';stubs.mkdir()
