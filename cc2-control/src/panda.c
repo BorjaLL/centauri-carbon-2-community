@@ -154,6 +154,19 @@ static int gcode_file_metadata(const char *root,const char *name,char *out,size_
     return n>0&&(size_t)n<cap?0:-1;
 }
 
+/* Metadata for `name`, or for the file being printed when `name` is a cut-off copy of
+ * its name: DragonBreath keeps 63 bytes of print_stats.filename, and ElegooSlicer's
+ * names ("ECC2_0.6_<model>_<filament>_<layer>_<time>.gcode") are often longer. */
+static int print_file_metadata(int control_port,const char *root,const char *name,char *out,size_t cap){
+    if(gcode_file_metadata(root,name,out,cap)==0)return 0;
+    size_t n=strlen(name);if(n<32)return -1;
+    char source[PANDA_BODY_MAX],raw[PANDA_FILENAME_MAX*2],current[PANDA_FILENAME_MAX];
+    if(local_printer_json(control_port,source,sizeof(source))<0)return -1;
+    json_string_raw(strstr(source,"\"print\""),"\"filename\"",raw,sizeof(raw));
+    if(!raw[0]||json_unescape(raw,current,sizeof(current))<0||strlen(current)<=n||strncmp(current,name,n))return -1;
+    return gcode_file_metadata(root,current,out,cap);
+}
+
 static int url_decode(const char *in,char *out,size_t cap){
     size_t o=0;for(;*in&&*in!='&'&&*in!='#';in++){char c=*in;if(c=='+')c=' ';else if(c=='%'){unsigned v;if(!isxdigit((unsigned char)in[1])||!isxdigit((unsigned char)in[2])||sscanf(in+1,"%2x",&v)!=1)return -1;c=(char)v;in+=2;}if(!c||o+1>=cap)return -1;out[o++]=c;}out[o]='\0';return 0;
 }
@@ -179,7 +192,7 @@ static void *handle_client(void *arg){
         else if(strncmp(path,"/server/files/metadata?",23)==0){
             const char *q=strstr(path,"?filename=");if(!q)q=strstr(path,"&filename=");
             char name[PANDA_FILENAME_MAX],meta[2048],body[2100];
-            if(q&&url_decode(q+10,name,sizeof(name))==0&&gcode_file_metadata(gcode_root,name,meta,sizeof(meta))==0){snprintf(body,sizeof(body),"{\"result\":%s}\n",meta);http_reply(fd,200,"OK",body);}
+            if(q&&url_decode(q+10,name,sizeof(name))==0&&print_file_metadata(control_port,gcode_root,name,meta,sizeof(meta))==0){snprintf(body,sizeof(body),"{\"result\":%s}\n",meta);http_reply(fd,200,"OK",body);}
             else http_reply(fd,404,"Not Found","{\"error\":{\"code\":404,\"message\":\"Metadata not available\"}}\n");
         }
         else http_reply(fd,404,"Not Found","{\"error\":{\"code\":404,\"message\":\"Read-only Panda compatibility endpoint\"}}\n");
@@ -190,7 +203,7 @@ static void *handle_client(void *arg){
     while(1){char message[4096];int opcode=0;int got=ws_read(fd,message,sizeof(message),&opcode);if(got>0&&opcode==1){int id=1001;char *ip=strstr(message,"\"id\"");if(ip){ip=strchr(ip,':');if(ip)id=atoi(ip+1);}char method[64];json_string_raw(message,"\"method\"",method,sizeof(method));
             if(!strcmp(method,"server.files.metadata")){char raw[PANDA_FILENAME_MAX*2],name[PANDA_FILENAME_MAX],meta[2048],body[2200];int len;
                 json_string_raw(strstr(message,"\"params\""),"\"filename\"",raw,sizeof(raw));
-                if(raw[0]&&json_unescape(raw,name,sizeof(name))==0&&gcode_file_metadata(gcode_root,name,meta,sizeof(meta))==0)len=snprintf(body,sizeof(body),"{\"jsonrpc\":\"2.0\",\"id\":%d,\"result\":%s}",id,meta);
+                if(raw[0]&&json_unescape(raw,name,sizeof(name))==0&&print_file_metadata(control_port,gcode_root,name,meta,sizeof(meta))==0)len=snprintf(body,sizeof(body),"{\"jsonrpc\":\"2.0\",\"id\":%d,\"result\":%s}",id,meta);
                 else len=snprintf(body,sizeof(body),"{\"jsonrpc\":\"2.0\",\"id\":%d,\"error\":{\"code\":404,\"message\":\"Metadata not available\"}}",id);
                 if(ws_send(fd,1,body,(size_t)len)<0)break;}
             else if(strstr(message,"printer.objects.query")||strstr(message,"printer.objects.subscribe")){char body[4096];moonraker_status(control_port,body,sizeof(body),0,id);if(ws_send(fd,1,body,strlen(body))<0)break;subscribed=1;}else{char body[256];int len=snprintf(body,sizeof(body),"{\"jsonrpc\":\"2.0\",\"id\":%d,\"error\":{\"code\":-32601,\"message\":\"Read-only Panda compatibility endpoint\"}}",id);if(ws_send(fd,1,body,(size_t)len)<0)break;}}else if(got>=0&&opcode==8)break;else if(got>=0&&opcode==9){/* Pings are often empty (ESP-IDF clients); answer those too. */if(ws_send(fd,10,message,(size_t)got)<0)break;}else if(got<0&&errno!=EAGAIN&&errno!=EWOULDBLOCK)break;

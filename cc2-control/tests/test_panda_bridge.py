@@ -73,7 +73,9 @@ def gcode(types, used):
 
 binary = sys.argv[1]
 gcode_root = tempfile.mkdtemp(prefix="cc2-panda-gcode-")
-multi = 'Hood "v2"_PETG+PLA.gcode'
+# ElegooSlicer-style name, longer than the 63 bytes DragonBreath keeps.
+multi = 'ECC2_0.6_Compact "CC2" Hood_Elegoo PETG-CF 0.6 Hyper CHT_0.24_1h13m.gcode'
+assert len(multi) > 63
 with open(os.path.join(gcode_root, multi), "w") as f:
     f.write(gcode("PETG;PLA", "17677.21, 232.46"))
 with open(os.path.join(gcode_root, "asa.gcode"), "w") as f:
@@ -110,6 +112,9 @@ try:
     plain = http(panda_port, "/server/files/metadata?filename=plain.gcode")["result"]
     assert "filament_type" not in plain and "filament_used_mm" not in plain
     # Only plain names inside the G-code folder; never a path, a hidden file or a directory.
+    # A cut-off name only stands for the file being printed; with no print it matches nothing.
+    for cut in (multi[:20], multi[:63]):
+        http(panda_port, "/server/files/metadata?filename=" + urllib.parse.quote(cut), status=404)
     for name in ["missing.gcode", "../" + os.path.basename(gcode_root) + "/asa.gcode",
                  "/etc/passwd", "..", ".hidden", "folder.gcode", "%2e%2e%2fasa.gcode", ""]:
         http(panda_port, "/server/files/metadata?filename=" + name, status=404)
