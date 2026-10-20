@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { MoveLeft, RotateCcw, Save } from 'lucide-preact'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/field'
@@ -32,6 +32,10 @@ export const CanvasUnload = ({ idle }: { idle: boolean }) => {
   const [value, setValue] = useState('')
   const [edited, setEdited] = useState(false) // a value outside the range read from the printer is not an input error
   const [busy, setBusy] = useState(false)
+  const [restarting, setRestarting] = useState(false)
+  // State alone does not guard against two clicks before the next render.
+  const saveInFlight = useRef(false)
+  const restartInFlight = useRef(false)
   const show = (s: Unload) => {
     setState(s)
     setValue(String(s.override ?? s.configured ?? ''))
@@ -49,18 +53,26 @@ export const CanvasUnload = ({ idle }: { idle: boolean }) => {
   }, [])
 
   const restart = async () => {
-    if (!(await ask(t('canvas.unload_restart_confirm'), true))) {
-      notify(t('canvas.unload_pending'))
-      return
-    }
+    if (restartInFlight.current) return
+    restartInFlight.current = true
+    setRestarting(true)
     try {
+      if (!(await ask(t('canvas.unload_restart_confirm'), true))) {
+        notify(t('canvas.unload_pending'))
+        return
+      }
       await post('/api/canvas/unload/restart', 'RESTART')
       notify(t('canvas.unload_restarting'))
     } catch (e) {
       notify(tpl('common.rejected_error', { error: errText(e) }), 'error')
+    } finally {
+      restartInFlight.current = false
+      setRestarting(false)
     }
   }
   const save = async (body: string) => {
+    if (saveInFlight.current || restartInFlight.current) return
+    saveInFlight.current = true
     setBusy(true)
     try {
       const next: Unload = await post('/api/canvas/unload', body)
@@ -70,6 +82,7 @@ export const CanvasUnload = ({ idle }: { idle: boolean }) => {
     } catch (e) {
       notify(tpl('common.rejected_error', { error: errText(e) }), 'error')
     } finally {
+      saveInFlight.current = false
       setBusy(false)
     }
   }
@@ -79,7 +92,8 @@ export const CanvasUnload = ({ idle }: { idle: boolean }) => {
   const number = Number(value)
   const valid = /^\d+$/.test(value) && number >= min && number <= max
   const current = override ?? configured
-  const locked = !idle || busy || !state.editable
+  const locked = !idle || busy || restarting || !state.editable
+  const canSave = !locked && valid && number !== override
   return (
     <div class="mt-3 border-t border-edge pt-3" data-canvas-unload>
       <label for="canvas-unload" class="flex items-center gap-2">
@@ -106,9 +120,14 @@ export const CanvasUnload = ({ idle }: { idle: boolean }) => {
             setValue(e.currentTarget.value.trim())
             setEdited(true)
           }}
-          onKeyDown={e => e.key === 'Enter' && valid && !locked && save(value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && canSave) {
+              e.preventDefault()
+              void save(value)
+            }
+          }}
         />
-        <Button disabled={locked || !valid || number === override} onClick={() => save(value)}>
+        <Button disabled={!canSave} onClick={() => save(value)}>
           <Save {...I} />
           {t('canvas.unload_save')}
         </Button>
@@ -123,7 +142,7 @@ export const CanvasUnload = ({ idle }: { idle: boolean }) => {
       {state.pending_restart && (
         <div class="mt-2 flex flex-wrap items-center gap-2">
           <p class="text-[13px] text-cyan">{t('canvas.unload_pending')}</p>
-          <Button disabled={!idle || state.restart === 'restarting'} onClick={restart}>
+          <Button disabled={!idle || busy || restarting || state.restart === 'restarting'} onClick={restart}>
             {t('canvas.unload_restart')}
           </Button>
         </div>
