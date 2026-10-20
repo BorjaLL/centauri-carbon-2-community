@@ -177,7 +177,8 @@ export const Updates = () => {
       <details class="border-t border-edge pt-3">
         <summary class="cursor-pointer">{t('updates.local_file')}</summary>
         <input
-          class="my-3 block max-w-full"
+          class="cc2-update-file my-3 block w-full max-w-md"
+          aria-label={t('updates.local_file')}
           type="file"
           accept=".cc2update"
           disabled={busy}
