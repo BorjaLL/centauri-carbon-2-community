@@ -1,0 +1,15 @@
+name: Camera launcher-only candidate
+on:
+  push:
+    branches: [test/camera-launcher-matrix-investigation]
+    paths:
+      - 'experimental/camera-launcher-investigation/**'
+      - '.github/workflows/camera-launcher-check.yml'
+permissions:
+  contents: read
+jobs:
+  launcher:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 experimental/camera-launcher-investigation/test_launcher.py
