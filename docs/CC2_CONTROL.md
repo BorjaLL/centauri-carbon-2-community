@@ -127,6 +127,8 @@ wget -qO- http://127.0.0.1:7125/printer/objects/list
 
 The bridge also exposes object queries and WebSocket compatibility required by supported clients.
 
+`print_stats` includes the current file name, and `server.files.metadata` (WebSocket method, or `GET /server/files/metadata?filename=NAME`) returns the slicer's `filament_type` list and per-filament `filament_used_mm` for a file in the printer's internal G-code folder. Chamber heaters use them to choose a temperature for the material being printed. For example, DragonBreath firmware in **AUTO** looks the material up in its **Filament zones** table: set its control source to Klipper/Moonraker with the printer's address and port 7125. Only plain file names in the internal folder are read; USB files and paths return 404.
+
 **Settings → Integrations → Panda Breath page** (off by default) adds a menu page that embeds the Panda Breath's own web page in a sandboxed frame. The address defaults to `pandabreath.local`, the stock firmware's mDNS name. The **DragonBreath firmware** switch renames the page to DragonBreath and changes the default address to `dragonbreath.local`; an address entered by hand (for example an IP address) is kept. CC2 Control does not contact the device: the browser loads the page directly, so it must be on the Panda Breath's network. All settings are stored in the browser. The contributor tested the embedded page with both stock BTT and DragonBreath firmware. Installation of this integrated CC2 Control build on a printer remains to be validated.
 
 ## Canvas, material presets and G-code library
