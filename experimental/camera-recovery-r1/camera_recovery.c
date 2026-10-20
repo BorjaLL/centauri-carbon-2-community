@@ -23,16 +23,24 @@ static void (*native_construct)(arm_shared *,const int *);
 static int (*native_broadcast)(void *,const arm_string *);
 static int (*native_send)(void *,const arm_string *);
 
+static void write_best_effort(int fd,const char *p,size_t n) {
+    while(n) {
+        ssize_t written=write(fd,p,n);
+        if(written>0){p+=written;n-=(size_t)written;}
+        else if(written<0&&errno==EINTR)continue;
+        else break;
+    }
+}
 static void refuse(const char *why) {
-    (void)write(2,"Camera recovery refused: ",25);
-    (void)write(2,why,strlen(why));(void)write(2,"\n",1);_exit(126);
+    write_best_effort(2,"Camera recovery refused: ",25);
+    write_best_effort(2,why,strlen(why));write_best_effort(2,"\n",1);_exit(126);
 }
 static void status_locked(void) {
     char line[400];
     int n=snprintf(line,sizeof(line),"trial=RECOVERY_R1 pid=%ld patched=1 ready=%d epoch=%u announced=%lu suppressed=%lu failed=%lu\n",
                    (long)getpid(),state.ready,state.epoch,state.sent,state.duplicate,state.failed);
     int fd=open("/tmp/cc2-camera-recovery.status",O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW,0600);
-    if(fd>=0){if(n>0&&(size_t)n<sizeof(line))(void)write(fd,line,(size_t)n);(void)close(fd);}
+    if(fd>=0){if(n>0&&(size_t)n<sizeof(line))write_best_effort(fd,line,(size_t)n);(void)close(fd);}
 }
 static int socket_key(int fd,cc2_socket_key *key) {
     struct stat st;
@@ -131,3 +139,4 @@ __attribute__((constructor)) static void activate(void) {
     }
     take();status_locked();release();unsetenv("CC2_CAMERA_RECOVERY_TRIAL");
 }
+
