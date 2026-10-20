@@ -28,13 +28,8 @@ export const canvasTimeline = store({ events: [] as CanvasObservation[] })
 export function observedPrinterPhase(reading: unknown, now = performance.now()): ObservedPrinterPhase {
   if (!reading || typeof reading !== 'object' || Array.isArray(reading)) return 'unknown'
   const r = reading as { ok?: unknown; at?: unknown; data?: unknown }
-  if (
-    r.ok !== true ||
-    typeof r.at !== 'number' ||
-    !Number.isFinite(r.at) ||
-    now < r.at ||
-    now - r.at > 5000
-  ) return 'unknown'
+  if (r.ok !== true || typeof r.at !== 'number' || !Number.isFinite(r.at) || now < r.at || now - r.at > 5000)
+    return 'unknown'
   const data = r.data as { connected?: unknown; machine?: { status?: unknown; sub_status?: unknown } } | null
   if (!data || typeof data !== 'object' || data.connected !== true) return 'unknown'
   if (data.machine?.status === 1) return 'idle'
