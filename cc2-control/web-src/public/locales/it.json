@@ -1009,6 +1009,7 @@
   "canvas.timeline_empty": "Nessun cambiamento di slot registrato.",
   "canvas.timeline_change": "Slot {slot}: {from} → {to}",
   "canvas.timeline_clear": "Cancella cronologia",
+  "canvas.timeline_printer_context": "Stampante (stato recente): {state}",
   "canvas.reason_unassigned_head": "Filamento rilevato in testina · slot non associato",
   "canvas.recovery_title": "Stato Canvas da ripristinare",
   "canvas.recovery_hint": "Dopo un riavvio può rimanere filamento in testina senza uno slot Canvas associato. Dal display ELEGOO verifica l’ultimo slot utilizzato e completane il caricamento con la procedura nativa; può avvenire ulteriore spurgo. Non caricare un altro filamento. Se lo slot è sconosciuto o usi la bobina esterna, controlla il percorso del filo e segui le indicazioni del display. I comandi si riabilitano quando la stampante riporta uno stato coerente.",
