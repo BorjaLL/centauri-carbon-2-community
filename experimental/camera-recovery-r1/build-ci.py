@@ -1,4 +1,4 @@
-import hashlib,json,os,re,subprocess,shutil
+import hashlib,json,os,re,subprocess,shutil,sys
 from pathlib import Path
 root=Path(__file__).resolve().parent
 os.chdir(root)
@@ -25,6 +25,7 @@ versions=subprocess.check_output(['arm-linux-gnueabihf-readelf','-V',lib],text=T
 required=[tuple(map(int,x.split('.'))) for x in re.findall(r'GLIBC_(\d+\.\d+(?:\.\d+)?)',versions)]
 assert required and max(required)<=(2,23),versions
 run(['sh','-n','trial.sh'])
+run([sys.executable,'test_trial.py'])
 result={'recovery_library_sha256':hashlib.sha256(lib.read_bytes()).hexdigest(),
  'glibc_max_required':'.'.join(map(str,max(required))), 'host_and_arm_socket_tests':True,
  'concurrent_ordering_cases_each_run':150,'asan_ubsan':True,'arm_libstdcxx_layout':True,

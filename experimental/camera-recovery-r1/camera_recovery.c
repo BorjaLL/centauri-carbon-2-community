@@ -139,4 +139,3 @@ __attribute__((constructor)) static void activate(void) {
     }
     take();status_locked();release();unsetenv("CC2_CAMERA_RECOVERY_TRIAL");
 }
-
