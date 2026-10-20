@@ -13,3 +13,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: python3 experimental/camera-launcher-investigation/test_launcher.py
+      - run: python3 experimental/camera-launcher-investigation/test_baseline.py
