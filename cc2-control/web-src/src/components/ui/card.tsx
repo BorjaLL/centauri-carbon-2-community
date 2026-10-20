@@ -51,9 +51,7 @@ export const Page = ({
         <h2 class="text-2xl font-semibold [overflow-wrap:anywhere]">{t(title)}</h2>
         {sub && <p class="text-muted [overflow-wrap:anywhere]">{t(sub)}</p>}
       </div>
-      {tags !== undefined && (
-        <div class="flex min-w-0 flex-wrap items-center gap-2 cc2-sm:justify-end">{tags}</div>
-      )}
+      {tags !== undefined && <div class="flex min-w-0 flex-wrap items-center gap-2 cc2-sm:justify-end">{tags}</div>}
     </div>
     {children}
   </>
