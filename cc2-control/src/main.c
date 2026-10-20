@@ -3932,7 +3932,7 @@ int main(int argc, char **argv) {
     }
     if (listen(server, 8) < 0) { perror("listen"); close(server); return 1; }
     panda_server panda;
-    if (panda_start(&panda, panda_port, port) != 0) {
+    if (panda_start(&panda, panda_port, port, gcode_internal_root) != 0) {
         perror("panda bridge");
         close(server); mqtt_close(&mqtt); console_destroy(&console);
         return 1;
