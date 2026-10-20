@@ -25,25 +25,31 @@ def http(port, path, status=200):
     return json.loads(body)
 
 
-def ws_frame(payload):
+def ws_frame(payload, opcode=1):
     mask = os.urandom(4)
     size = len(payload)
     if size < 126:
-        header = bytes((0x81, 0x80 | size))
+        header = bytes((0x80 | opcode, 0x80 | size))
     else:
         header = bytes((0x81, 0x80 | 126)) + size.to_bytes(2, "big")
     return header + mask + bytes(value ^ mask[i % 4] for i, value in enumerate(payload))
 
 
-def ws_read(sock):
+def ws_read_frame(sock):
     header = sock.recv(2)
-    assert len(header) == 2 and header[0] == 0x81
+    assert len(header) == 2
     size = header[1] & 127
     if size == 126:
         size = int.from_bytes(sock.recv(2), "big")
     data = b""
     while len(data) < size:
         data += sock.recv(size - len(data))
+    return header[0] & 15, data
+
+
+def ws_read(sock):
+    opcode, data = ws_read_frame(sock)
+    assert opcode == 1
     return json.loads(data)
 
 
@@ -132,6 +138,18 @@ try:
     notification = ws_read(sock)
     assert notification["method"] == "notify_status_update"
     assert notification["params"][0]["print_stats"]["filename"] == ""
+
+    # ESP-IDF clients (DragonBreath) send empty pings and drop the link without a pong.
+    for payload in (b"", b"keepalive"):
+        sock.sendall(ws_frame(payload, opcode=9))
+        deadline = time.monotonic() + 3
+        while True:
+            assert time.monotonic() < deadline, f"no pong for ping {payload!r}"
+            opcode, data = ws_read_frame(sock)
+            if opcode == 10:
+                assert data == payload
+                break
+            assert opcode == 1
 
     # The same request over the WebSocket, as DragonBreath sends it.
     reply = ws_call(sock, {"jsonrpc": "2.0", "method": "server.files.metadata",
