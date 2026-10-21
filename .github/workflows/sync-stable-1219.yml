@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   synchronize:
-    if: github.actor != 'github-actions[bot]' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/cc2-control-1.2.19-channel'))
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
