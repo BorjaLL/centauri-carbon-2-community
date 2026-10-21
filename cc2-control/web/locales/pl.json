@@ -1027,5 +1027,7 @@
   "settings.pandabreath_address_invalid": "Wpisz nazwę hosta lub adres IP, bez http:// (na przykład {host}).",
   "common.dragonbreath": "Dragon Breath",
   "settings.pandabreath_dragonbreath": "Oprogramowanie Dragon Breath",
-  "settings.pandabreath_dragonbreath_description": "Włącz, jeśli Panda Breath działa na otwartym oprogramowaniu Dragon Breath. Zmienia nazwę na Dragon Breath, a domyślny adres na dragonbreath.local."
+  "settings.pandabreath_dragonbreath_description": "Włącz, jeśli Panda Breath działa na otwartym oprogramowaniu Dragon Breath. Zmienia nazwę na Dragon Breath, a domyślny adres na dragonbreath.local.",
+  "files.date_unavailable": "Data niedostępna",
+  "files.date_unavailable_hint": "Niektóre daty są niedostępne, np. gdy zegar drukarki nie był zsynchronizowany podczas przesyłania. Sortowanie od najnowszych pokazuje najpierw pliki z datą, a pozostałe według nazwy. Oryginalne pliki pozostają bez zmian."
 }

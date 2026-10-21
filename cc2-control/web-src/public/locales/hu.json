@@ -1027,5 +1027,7 @@
   "settings.pandabreath_address_invalid": "Adj meg egy gépnevet vagy IP-címet, http:// nélkül (például {host}).",
   "common.dragonbreath": "Dragon Breath",
   "settings.pandabreath_dragonbreath": "Dragon Breath firmware",
-  "settings.pandabreath_dragonbreath_description": "Kapcsold be, ha a Panda Breath a nyílt Dragon Breath firmware-t futtatja. A név Dragon Breath lesz, az alapértelmezett cím pedig dragonbreath.local."
+  "settings.pandabreath_dragonbreath_description": "Kapcsold be, ha a Panda Breath a nyílt Dragon Breath firmware-t futtatja. A név Dragon Breath lesz, az alapértelmezett cím pedig dragonbreath.local.",
+  "files.date_unavailable": "A dátum nem érhető el",
+  "files.date_unavailable_hint": "Egyes dátumok nem érhetők el, például ha feltöltéskor a nyomtató órája nem volt szinkronizálva. A legújabbak szerinti rendezés először a dátummal rendelkező fájlokat, majd a többit név szerint mutatja. Az eredeti fájlok nem változnak."
 }

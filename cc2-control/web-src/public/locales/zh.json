@@ -1027,5 +1027,7 @@
   "pandabreath.disabled": "{name} 页面已关闭。",
   "settings.pandabreath_dragonbreath": "Dragon Breath 固件",
   "pandabreath.open_integrations": "在设置 → 集成中启用",
-  "settings.pandabreath_dragonbreath_description": "如果 Panda Breath 使用开源 Dragon Breath 固件，请启用此选项。名称将更改为 Dragon Breath，默认地址将更改为 dragonbreath.local。"
+  "settings.pandabreath_dragonbreath_description": "如果 Panda Breath 使用开源 Dragon Breath 固件，请启用此选项。名称将更改为 Dragon Breath，默认地址将更改为 dragonbreath.local。",
+  "files.date_unavailable": "日期不可用",
+  "files.date_unavailable_hint": "部分文件日期不可用，例如上传时打印机时钟尚未同步。“最新优先”会先显示日期有效的文件，再按名称显示其余文件。原始文件不会被修改。"
 }

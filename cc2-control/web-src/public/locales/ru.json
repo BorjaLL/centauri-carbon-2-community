@@ -1027,5 +1027,7 @@
   "pandabreath.disabled": "Страница {name} отключена.",
   "settings.pandabreath_dragonbreath": "Прошивка Dragon Breath",
   "pandabreath.open_integrations": "Включите её в Настройки → Интеграции",
-  "settings.pandabreath_dragonbreath_description": "Включите, если Panda Breath использует открытую прошивку Dragon Breath. Название изменится на Dragon Breath, а адрес по умолчанию — на dragonbreath.local."
+  "settings.pandabreath_dragonbreath_description": "Включите, если Panda Breath использует открытую прошивку Dragon Breath. Название изменится на Dragon Breath, а адрес по умолчанию — на dragonbreath.local.",
+  "files.date_unavailable": "Дата недоступна",
+  "files.date_unavailable_hint": "Некоторые даты недоступны, например если часы принтера не были синхронизированы при загрузке. При сортировке по дате сначала идут файлы с датой, затем остальные по имени. Исходные файлы не изменяются."
 }

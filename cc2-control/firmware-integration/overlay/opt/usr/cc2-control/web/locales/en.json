@@ -1027,5 +1027,7 @@
   "settings.pandabreath_address_invalid": "Enter a host name or IP address, without http:// (for example {host}).",
   "common.dragonbreath": "Dragon Breath",
   "settings.pandabreath_dragonbreath": "Dragon Breath firmware",
-  "settings.pandabreath_dragonbreath_description": "Turn on if the Panda Breath runs the open Dragon Breath firmware. Changes the name to Dragon Breath and the default address to dragonbreath.local."
+  "settings.pandabreath_dragonbreath_description": "Turn on if the Panda Breath runs the open Dragon Breath firmware. Changes the name to Dragon Breath and the default address to dragonbreath.local.",
+  "files.date_unavailable": "Date unavailable",
+  "files.date_unavailable_hint": "Some file dates are unavailable, for example when the printer clock was not synchronized during upload. Newest first puts dated files first; files without a reliable date follow in name order. Original files are unchanged."
 }

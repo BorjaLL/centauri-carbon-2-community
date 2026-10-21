@@ -1027,5 +1027,7 @@
   "settings.pandabreath_address_invalid": "Saisissez un nom d'hôte ou une adresse IP, sans http:// (par exemple {host}).",
   "common.dragonbreath": "Dragon Breath",
   "settings.pandabreath_dragonbreath": "Firmware Dragon Breath",
-  "settings.pandabreath_dragonbreath_description": "Activez si le Panda Breath utilise le firmware libre Dragon Breath. Le nom devient Dragon Breath et l'adresse par défaut dragonbreath.local."
+  "settings.pandabreath_dragonbreath_description": "Activez si le Panda Breath utilise le firmware libre Dragon Breath. Le nom devient Dragon Breath et l'adresse par défaut dragonbreath.local.",
+  "files.date_unavailable": "Date indisponible",
+  "files.date_unavailable_hint": "Certaines dates sont indisponibles, par exemple si l’horloge de l’imprimante n’était pas synchronisée lors du transfert. Le tri par date place les fichiers datés en premier, puis les autres par nom. Les fichiers originaux restent inchangés."
 }
