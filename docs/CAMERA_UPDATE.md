@@ -33,3 +33,5 @@ The combined installer passed 58 previous-trial-profile and 53 native-profile st
 Thanks to tharje for reproduction, traces, crash analysis and diagnosis, and to the community beta testers.
 
 Preparation validates keyboard file selection with browser focus restored after native dialogs. It serializes runs for this branch; no camera payload bytes change.
+
+Unchanged application archives retain their verified source pins during preparation. Merging the standalone date fix retains the combined 1.2.19 archive rather than the older application snapshot.
