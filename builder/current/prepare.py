@@ -13,7 +13,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 COMPONENT = ROOT / 'components/cc2-control'
 SOURCE = COMPONENT / 'source/source.zip'
-SOURCE_COMMIT='37a4fa496091bd5adffca39d9b1cfff80c764fb0'
+SOURCE_COMMIT='ad846b9dc0c49b11a6ef97732d32e17dd10cda1d'
 SOURCE_SHA256='5deb0a6f304bd2f862e6157619cb400959ab8548cd8cdfbef4f827d4cfe519cc'
 RUNTIME = COMPONENT / 'runtime'
 OUTPUT = COMPONENT / 'prepared'
