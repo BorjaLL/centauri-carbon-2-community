@@ -15,7 +15,7 @@ on:
       - .github/workflows/prepare-camera-update.yml
 concurrency:
   group: prepare-camera-update-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 permissions:
   contents: write
   actions: read
