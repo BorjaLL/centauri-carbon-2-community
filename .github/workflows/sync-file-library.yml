@@ -1,0 +1,44 @@
+name: Prepare bounded file library sources
+on:
+  push:
+    branches: [feature/file-library-large-uploads]
+    paths: [.github/workflows/sync-file-library.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: cc2-control/web-src/package-lock.json
+      - name: Native tests with warnings as errors
+        run: make -C cc2-control clean test CROSS= CC=gcc EXTRA_CFLAGS=-Werror
+      - name: Verify UI and committed assets
+        working-directory: cc2-control/web-src
+        run: |
+          npm ci
+          npm run check
+          npm run build
+          git diff --exit-code -- ../web
+          npx playwright install --with-deps chromium
+          npm run test:file-library
+      - name: Refresh public source archive and pins
+        run: |
+          python3 experimental/pr128-integration/sync_source.py
+          python3 -m unittest discover -s builder/current/tests -p 'test_*.py'
+          python3 builder/current/launch_helpers/tests/test_launcher.py
+      - name: Save synchronized sources and remove preparation workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/sync-file-library.yml
+          git add builder/current
+          git commit -m 'Sync bounded file library source snapshot and checksums'
+          git push origin HEAD:feature/file-library-large-uploads
