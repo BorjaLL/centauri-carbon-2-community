@@ -10,6 +10,7 @@ import { Row } from '@/components/shared'
 import { errText, notify, request } from '@/lib/api'
 import { t, tpl } from '@/lib/i18n'
 import { duration, fileSize } from '@/lib/format'
+import { compareFileDates, fileModified } from '@/lib/file-date'
 import { startFile } from '@/pages/print-dialog'
 
 type Entry = { storage: 'internal' | 'usb'; file: any }
@@ -90,7 +91,7 @@ export const Files = () => {
         ? a.file.path.localeCompare(b.file.path)
         : sort === 'size'
           ? Number(b.file.size || 0) - Number(a.file.size || 0)
-          : Number(b.file.modified || 0) - Number(a.file.modified || 0)
+          : compareFileDates(a.file, b.file)
     )
   const currentPage = pageIndex(page, filtered.length)
   useEffect(() => setPage(currentPage), [currentPage])
@@ -216,6 +217,9 @@ export const Files = () => {
               <RefreshCw {...I} />
             </Button>
           </div>
+          {entries.some(e => fileModified(e.file.modified) === null) && (
+            <p class="cc2-file-date-note mt-3 text-sm text-muted">{t('files.date_unavailable_hint')}</p>
+          )}
           {checked.size > 0 && (
             <div class="my-3 flex items-center gap-2">
               <strong>{tpl('files.n_selected', { n: checked.size })}</strong>
@@ -274,7 +278,9 @@ export const Files = () => {
                 </div>
                 <span class="hidden cc2-md:inline">{fileSize(e.file.size)}</span>
                 <span class="hidden cc2-md:inline">
-                  {Number(e.file.modified) > 0 ? new Date(Number(e.file.modified) * 1000).toLocaleString() : '—'}
+                  {fileModified(e.file.modified) !== null
+                    ? new Date(Number(e.file.modified) * 1000).toLocaleString()
+                    : t('files.date_unavailable')}
                 </span>
                 <span class="hidden cc2-md:inline">{e.storage === 'usb' ? 'USB' : t('files.internal')}</span>
                 <div class="flex gap-1.5">

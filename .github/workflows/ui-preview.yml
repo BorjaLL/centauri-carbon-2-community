@@ -40,6 +40,8 @@ jobs:
         run: npm run test:mesh
       - name: Verify paginated lists and storage display
         run: npm run test:list-pages
+      - name: Verify unavailable G-code dates and sorting without file writes
+        run: npm run test:file-dates
       - name: Verify camera streaming lifecycle
         run: npm run test:camera
       - name: Verify Polish and Czech language selection and layouts
