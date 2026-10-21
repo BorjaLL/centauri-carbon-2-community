@@ -91,6 +91,9 @@ jobs:
       - name: Canvas states and explicit recovery loading
         run: npm run test:canvas-states
 
+      - name: Sidebar geometry and accessible navigation regression
+        run: node preview/test-ui-polish.mjs
+
       - name: Hungarian language selection, persistence and mobile layouts
         run: npm run test:hungarian
 
