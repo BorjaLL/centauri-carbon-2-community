@@ -3,6 +3,8 @@ on:
   push:
     branches: [fix/gcode-unreliable-dates]
     paths: [.github/workflows/sync-file-date-snapshot.yml]
+  pull_request:
+    paths: [.github/workflows/sync-file-date-snapshot.yml]
 permissions:
   contents: write
 concurrency:
@@ -10,6 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   synchronize:
+    if: github.actor != 'github-actions[bot]' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/gcode-unreliable-dates'))
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
@@ -31,4 +34,3 @@ jobs:
           python3 cc2-control/tests/test_locales_static.py
       - name: Publish verified snapshot
         run: git push origin HEAD:refs/heads/fix/gcode-unreliable-dates
-# Scope: source snapshot and existing builder verification only.
