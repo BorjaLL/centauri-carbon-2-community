@@ -1029,5 +1029,12 @@
   "settings.pandabreath_dragonbreath": "Firmware Dragon Breath",
   "settings.pandabreath_dragonbreath_description": "Attiva se il Panda Breath usa il firmware aperto Dragon Breath. Cambia il nome in Dragon Breath e l'indirizzo predefinito in dragonbreath.local.",
   "files.date_unavailable": "Data non disponibile",
-  "files.date_unavailable_hint": "Alcune date dei file non sono disponibili, ad esempio se l’orologio della stampante non era sincronizzato durante il caricamento. Più recenti mostra prima i file con data; quelli senza data affidabile seguono in ordine di nome. I file originali restano invariati."
+  "files.date_unavailable_hint": "Alcune date dei file non sono disponibili, ad esempio se l’orologio della stampante non era sincronizzato durante il caricamento. Più recenti mostra prima i file con data; quelli senza data affidabile seguono in ordine di nome. I file originali restano invariati.",
+  "job.bed_map": "Mappa del piatto",
+  "job.bed_map_hint": "Vista dall’alto. Seleziona un oggetto numerato sulla mappa o nell’elenco. L’esclusione richiede sempre conferma.",
+  "job.bed_map_front": "Fronte (Y = 0)",
+  "job.bed_map_selected": "Selezionato",
+  "job.bed_map_missing": "{n} oggetti non hanno una posizione valida sul piatto. Selezionali dall’elenco.",
+  "job.bed_map_choose": "Seleziona un oggetto sulla mappa o nell’elenco.",
+  "job.bed_map_close": "Chiudi mappa del piatto"
 }

@@ -10,11 +10,15 @@ export const Dialog = ({
   locked,
   children,
   width = 520,
+  class: className = '',
+  label,
 }: {
   onClose?: () => void
   locked?: boolean
   children: ComponentChildren
   width?: number
+  class?: string
+  label?: string
 }) => {
   const box = useRef<HTMLDivElement>(null),
     props = useRef({ onClose, locked })
@@ -55,10 +59,11 @@ export const Dialog = ({
     >
       <div
         ref={box}
-        class="max-h-[92vh] overflow-auto rounded-xl border border-edge bg-panel p-6 shadow-2xl"
+        class={`max-h-[92vh] overflow-auto rounded-xl border border-edge bg-panel p-6 shadow-2xl ${className}`}
         style={{ width: `min(${width}px,96vw)` }}
         role="dialog"
         aria-modal="true"
+        aria-label={label}
       >
         {children}
       </div>

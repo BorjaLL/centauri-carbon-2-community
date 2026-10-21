@@ -1029,5 +1029,12 @@
   "pandabreath.open_integrations": "Actívala en Ajustes → Integraciones",
   "settings.pandabreath_dragonbreath_description": "Activa esta opción si Panda Breath utiliza el firmware abierto Dragon Breath. Cambia el nombre a Dragon Breath y la dirección predeterminada a dragonbreath.local.",
   "files.date_unavailable": "Fecha no disponible",
-  "files.date_unavailable_hint": "Algunas fechas no están disponibles, por ejemplo si el reloj de la impresora no estaba sincronizado al cargar los archivos. El orden por fecha muestra primero los archivos con fecha y después los demás por nombre. Los archivos originales no se modifican."
+  "files.date_unavailable_hint": "Algunas fechas no están disponibles, por ejemplo si el reloj de la impresora no estaba sincronizado al cargar los archivos. El orden por fecha muestra primero los archivos con fecha y después los demás por nombre. Los archivos originales no se modifican.",
+  "job.bed_map": "Mapa de la placa",
+  "job.bed_map_hint": "Vista superior. Selecciona un objeto numerado en el mapa o en la lista. La exclusión siempre requiere confirmación.",
+  "job.bed_map_front": "Frente (Y = 0)",
+  "job.bed_map_selected": "Seleccionado",
+  "job.bed_map_missing": "{n} objetos no tienen una posición válida en la placa. Selecciónalos en la lista.",
+  "job.bed_map_choose": "Selecciona un objeto en el mapa o en la lista.",
+  "job.bed_map_close": "Cerrar mapa de la placa"
 }

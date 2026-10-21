@@ -74,6 +74,10 @@ jobs:
         run: npm run test:plate-flow
       - name: Verify the Job page asks for objects only during a print
         run: npm run test:job-objects
+      - name: Bed map selection, live highlight and protected exclusion
+        run: npm run test:bed-map
+        env:
+          CC2_SCREENSHOTS: ${{ runner.temp }}/cc2-preview-screenshots
       - name: Browser upload and same-name reload
         run: npm run test:upload
       - name: Save screenshots for visual review

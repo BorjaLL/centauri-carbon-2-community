@@ -1029,5 +1029,12 @@
   "settings.pandabreath_dragonbreath": "Dragon Breath firmware",
   "settings.pandabreath_dragonbreath_description": "Turn on if the Panda Breath runs the open Dragon Breath firmware. Changes the name to Dragon Breath and the default address to dragonbreath.local.",
   "files.date_unavailable": "Date unavailable",
-  "files.date_unavailable_hint": "Some file dates are unavailable, for example when the printer clock was not synchronized during upload. Newest first puts dated files first; files without a reliable date follow in name order. Original files are unchanged."
+  "files.date_unavailable_hint": "Some file dates are unavailable, for example when the printer clock was not synchronized during upload. Newest first puts dated files first; files without a reliable date follow in name order. Original files are unchanged.",
+  "job.bed_map": "Bed map",
+  "job.bed_map_hint": "Top view. Select a numbered object on the map or in the list. Exclusion always requires confirmation.",
+  "job.bed_map_front": "Front (Y = 0)",
+  "job.bed_map_selected": "Selected",
+  "job.bed_map_missing": "{n} objects have no usable bed position. Select them from the list.",
+  "job.bed_map_choose": "Select an object on the map or in the list.",
+  "job.bed_map_close": "Close bed map"
 }

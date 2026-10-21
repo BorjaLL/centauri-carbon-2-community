@@ -1029,5 +1029,12 @@
   "settings.pandabreath_dragonbreath": "Firmware Dragon Breath",
   "settings.pandabreath_dragonbreath_description": "Zapněte, pokud Panda Breath používá otevřený firmware Dragon Breath. Změní název na Dragon Breath a výchozí adresu na dragonbreath.local.",
   "files.date_unavailable": "Datum není dostupné",
-  "files.date_unavailable_hint": "Některá data nejsou dostupná, například pokud při nahrávání nebyly synchronizovány hodiny tiskárny. Řazení od nejnovějších zobrazí nejprve soubory s datem a ostatní podle názvu. Původní soubory se nemění."
+  "files.date_unavailable_hint": "Některá data nejsou dostupná, například pokud při nahrávání nebyly synchronizovány hodiny tiskárny. Řazení od nejnovějších zobrazí nejprve soubory s datem a ostatní podle názvu. Původní soubory se nemění.",
+  "job.bed_map": "Mapa podložky",
+  "job.bed_map_hint": "Pohled shora. Vyberte očíslovaný objekt na mapě nebo v seznamu. Vyloučení vždy vyžaduje potvrzení.",
+  "job.bed_map_front": "Přední strana (Y = 0)",
+  "job.bed_map_selected": "Vybráno",
+  "job.bed_map_missing": "{n} objektů nemá platnou polohu na podložce. Vyberte je ze seznamu.",
+  "job.bed_map_choose": "Vyberte objekt na mapě nebo v seznamu.",
+  "job.bed_map_close": "Zavřít mapu podložky"
 }

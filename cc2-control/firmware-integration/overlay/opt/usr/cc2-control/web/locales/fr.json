@@ -1029,5 +1029,12 @@
   "settings.pandabreath_dragonbreath": "Firmware Dragon Breath",
   "settings.pandabreath_dragonbreath_description": "Activez si le Panda Breath utilise le firmware libre Dragon Breath. Le nom devient Dragon Breath et l'adresse par défaut dragonbreath.local.",
   "files.date_unavailable": "Date indisponible",
-  "files.date_unavailable_hint": "Certaines dates sont indisponibles, par exemple si l’horloge de l’imprimante n’était pas synchronisée lors du transfert. Le tri par date place les fichiers datés en premier, puis les autres par nom. Les fichiers originaux restent inchangés."
+  "files.date_unavailable_hint": "Certaines dates sont indisponibles, par exemple si l’horloge de l’imprimante n’était pas synchronisée lors du transfert. Le tri par date place les fichiers datés en premier, puis les autres par nom. Les fichiers originaux restent inchangés.",
+  "job.bed_map": "Plan du plateau",
+  "job.bed_map_hint": "Vue de dessus. Sélectionnez un objet numéroté sur le plan ou dans la liste. L’exclusion nécessite toujours une confirmation.",
+  "job.bed_map_front": "Avant (Y = 0)",
+  "job.bed_map_selected": "Sélectionné",
+  "job.bed_map_missing": "{n} objets n’ont pas de position exploitable sur le plateau. Sélectionnez-les dans la liste.",
+  "job.bed_map_choose": "Sélectionnez un objet sur le plan ou dans la liste.",
+  "job.bed_map_close": "Fermer le plan du plateau"
 }

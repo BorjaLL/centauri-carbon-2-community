@@ -1029,5 +1029,12 @@
   "pandabreath.open_integrations": "在设置 → 集成中启用",
   "settings.pandabreath_dragonbreath_description": "如果 Panda Breath 使用开源 Dragon Breath 固件，请启用此选项。名称将更改为 Dragon Breath，默认地址将更改为 dragonbreath.local。",
   "files.date_unavailable": "日期不可用",
-  "files.date_unavailable_hint": "部分文件日期不可用，例如上传时打印机时钟尚未同步。“最新优先”会先显示日期有效的文件，再按名称显示其余文件。原始文件不会被修改。"
+  "files.date_unavailable_hint": "部分文件日期不可用，例如上传时打印机时钟尚未同步。“最新优先”会先显示日期有效的文件，再按名称显示其余文件。原始文件不会被修改。",
+  "job.bed_map": "打印平台地图",
+  "job.bed_map_hint": "俯视图。请在地图或列表中选择带编号的对象。排除操作始终需要确认。",
+  "job.bed_map_front": "前侧（Y = 0）",
+  "job.bed_map_selected": "已选择",
+  "job.bed_map_missing": "{n} 个对象没有有效的平台位置。请从列表中选择。",
+  "job.bed_map_choose": "请在地图或列表中选择对象。",
+  "job.bed_map_close": "关闭平台地图"
 }

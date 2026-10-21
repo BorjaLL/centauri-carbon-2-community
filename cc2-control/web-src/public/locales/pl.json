@@ -1029,5 +1029,12 @@
   "settings.pandabreath_dragonbreath": "Oprogramowanie Dragon Breath",
   "settings.pandabreath_dragonbreath_description": "Włącz, jeśli Panda Breath działa na otwartym oprogramowaniu Dragon Breath. Zmienia nazwę na Dragon Breath, a domyślny adres na dragonbreath.local.",
   "files.date_unavailable": "Data niedostępna",
-  "files.date_unavailable_hint": "Niektóre daty są niedostępne, np. gdy zegar drukarki nie był zsynchronizowany podczas przesyłania. Sortowanie od najnowszych pokazuje najpierw pliki z datą, a pozostałe według nazwy. Oryginalne pliki pozostają bez zmian."
+  "files.date_unavailable_hint": "Niektóre daty są niedostępne, np. gdy zegar drukarki nie był zsynchronizowany podczas przesyłania. Sortowanie od najnowszych pokazuje najpierw pliki z datą, a pozostałe według nazwy. Oryginalne pliki pozostają bez zmian.",
+  "job.bed_map": "Mapa stołu",
+  "job.bed_map_hint": "Widok z góry. Wybierz ponumerowany obiekt na mapie lub na liście. Wykluczenie zawsze wymaga potwierdzenia.",
+  "job.bed_map_front": "Przód (Y = 0)",
+  "job.bed_map_selected": "Wybrany",
+  "job.bed_map_missing": "{n} obiektów nie ma prawidłowej pozycji na stole. Wybierz je z listy.",
+  "job.bed_map_choose": "Wybierz obiekt na mapie lub na liście.",
+  "job.bed_map_close": "Zamknij mapę stołu"
 }
