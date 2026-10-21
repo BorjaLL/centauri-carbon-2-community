@@ -29,3 +29,5 @@ before changing it; do not run a second competing synchronization service.
 Browser regression tests cover epoch-like/missing values, boundary dates,
 unchanged local formatting, sorting controls, search, refresh and mobile layout.
 Real-printer UI confirmation remains separate from automated tests.
+
+Builder validation uses the synchronized canonical source archive and unchanged checksum guards.
