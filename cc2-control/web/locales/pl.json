@@ -904,7 +904,7 @@
   "files.space_available": "{available} dostępne z {total}",
   "files.space_unavailable": "Informacja o wolnym miejscu niedostępna",
   "updates.title": "Aktualizacje",
-  "updates.application_only": "Aktualizuje tylko CC2 Control; firmware drukarki nie zmienia się.",
+  "updates.application_only": "Instaluje CC2 Control i składniki wymienione w informacjach o wydaniu. Postępuj zgodnie z instrukcjami ponownego uruchomienia drukarki.",
   "updates.installed": "Zainstalowana wersja",
   "updates.channel": "Kanał aktualizacji",
   "updates.stable": "Stabilny",

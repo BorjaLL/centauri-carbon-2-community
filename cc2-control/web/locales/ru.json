@@ -904,7 +904,7 @@
   "files.space_available": "Доступно {available} из {total}",
   "files.space_unavailable": "Данные о свободном месте недоступны",
   "updates.title": "Обновления",
-  "updates.application_only": "Обновляется только CC2 Control; прошивка принтера не меняется.",
+  "updates.application_only": "Устанавливает CC2 Control и компоненты, указанные в примечаниях к выпуску. Следуйте инструкциям по перезагрузке принтера.",
   "updates.installed": "Установленная версия",
   "updates.channel": "Канал обновлений",
   "updates.stable": "Стабильный",

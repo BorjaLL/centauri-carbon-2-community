@@ -904,7 +904,7 @@
   "files.space_available": "Szabad: {available} / Összes: {total}",
   "files.space_unavailable": "A tárhelyadatok nem érhetők el",
   "updates.title": "Frissítések",
-  "updates.application_only": "Csak a CC2 Control frissül; a nyomtató firmware-je nem változik.",
+  "updates.application_only": "Telepíti a CC2 Controlt és a kiadási megjegyzésekben felsorolt összetevőket. Kövesd a nyomtató újraindítására vonatkozó utasításokat.",
   "updates.installed": "Telepített verzió",
   "updates.channel": "Frissítési csatorna",
   "updates.stable": "Stabil",
