@@ -31,3 +31,5 @@ The R2 runtime was observed through seven hours of printing with AI options enab
 The combined installer passed 58 previous-trial-profile and 53 native-profile startup/rollback/refusal fixtures under each of sh and BusyBox ash, plus isolated application transaction tests for preflight, health and post-commit failures, exact manual rollback and foreign-edit refusal. Its ARM build, browser tests and sanitizers passed. Combined installer acceptance on the printer remains pending before stable publication.
 
 Thanks to tharje for reproduction, traces, crash analysis and diagnosis, and to the community beta testers.
+
+Preparation validates keyboard file selection with browser focus restored after native dialogs. It serializes runs for this branch; no camera payload bytes change.
