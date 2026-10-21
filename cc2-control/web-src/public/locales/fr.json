@@ -226,7 +226,7 @@
   "console.kinematic_bypass_commands_remain": "Les commandes contournant la cinématique restent bloquées",
   "console.lock_console": "Verrouiller la console",
   "console.locked": "Verrouillé",
-  "console.messages_received": "Messages reçus",
+  "console.messages_received": "Messages reçus :",
   "console.motion_commands_require_homing": "Les commandes de mouvement nécessitent une prise d’origine",
   "console.only_send_commands_you_understand": "N’envoyez que des commandes que vous comprenez.",
   "console.printer_status": "État de l’imprimante",
@@ -1040,5 +1040,8 @@
   "canvas.recovery_load_slot": "Récupérer en chargeant l’emplacement {slot}",
   "canvas.recovery_load_confirm": "Lancer le chargement de récupération depuis l’emplacement {slot} ? Vérifiez le trajet du filament et utilisez Canvas, pas une bobine externe. Le firmware peut chauffer la buse et purger davantage. Attendez la confirmation de l’imprimante.",
   "canvas.recovery_load_sent": "Demande envoyée. Attendez le chargement natif et un état confirmé. Aucun nouvel essai automatique.",
-  "canvas.recovery_load_select": "Sélectionnez un emplacement présent. Charger/Décharger restent bloqués jusqu’à confirmation d’un état cohérent."
+  "canvas.recovery_load_select": "Sélectionnez un emplacement présent. Charger/Décharger restent bloqués jusqu’à confirmation d’un état cohérent.",
+  "files.sort": "Trier par",
+  "app.print_progress": "Progression de l'impression",
+  "app.sidebar": "Menu latéral"
 }

@@ -226,7 +226,7 @@
   "console.kinematic_bypass_commands_remain": "I comandi che aggirano la cinematica restano bloccati",
   "console.lock_console": "Blocca la console",
   "console.locked": "Bloccato",
-  "console.messages_received": "Messaggi ricevuti",
+  "console.messages_received": "Messaggi ricevuti:",
   "console.motion_commands_require_homing": "I comandi di movimento richiedono l’homing",
   "console.only_send_commands_you_understand": "Invia soltanto comandi che conosci.",
   "console.printer_status": "Stato stampante",
@@ -1040,5 +1040,8 @@
   "canvas.recovery_load_slot": "Recupera caricando lo slot {slot}",
   "canvas.recovery_load_confirm": "Avviare il caricamento di recupero dallo slot {slot}? Verifica che il percorso del filamento sia libero e che tu stia usando Canvas, non la bobina esterna. Il firmware può scaldare l’ugello e spurgare altro materiale. Attendi la conferma del nuovo stato dalla stampante.",
   "canvas.recovery_load_sent": "Richiesta inviata. Attendi il caricamento nativo e la conferma aggiornata della stampante. Nessun nuovo tentativo automatico.",
-  "canvas.recovery_load_select": "Seleziona uno slot presente. Carica e Scarica normali restano bloccati finché la stampante non conferma uno stato coerente."
+  "canvas.recovery_load_select": "Seleziona uno slot presente. Carica e Scarica normali restano bloccati finché la stampante non conferma uno stato coerente.",
+  "files.sort": "Ordina per",
+  "app.print_progress": "Avanzamento della stampa",
+  "app.sidebar": "Menu laterale"
 }

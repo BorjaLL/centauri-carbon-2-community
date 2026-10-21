@@ -226,7 +226,7 @@
   "console.kinematic_bypass_commands_remain": "Kinematic-bypass commands remain blocked",
   "console.lock_console": "Lock console",
   "console.locked": "Locked",
-  "console.messages_received": "Messages received",
+  "console.messages_received": "Messages received:",
   "console.motion_commands_require_homing": "Motion commands require homing",
   "console.only_send_commands_you_understand": "Only send commands you understand.",
   "console.printer_status": "Printer status",
@@ -1040,5 +1040,8 @@
   "canvas.recovery_load_slot": "Recover by loading slot {slot}",
   "canvas.recovery_load_confirm": "Start recovery loading from slot {slot}? Check that the filament path is clear and you are using Canvas, not an external spool. The firmware may heat the nozzle and purge additional material. Wait for the printer to confirm the new state.",
   "canvas.recovery_load_sent": "Request sent. Wait for native loading and fresh printer confirmation. No automatic retry.",
-  "canvas.recovery_load_select": "Select a present slot. Normal Load/Unload stay blocked until the printer confirms a coherent state."
+  "canvas.recovery_load_select": "Select a present slot. Normal Load/Unload stay blocked until the printer confirms a coherent state.",
+  "files.sort": "Sort by",
+  "app.print_progress": "Print progress",
+  "app.sidebar": "Side menu"
 }

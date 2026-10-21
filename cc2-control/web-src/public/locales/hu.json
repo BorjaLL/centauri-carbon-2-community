@@ -253,7 +253,7 @@
   "console.kinematic_bypass_commands_remain": "A mozgásvédelmet megkerülő parancsok továbbra is tiltva vannak",
   "console.lock_console": "Konzol zárolása",
   "console.locked": "Zárolva",
-  "console.messages_received": "Fogadott üzenetek",
+  "console.messages_received": "Fogadott üzenetek:",
   "console.motion_commands_require_homing": "Mozgatáshoz előbb alaphelyzetbe kell állítani a tengelyeket",
   "console.only_send_commands_you_understand": "Csak olyan parancsot küldj, amelynek érted a hatását.",
   "console.printer_status": "Nyomtató állapota",
@@ -1040,5 +1040,8 @@
   "canvas.recovery_load_slot": "Helyreállítás a(z) {slot}. rekesz betöltésével",
   "canvas.recovery_load_confirm": "Induljon helyreállító betöltés a(z) {slot}. rekeszből? Ellenőrizze a szál útját, és Canvast használjon, ne külső tekercset. A firmware felfűtheti a fúvókát és további anyagot öblíthet. Várja meg a nyomtató visszaigazolását.",
   "canvas.recovery_load_sent": "Kérés elküldve. Várja meg a natív betöltést és az állapot visszaigazolását. Nincs automatikus újrapróbálkozás.",
-  "canvas.recovery_load_select": "Válasszon szálat tartalmazó rekeszt. A normál betöltés/kihúzás az egységes állapot visszaigazolásáig tiltva marad."
+  "canvas.recovery_load_select": "Válasszon szálat tartalmazó rekeszt. A normál betöltés/kihúzás az egységes állapot visszaigazolásáig tiltva marad.",
+  "files.sort": "Rendezés",
+  "app.print_progress": "Nyomtatás előrehaladása",
+  "app.sidebar": "Oldalmenü"
 }

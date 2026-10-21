@@ -226,7 +226,7 @@
   "console.kinematic_bypass_commands_remain": "Příkazy obcházející kinematiku zůstávají blokovány",
   "console.lock_console": "Zamknout konzoli",
   "console.locked": "Zamčeno",
-  "console.messages_received": "Přijaté zprávy",
+  "console.messages_received": "Přijaté zprávy:",
   "console.motion_commands_require_homing": "Příkazy pohybu vyžadují referencování",
   "console.only_send_commands_you_understand": "Odesílejte jen příkazy, kterým rozumíte.",
   "console.printer_status": "Stav tiskárny",
@@ -1040,5 +1040,8 @@
   "canvas.recovery_load_slot": "Obnovit zavedením ze slotu {slot}",
   "canvas.recovery_load_confirm": "Spustit obnovovací zavedení ze slotu {slot}? Zkontrolujte dráhu filamentu a používejte Canvas, ne externí cívku. Firmware může zahřát trysku a vytlačit další materiál. Vyčkejte na potvrzení tiskárny.",
   "canvas.recovery_load_sent": "Požadavek odeslán. Vyčkejte na nativní zavedení a potvrzení stavu. Bez automatického opakování.",
-  "canvas.recovery_load_select": "Vyberte obsazený slot. Běžné zavedení/vysunutí zůstává blokováno do potvrzení konzistentního stavu."
+  "canvas.recovery_load_select": "Vyberte obsazený slot. Běžné zavedení/vysunutí zůstává blokováno do potvrzení konzistentního stavu.",
+  "files.sort": "Seřadit podle",
+  "app.print_progress": "Průběh tisku",
+  "app.sidebar": "Boční menu"
 }
