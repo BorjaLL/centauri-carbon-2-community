@@ -118,4 +118,36 @@ with tempfile.TemporaryDirectory() as directory:
     f=Fixture(parent,noop);(f.source/'libcc2-camera-recovery-r2.so').write_text('tampered');f.run('install',ok=False);f.unchanged()
     f=Fixture(parent,noop);f.run('install');shutil.move(f.base,f.root/'payload-away')
     assert f.boot(source=True)==['0','0','0','unset']
+    # A previous rollback retains the personal directory. Known original
+    # startup must still be eligible for the normal application component.
+    f=Fixture(parent,noop);personal=f.root/'opt/usr/cc2-camera-recovery-r2';personal.mkdir()
+    f.run('check');f.run('install');assert f.base.exists() and not list(personal.iterdir())
+    if os.environ.get('CC2_TEST_NATIVE_PROFILE')!='1':
+        for failure in ('none','source','startup','helper'):
+            f=Fixture(parent,noop);personal=f.root/'opt/usr/cc2-camera-recovery-r2';personal.mkdir()
+            pins={
+                'common.sh':'7aa2ffafba8d49bf657a4b414973410a6eea42e34061c9aefb9df9be30f4fc78',
+                'manage.sh':'f4a6c1cfe6dc1b6ab2e936ad1787fba7ea7b71064ce551ddad00e00e0569c4ff',
+                'boot-camera.sh':'57b9d994c3b1910bf6409580d588381afbea1d430ec335d7fd7bf86dc23e62ca',
+                'SHA256SUMS':'8e983273fc42c0d85adea7719d051a7045cf8a8b0b842766a093ebb5c5791877'}
+            for name in pins:write(personal/name,'fixture personal '+name+'\n')
+            for name in ('libcc2-camera-reap-r2.so','libcc2-camera-recovery-r2.so','cc2-camera-reap-check'):
+                shutil.copyfile(f.source/name,personal/name)
+            (personal/'cc2-camera-reap-check').chmod(0o700)
+            (personal/'printer.original').write_bytes(f.original)
+            write(personal/'enabled','CAMERA_RECOVERY_R2_ENABLED\n')
+            common=f.source/'common.sh';text=common.read_text()
+            for name,pin in pins.items():text=text.replace(pin,sha(personal/name))
+            common.write_text(text);f.manifest()
+            old_line=f'( if [ -x {f.old}/boot-camera.sh ]; then exec {f.old}/boot-camera.sh; else exec {f.camera}; fi ) & # CC2_CAMERA_BOOT_R1'
+            new_line=f'( if [ -x {personal}/boot-camera.sh ]; then exec {personal}/boot-camera.sh; else exec {f.camera}; fi ) & # CC2_CAMERA_RECOVERY_R2'
+            f.init.write_text(f.init.read_text().replace(old_line,new_line))
+            if failure=='source':write(personal/'common.sh','changed source\n')
+            if failure=='startup':f.init.write_text(f.init.read_text()+'# unrelated\n')
+            before=f.init.read_bytes();enabled=(personal/'enabled').read_bytes()
+            env={'TEST_HELPER_FAIL':'1'} if failure=='helper' else {}
+            f.run('check',ok=failure=='none',**env)
+            if failure=='none':f.run('install')
+            assert f.init.read_bytes()==before and not f.base.exists()
+            assert (personal/'enabled').read_bytes()==enabled and not f.launches.exists()
 print(f'PASS: {CASES} persistent install/boot/disable/enable/exact-rollback/fallback/refusal cases; shell={SHELL}; no printer addressed')

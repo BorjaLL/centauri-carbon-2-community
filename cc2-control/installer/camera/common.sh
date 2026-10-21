@@ -62,6 +62,9 @@ backup_fingerprint() {
     case "$(sha "$1")" in "$STOCK_INIT_SHA"|"$TRIAL_INIT_SHA") return 0;; *) return 1;; esac
 }
 personal_existing() {
+    # A rolled-back personal trial intentionally retains its files. A known
+    # native/one-shot startup means that directory is dormant, not active.
+    case "$(sha "$INIT")" in "$STOCK_INIT_SHA"|"$TRIAL_INIT_SHA") return 1;; esac
     [ -d "$PERSONAL" ] && [ ! -L "$PERSONAL" ] || return 1
     for item in \
       'common.sh:7aa2ffafba8d49bf657a4b414973410a6eea42e34061c9aefb9df9be30f4fc78' \
