@@ -97,9 +97,11 @@ try {
     }
   }
   await page.evaluate(() => { document.documentElement.dataset.theme = 'dark' })
-  await localFile.focus()
+  // Dismissing a native chooser can leave the browser window inactive in headless CI.
+  // Restore the page before testing real keyboard activation on the input itself.
+  await page.bringToFront()
   const keyboardChooser = page.waitForEvent('filechooser')
-  await page.keyboard.press('Space')
+  await localFile.press('Space')
   await (await keyboardChooser).setFiles({ name: 'trial.cc2update', mimeType: 'application/octet-stream', buffer: Buffer.alloc(1200) })
   assert.equal(await localFile.evaluate(input => input.files[0].name), 'trial.cc2update')
   assert.equal(downloads, 0, 'choosing a file must not download or install')

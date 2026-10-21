@@ -904,7 +904,7 @@
   "common.next_page": "Siguiente",
   "common.page_of_total": "Pagina {page} de {pages} · {total} elementos",
   "updates.title": "Actualizaciones",
-  "updates.application_only": "Actualiza solo CC2 Control; el firmware de la impresora no cambia.",
+  "updates.application_only": "Instala CC2 Control y los componentes indicados en las notas de versión. Sigue las instrucciones de reinicio de la impresora.",
   "updates.installed": "Version instalada",
   "updates.channel": "Canal de actualizacion",
   "updates.stable": "Estable",

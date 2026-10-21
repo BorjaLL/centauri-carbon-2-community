@@ -904,7 +904,7 @@
   "files.space_available": "{available} dostupných z {total}",
   "files.space_unavailable": "Údaje o volném místě nejsou dostupné",
   "updates.title": "Aktualizace",
-  "updates.application_only": "Aktualizuje pouze CC2 Control; firmware tiskárny se nemění.",
+  "updates.application_only": "Instaluje CC2 Control a součásti uvedené v poznámkách k vydání. Dodržujte pokyny k restartování tiskárny.",
   "updates.installed": "Nainstalovaná verze",
   "updates.channel": "Kanál aktualizací",
   "updates.stable": "Stabilní",

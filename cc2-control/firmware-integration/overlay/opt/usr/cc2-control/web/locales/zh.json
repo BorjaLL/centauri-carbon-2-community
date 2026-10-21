@@ -904,7 +904,7 @@
   "files.space_available": "可用 {available}，总计 {total}",
   "files.space_unavailable": "存储空间信息不可用",
   "updates.title": "更新",
-  "updates.application_only": "仅更新 CC2 Control，不更改打印机固件。",
+  "updates.application_only": "安装 CC2 Control 和发行说明中列出的组件。请遵循打印机重启说明。",
   "updates.installed": "已安装版本",
   "updates.channel": "更新通道",
   "updates.stable": "稳定版",

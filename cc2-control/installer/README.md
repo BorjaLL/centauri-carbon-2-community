@@ -8,7 +8,7 @@ Extract the entire ZIP on the computer. Windows: Install-Windows.cmd. Linux/macO
 
 Printer must be configured, connected, Idle and cold: nozzle/bed at most 50 °C, both targets zero. No print or calibration should be running. Configuration, materials, UI preferences, plates/nozzles and spools are retained. Backup and rollback are included. Health, running binary checksum, MQTT registration and snapshot are checked for up to 240 seconds.
 
-This changes only CC2 Control; firmware and callback runtime stay in place. Restart once while Idle and check automatic startup.
+**For the complete camera update, a full manual printer reboot while Idle is required after installation.** The authenticated installer can also stage the fingerprinted camera libraries and startup hook described in the release notes. The printer executable and callback runtime stay in place. See README-TEST.md and README-TEST.it.md for the component scope, compatibility, rollback and restart instructions.
 
 [Detailed English instructions](https://github.com/Neme77/centauri-carbon-2-community/blob/develop/docs/UPDATE_CC2.md) · [Istruzioni italiane](https://github.com/Neme77/centauri-carbon-2-community/blob/develop/docs/UPDATE_CC2.it.md)
 

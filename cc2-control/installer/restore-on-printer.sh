@@ -4,6 +4,7 @@ BACKUP=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 TARGET=/opt/usr/cc2-control
 INIT=/etc/init.d/cc2-control
 LOCK=/tmp/cc2-control-install.lock
+@CAMERA_RESTORE_FUNCTION@
 wait_stopped() {
     stop_wait=0
     while pidof cc2-control >/dev/null 2>&1; do
@@ -46,6 +47,7 @@ require_cold
 
 mkdir "$LOCK" || exit 1
 trap 'rmdir "$LOCK"' 0
+if [ -f "$BACKUP/printer-camera.before" ]; then camera_restore_startup "$BACKUP"; fi
 "$INIT" stop
 if ! wait_stopped; then echo 'Service did not stop.' >&2; exit 1; fi
 # Keep current preferences and access configuration when reverting binaries.
