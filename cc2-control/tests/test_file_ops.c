@@ -81,7 +81,8 @@ static void test_large_upload_admission(mqtt_client *mqtt){
     expect(used>0 && !strstr(response,"413 Payload Too Large") && !strstr(response,"201 Created"),"incomplete large upload fails without a false size refusal or success");
     char path[1024];snprintf(path,sizeof(path),"%s/large.gcode",gcode_internal_root);
     expect(access(path,F_OK)!=0,"incomplete large upload never finalized");
-    for(int i=0;i<100 && atomic_load(&upload_busy);i++)usleep(10000);
+    const struct timespec pause={0,10000000};
+    for(int i=0;i<100 && atomic_load(&upload_busy);i++)nanosleep(&pause,NULL);
     expect(!atomic_load(&upload_busy),"large upload releases worker slot");
 }
 int main(void){

@@ -27,3 +27,4 @@ jobs:
           git add builder/current
           git commit -m 'Sync bounded file library source snapshot and checksums'
           git push origin HEAD:feature/file-library-large-uploads
+# Recheck the POSIX-portable upload fixture in the pinned snapshot.
