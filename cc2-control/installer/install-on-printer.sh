@@ -19,10 +19,19 @@ CHANGED=0
 STOPPED=0
 PASSED=0
 BACKUP=''
+CAMERA_SOURCE=''
+@CAMERA_COMPONENT_FUNCTIONS@
 finish() {
     code=$?
     trap - 0 1 2 15
     set +e
+    if [ "$PASSED" -eq 0 ] && [ -n "$CAMERA_SOURCE" ] && [ -n "$BACKUP" ] && [ -f "$BACKUP/printer-camera.before" ]; then
+        if ! camera_restore_startup "$BACKUP"; then
+            echo "Camera startup restoration refused; inspect $BACKUP before reboot." >&2
+            rmdir "$LOCK"
+            exit 1
+        fi
+    fi
     if [ "$PASSED" -eq 0 ] && [ "$STOPPED" -eq 1 ]; then
         "$INIT" stop >/dev/null 2>&1
         if ! wait_stopped; then
@@ -75,11 +84,13 @@ require_cold() {
     done
 }
 require_cold
+@CAMERA_COMPONENT_PREFLIGHT@
 BACKUP="/opt/usr/cc2-control-backup-$(date +%Y%m%d-%H%M%S)-$$"
 mkdir "$BACKUP"
 cp -a "$TARGET" "$BACKUP/installation"
 cp -p "$INIT" "$BACKUP/init.before"
 cp "$STAGE/restore-on-printer.sh" "$BACKUP/restore.sh"
+if [ -n "$CAMERA_SOURCE" ]; then cp -p /etc/init.d/printer "$BACKUP/printer-camera.before"; fi
 STATUS=$(wget -qO- http://127.0.0.1:8081/api/printer)
 case "$STATUS" in *'"connected":true'*'"machine":{"status":1,'*) ;; *) echo 'Printer state changed; update cancelled.' >&2; exit 1;; esac
 require_cold
@@ -134,6 +145,10 @@ while [ "$tries" -lt 120 ]; do
             RUN_HASH=$(sha256sum "/proc/$RUN_PID/exe" 2>/dev/null | awk '{print $1}')
             if [ "$RUN_HASH" = "$EXPECTED" ]; then
                 case "$RESULT" in *'"mqtt_registered":true'*'"snapshot_received":true'*) ;; *) tries=$((tries+1)); sleep 2; continue;; esac
+                if [ -n "$CAMERA_SOURCE" ]; then
+                    sh "$CAMERA_SOURCE/manage.sh" install || exit 1
+                    echo 'REBOOT REQUIRED: reboot the complete idle printer to activate the camera fixes.'
+                fi
                 PASSED=1
                 echo "$RESULT"
                 echo "INSTALLATION PASSED. Backup: $BACKUP"
