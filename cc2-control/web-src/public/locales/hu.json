@@ -1029,5 +1029,12 @@
   "settings.pandabreath_dragonbreath": "Dragon Breath firmware",
   "settings.pandabreath_dragonbreath_description": "Kapcsold be, ha a Panda Breath a nyílt Dragon Breath firmware-t futtatja. A név Dragon Breath lesz, az alapértelmezett cím pedig dragonbreath.local.",
   "files.date_unavailable": "A dátum nem érhető el",
-  "files.date_unavailable_hint": "Egyes dátumok nem érhetők el, például ha feltöltéskor a nyomtató órája nem volt szinkronizálva. A legújabbak szerinti rendezés először a dátummal rendelkező fájlokat, majd a többit név szerint mutatja. Az eredeti fájlok nem változnak."
+  "files.date_unavailable_hint": "Egyes dátumok nem érhetők el, például ha feltöltéskor a nyomtató órája nem volt szinkronizálva. A legújabbak szerinti rendezés először a dátummal rendelkező fájlokat, majd a többit név szerint mutatja. Az eredeti fájlok nem változnak.",
+  "job.bed_map": "Tárgyasztaltérkép",
+  "job.bed_map_hint": "Felülnézet. Válasszon egy számozott objektumot a térképen vagy a listában. A kizárás mindig megerősítést igényel.",
+  "job.bed_map_front": "Elöl (Y = 0)",
+  "job.bed_map_selected": "Kiválasztva",
+  "job.bed_map_missing": "{n} objektumnak nincs érvényes helye a tárgyasztalon. Válassza ki őket a listából.",
+  "job.bed_map_choose": "Válasszon objektumot a térképen vagy a listában.",
+  "job.bed_map_close": "Tárgyasztaltérkép bezárása"
 }
