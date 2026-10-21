@@ -31,3 +31,4 @@ jobs:
           python3 cc2-control/tests/test_locales_static.py
       - name: Publish verified snapshot
         run: git push origin HEAD:refs/heads/fix/gcode-unreliable-dates
+# Scope: source snapshot and existing builder verification only.
