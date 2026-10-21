@@ -63,7 +63,12 @@ jobs:
           cp -a cc2-control/web/. cc2-control/firmware-integration/overlay/opt/usr/cc2-control/web/
           git add cc2-control
           git diff --cached --quiet || git commit -m "Rebuild 1.2.19 update component notices"
+          previous_source_sha=$(sha256sum builder/current/components/cc2-control/source/source.zip | cut -d ' ' -f 1)
           python3 experimental/pr128-integration/sync_source.py
+          current_source_sha=$(sha256sum builder/current/components/cc2-control/source/source.zip | cut -d ' ' -f 1)
+          if [ "$previous_source_sha" = "$current_source_sha" ]; then
+            git restore builder/current/prepare.py builder/current/core/firmware_builder.py builder/current/launch_helpers/run_build.py
+          fi
           git add builder/current
           git diff --cached --quiet || git commit -m "Pin 1.2.19 application sources for combined updater"
           git push origin HEAD:refs/heads/test/control-1.2.19-camera-and-dates
