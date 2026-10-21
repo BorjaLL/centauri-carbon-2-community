@@ -50,7 +50,31 @@ The exact R3 image passed its signed build and maintainer installation/connectio
 
 **Italiano:** la V4.4.1 offre ai nuovi utenti un unico firmware con CC2 Control 1.2.10, fix e updater già integrati. Per gli update successivi basta il pannello e la conferma con il codice LAN. Chi usa già la V4.4 può scegliere l'aggiornamento della sola applicazione. Non serve ripristinare la stampante.
 
-## CC2 Control 1.2.18 — Canvas and Panda Breath
+## CC2 Control 1.2.19 — camera stability and interactive object bed map
+
+**[Download CC2 Control 1.2.19](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.19-V4.4)** · [Full release notes and PRs](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.19-V4.4) · [English guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
+
+> **FULL PRINTER REBOOT REQUIRED AFTER INSTALLATION / RIAVVIO COMPLETO DELLA STAMPANTE NECESSARIO.** The camera fix activates at the next complete printer start. Reloading the page or restarting only CC2 Control is insufficient.
+
+For **Community Firmware V4.4/V4.4.1**, qualified ELEGOO base **02.01.01.07**. Settings and libraries are retained. The complete firmware image and builder downloads above remain unchanged and will be updated separately.
+
+| New since 1.2.18 | What changes | Credit / PRs |
+| --- | --- | --- |
+| Camera stability and recovery | Reclaims completed video-client thread stacks and restores readiness notifications needed by local/Matrix video after a camera-only restart through the patched launcher. Original camera executable retained; no watchdog, automatic restart, extra stream slots or Wi-Fi tuning. | Diagnosis and reproduction: **[tharje](https://github.com/tharje)**, [#160](https://github.com/Neme77/centauri-carbon-2-community/issues/160); [#183](https://github.com/Neme77/centauri-carbon-2-community/pull/183), [#186](https://github.com/Neme77/centauri-carbon-2-community/pull/186) |
+| Interactive object map | Job → Object exclusion → Bed map: 256 × 256 mm view, numbered markers/outlines and linked list. Selection cyan, current object amber, excluded red. Exclusion keeps its confirmation and original G-code ID; no extra polling. | Idea/prototype: **Nick Plateringen-Paul**, [#188](https://github.com/Neme77/centauri-carbon-2-community/pull/188) |
+| Reliable file-date presentation | Invalid/epoch dates shown as unavailable; undated files sort after valid dates. G-code and original timestamps are untouched. | [#185](https://github.com/Neme77/centauri-carbon-2-community/pull/185) |
+| Canvas and mobile refinements | Prevent unchanged Enter saves and duplicate restart submissions; annotate slot observations with recent printer context; keep header actions and the heater external link accessible on phones. | **[pezso92](https://github.com/pezso92)**, [#175](https://github.com/Neme77/centauri-carbon-2-community/pull/175), [#176](https://github.com/Neme77/centauri-carbon-2-community/pull/176), [#177](https://github.com/Neme77/centauri-carbon-2-community/pull/177), integrated [#180](https://github.com/Neme77/centauri-carbon-2-community/pull/180) |
+| Panda/DragonBreath metadata | Read-only port 7125 bridge reports filename and available filament/usage metadata for DragonBreath AUTO zones; empty WebSocket ping handling and file/freshness guards. Not direct MQTT heater control. | Original feature: **[Noahwhite2014](https://github.com/Noahwhite2014)**, [#181](https://github.com/Neme77/centauri-carbon-2-community/pull/181), integrated [#182](https://github.com/Neme77/centauri-carbon-2-community/pull/182) |
+
+**Install:** Settings → Updates → Stable → Check for updates. Enter the printer **LAN access code** from the display, download/verify, then confirm installation separately. The LAN code differs from the SSH password. Use a connected, idle and cold printer (nozzle/bed ≤50 °C), targets zero, live viewers closed. After the success message, **manually reboot the full printer**. Alternatively upload the `.cc2update`; extract the multiplatform ZIP on the computer. Same-version trials use the PC installer. No factory reset or intermediate app release is needed.
+
+Validated on the printer: object map/exclusion, Orca sync, upgrade preserving an existing personal camera patch, and a fresh 1.2.18 → panel upload → 1.2.19 installation after removing both personal startup hooks. After full reboot, bundled camera libraries activated and local/Matrix video worked. Seven earlier hours of printing with AI options enabled and streaming working do not individually qualify AI detections or every expired RTC session.
+
+Thanks to **tharje, Nick Plateringen-Paul, pezso92, Noahwhite2014**, **Barry**, and **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, for their contributions and testing. Earlier Spanish (**asiersan**), Hungarian (**pezso92**), punctuation (**Surfoo**), plate/mesh (**beanbo**) and other contribution credits remain in [Community credits](docs/CONTRIBUTORS.md).
+
+**Italiano:** fix webcam con recupero video locale/Matrix, mappa oggetti, date G-code non affidabili, miglioramenti Canvas/mobile di pezso92 e metadati Panda/DragonBreath di Noahwhite2014. Grazie a tharje per la diagnosi, a Nick per il prototipo e a **DamiBFryta, il beta tester definitivo**. Dopo l'installazione riuscita **riavviare completamente la stampante**; preferenze e librerie conservate. Builder e immagine firmware saranno aggiornati in seguito.
+
+## Previous application update — CC2 Control 1.2.18 — Canvas and Panda Breath
 
 **[Download CC2 Control 1.2.18](https://github.com/Neme77/centauri-carbon-2-community/releases/tag/CC2-Control-1.2.18-V4.4)** · [English update guide](docs/UPDATE_CC2.md) · [Guida italiana](docs/UPDATE_CC2.it.md).
 

@@ -119,3 +119,12 @@ Thanks to **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate 
 **[Noahwhite2014](https://github.com/Noahwhite2014)**: original Panda Breath / Dragon Breath interface (#166/#167) and native Canvas post-cut pull-back setting (#168), integrated and validated through #169. **[pezso92](https://github.com/pezso92)**: localization and update-requirement refinements (#163/#164/#165). Original commits and existing language credits are retained.
 
 Thanks to **Barry** for Panda Breath field feedback and **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, for persistent field testing and precise reports. Thanks to all contributors, translators and testers named above.
+
+## CC2 Control 1.2.19
+
+- **[tharje](https://github.com/tharje)**: camera failure investigation, traces, crash reproduction and analysis in #160, informing the thread-reclamation and readiness recovery fixes (#183/#186).
+- **Nick Plateringen-Paul**: original interactive bed-map idea and JavaScript prototype, integrated in #188 with original-ID exclusion and existing data/polling protections.
+- **[pezso92](https://github.com/pezso92)**: Canvas save/restart guards, observed-timeline context and mobile header actions (#175/#176/#177, integrated in #180). Original commits and author credit retained.
+- **[Noahwhite2014](https://github.com/Noahwhite2014)**: Panda/DragonBreath filament metadata bridge and empty WebSocket ping fix (#181, integrated in #182). Original commits and feature credit retained.
+
+Thanks to **Barry** for accessory feedback, **[DamiBFryta](https://www.reddit.com/user/DamiBFryta/), our ultimate beta tester**, and all community testers for sustained testing and detailed reports. Earlier contributors, including Spanish/Hungarian translation authors, remain credited above.
