@@ -279,37 +279,29 @@ int control_build_script(const char *action,const mqtt_client *m,char *script,si
            m->last_message<=0||now<m->last_message||now-m->last_message>15)
             return reject(reason,reason_cap,"Motor mode requires the printer to be idle with fresh telemetry");
         static const char *const steppers[]={"stepper_x","stepper_y"};
-        int n=quiet?snprintf(script,cap,"M400
-SET_VELOCITY_LIMIT VELOCITY=%s ACCEL=%s",
+        int n=quiet?snprintf(script,cap,"M400\nSET_VELOCITY_LIMIT VELOCITY=%s ACCEL=%s",
                              CONTROL_QUIET_VELOCITY,CONTROL_QUIET_ACCEL):0;
         if(n<0||(size_t)n>=cap)return reject(reason,reason_cap,"Motor mode command is too long");
         size_t used=(size_t)n;
         for(int i=0;i<2;i++){
             n=quiet?snprintf(script+used,cap-used,
-                    "
-SET_TMC_FIELD STEPPER=%s FIELD=tpwmthrs VALUE=%s"
-                    "
-SET_TMC_FIELD STEPPER=%s FIELD=en_spreadcycle VALUE=%s",
+                    "\nSET_TMC_FIELD STEPPER=%s FIELD=tpwmthrs VALUE=%s"
+                    "\nSET_TMC_FIELD STEPPER=%s FIELD=en_spreadcycle VALUE=%s",
                     steppers[i],CONTROL_TPWMTHRS_ZERO,steppers[i],CONTROL_SPREADCYCLE_ZERO):
                 snprintf(script+used,cap-used,
                     "%sSET_TMC_FIELD STEPPER=%s FIELD=en_spreadcycle VALUE=1"
-                    "
-SET_TMC_FIELD STEPPER=%s FIELD=tpwmthrs VALUE=%s",
-                    i?"
-":"",steppers[i],steppers[i],CONTROL_TPWMTHRS_MAX);
+                    "\nSET_TMC_FIELD STEPPER=%s FIELD=tpwmthrs VALUE=%s",
+                    i?"\n":"",steppers[i],steppers[i],CONTROL_TPWMTHRS_MAX);
             if(n<0||(size_t)n>=cap-used)return reject(reason,reason_cap,"Motor mode command is too long");
             used+=(size_t)n;
         }
         if(!quiet){
-            n=snprintf(script+used,cap-used,"
-SET_VELOCITY_LIMIT VELOCITY=%s ACCEL=%s",
+            n=snprintf(script+used,cap-used,"\nSET_VELOCITY_LIMIT VELOCITY=%s ACCEL=%s",
                        CONTROL_NORMAL_VELOCITY,CONTROL_NORMAL_ACCEL);
             if(n<0||(size_t)n>=cap-used)return reject(reason,reason_cap,"Motor mode command is too long");
             used+=(size_t)n;
         }
-        n=snprintf(script+used,cap-used,"
-DUMP_TMC STEPPER=stepper_x
-DUMP_TMC STEPPER=stepper_y");
+        n=snprintf(script+used,cap-used,"\nDUMP_TMC STEPPER=stepper_x\nDUMP_TMC STEPPER=stepper_y");
         if(n<0||(size_t)n>=cap-used)return reject(reason,reason_cap,"Motor mode command is too long");
         return 1;
     }
