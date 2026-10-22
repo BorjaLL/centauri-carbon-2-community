@@ -1044,5 +1044,6 @@
   "files.sort": "Ordina per",
   "app.print_progress": "Avanzamento della stampa",
   "app.sidebar": "Menu laterale",
-  "files.list_changed_retry": "L’elenco file è cambiato durante il caricamento. Aggiorna e riprova."
+  "files.list_changed_retry": "L’elenco file è cambiato durante il caricamento. Aggiorna e riprova.",
+  "job.bed_map_expand": "Espandi mappa del piatto"
 }

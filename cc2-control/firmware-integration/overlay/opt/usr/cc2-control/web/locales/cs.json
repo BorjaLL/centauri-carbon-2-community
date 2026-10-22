@@ -1044,5 +1044,6 @@
   "files.sort": "Seřadit podle",
   "app.print_progress": "Průběh tisku",
   "app.sidebar": "Boční menu",
-  "files.list_changed_retry": "Seznam souborů se během načítání změnil. Obnovte jej a zkuste to znovu."
+  "files.list_changed_retry": "Seznam souborů se během načítání změnil. Obnovte jej a zkuste to znovu.",
+  "job.bed_map_expand": "Zvětšit mapu podložky"
 }

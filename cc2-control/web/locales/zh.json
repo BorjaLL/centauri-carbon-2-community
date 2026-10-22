@@ -1044,5 +1044,6 @@
   "files.sort": "排序方式",
   "app.print_progress": "打印进度",
   "app.sidebar": "侧边菜单",
-  "files.list_changed_retry": "加载时文件列表发生变化。请刷新后重试。"
+  "files.list_changed_retry": "加载时文件列表发生变化。请刷新后重试。",
+  "job.bed_map_expand": "放大热床地图"
 }

@@ -1044,5 +1044,6 @@
   "files.sort": "Rendezés",
   "app.print_progress": "Nyomtatás előrehaladása",
   "app.sidebar": "Oldalmenü",
-  "files.list_changed_retry": "A fájllista betöltés közben megváltozott. Frissítsen és próbálja újra."
+  "files.list_changed_retry": "A fájllista betöltés közben megváltozott. Frissítsen és próbálja újra.",
+  "job.bed_map_expand": "Tárgyasztaltérkép nagyítása"
 }

@@ -1044,5 +1044,6 @@
   "files.sort": "Sort by",
   "app.print_progress": "Print progress",
   "app.sidebar": "Side menu",
-  "files.list_changed_retry": "The file list changed while loading. Refresh and try again."
+  "files.list_changed_retry": "The file list changed while loading. Refresh and try again.",
+  "job.bed_map_expand": "Expand bed map"
 }

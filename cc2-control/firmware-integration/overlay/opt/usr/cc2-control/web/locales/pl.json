@@ -1044,5 +1044,6 @@
   "files.sort": "Sortuj według",
   "app.print_progress": "Postęp wydruku",
   "app.sidebar": "Menu boczne",
-  "files.list_changed_retry": "Lista plików zmieniła się podczas wczytywania. Odśwież i spróbuj ponownie."
+  "files.list_changed_retry": "Lista plików zmieniła się podczas wczytywania. Odśwież i spróbuj ponownie.",
+  "job.bed_map_expand": "Powiększ mapę stołu"
 }
