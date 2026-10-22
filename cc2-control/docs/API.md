@@ -266,6 +266,9 @@ coefficients has not been independently verified.
 
 ## X/Y motor mode (StealthChop)
 
+Experimental: shipped only in the opt-in experimental channel, not qualified on
+V4.4 / V4.4.1 printers yet. Passing CI is not printer qualification.
+
 `POST /api/control` accepts `motors:quiet` and `motors:normal` while the printer is
 idle with fresh telemetry; both are refused during a print. They change the X and Y
 TMC2209 drivers together (CoreXY) with the native `SET_TMC_FIELD`, which refuses a
@@ -277,17 +280,20 @@ threshold does not cap the speed. Quiet therefore runs `M400` and
 `SET_VELOCITY_LIMIT VELOCITY=80 ACCEL=2000` before any StealthChop write; Normal
 restores SpreadCycle on both steppers first and then
 `SET_VELOCITY_LIMIT VELOCITY=500 ACCEL=20000`, the stock `printer.cfg` limits
-(CC2 Control does not read the printer configuration). Both end with `DUMP_TMC`
-for X and Y, shown in the Console.
+(CC2 Control does not read the printer configuration). Normal always restores these
+fixed values, not limits a user set before Quiet. Both end with `DUMP_TMC` for X and
+Y, shown in the Console.
 
 `GET /api/printer` reports the last requested mode as `motor_mode` (`"quiet"`,
 `"normal"`, or `null` before any request and after the printer service reconnects,
-when the configured mode returns). It does not report the toolhead velocity or
-acceleration limits.
+when the configured mode returns). It records the last accepted request, not a
+verified TMC register state: check the `DUMP_TMC` read-back. It does not report the
+toolhead velocity or acceleration limits.
 
-Quiet belongs to one print. A slicer's `M204` or `SET_VELOCITY_LIMIT` lines raise
-the limits again during the print, so Quiet suits only G-code sliced at or below
-80 mm/s and 2000 mm/s²; the Control page warns while a print runs in Quiet. When a
+Quiet belongs to one print. The 80 mm/s / 2000 mm/s² values are initial limits,
+not an enforced cap: a slicer's `M204` or `SET_VELOCITY_LIMIT` lines raise them
+again during the print, so Quiet suits only G-code sliced to stay at or below
+80 mm/s and 2000 mm/s² throughout; the Control page warns while a print runs in Quiet. When a
 print (printing or paused) has run in Quiet and the printer is idle again, CC2
 Control sends the Normal script itself.
 
