@@ -114,6 +114,7 @@ try {
   for (const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',768]]) {
     await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme)
     await page.setViewportSize({width,height:900})
+    await page.waitForTimeout(300)
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'page overflow')
     assert(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth),'dialog overflow')
     const rect=await dialog.boundingBox();assert(rect.x>=0&&rect.x+rect.width<=width,'dialog must stay inside viewport')
@@ -146,6 +147,15 @@ try {
   assert.equal(await dialog.locator('[data-bed-list-id="Back corner"]').getAttribute('aria-pressed'),'true')
   await dialog.getByRole('button',{name:'Close bed map',exact:true}).click()
   // Complete coordinate loss still leaves the list available without false map markers.
+  await page.evaluate(()=>window.__CC2_PREVIEW.objectRows=[{name:'Overlap A',center:[100,100]},{name:'Overlap B',center:[100,100]}])
+  await page.waitForFunction(()=>document.querySelectorAll('[data-object-id]').length===2)
+  await open.click()
+  await dialog.locator('[data-bed-list-id="Overlap B"]').click()
+  assert.equal(await dialog.locator('[data-bed-object-id="Overlap B"]').getAttribute('aria-pressed'),'true')
+  await dialog.locator('[data-bed-list-id="Overlap A"]').focus();await page.keyboard.press('Enter')
+  assert.equal(await dialog.locator('[data-bed-object-id="Overlap A"]').getAttribute('aria-pressed'),'true','coincident markers stay selectable from the compact list')
+  await dialog.getByRole('button',{name:'Close bed map',exact:true}).click()
+  // Coordinate loss still leaves the compact list available.
   await page.evaluate(()=>window.__CC2_PREVIEW.objectRows=[{name:'No position'}])
   await page.waitForFunction(()=>document.querySelector('[data-object-id]')?.dataset.objectId==='No position')
   await open.click();assert.equal(await markers.count(),0)
