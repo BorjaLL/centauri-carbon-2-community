@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { ask } from '@/lib/confirm'
 import { ArrowBigDown, ArrowBigUp, Check, Info, Palette, RefreshCw, Repeat, BrushCleaning, Trash2 } from 'lucide-preact'
 import { cn } from '@/lib/utils'
@@ -6,14 +6,14 @@ import { Card, CardHead, Page } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Pip, Tag } from '@/components/ui/badge'
 import { Select } from '@/components/ui/field'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogTitle } from '@/components/ui/dialog'
 import { Row } from '@/components/shared'
 import { CanvasUnload } from './canvas-unload'
 import { control, errText, notify, post } from '@/lib/api'
 import { type Key, t, tpl } from '@/lib/i18n'
 import { poll, usePoll } from '@/lib/poll'
 import { canvas, canvasColour, canvasHex, refreshCanvas } from '@/lib/canvas'
-import { canvasTimeline, clearCanvasTimeline } from '@/lib/canvas-events'
+import { canvasTimeline, clearCanvasTimeline, type ObservedPrinterPhase } from '@/lib/canvas-events'
 import { presets, printer } from '@/lib/state'
 import { findSpool, g, openChooser, refreshSpools, spoolLabel, spools } from '@/lib/spools'
 
@@ -74,7 +74,7 @@ const MaterialDialog = ({ slot, onClose }: { slot: number; onClose: () => void }
   return (
     <Dialog onClose={onClose}>
       <form onSubmit={submit}>
-        <h2 class="mb-4 text-xl font-semibold">{t('canvas.choose_material_and_colour')}</h2>
+        <DialogTitle class="mb-4">{t('canvas.choose_material_and_colour')}</DialogTitle>
         <label htmlFor="material-profile" class="mb-1.5 mt-3 block text-muted">
           {t('canvas.material_profile')}
         </label>
@@ -133,6 +133,9 @@ const MaterialDialog = ({ slot, onClose }: { slot: number; onClose: () => void }
 }
 
 export const Canvas = () => {
+  const recoverySending = useRef(false)
+  const [recoveryBusy, setRecoveryBusy] = useState(false)
+  const [recoverySent, setRecoverySent] = useState(false)
   const { model, controls, autoRefill, slot, optimistic, checked } = canvas.use()
   const { events } = canvasTimeline.use()
   const library = spools.use().data
@@ -165,6 +168,21 @@ export const Canvas = () => {
   usePoll(refreshSpools, 10000)
   const ok = Boolean(model?.connected)
   const selected = controls.find(c => c.slot === slot)
+  const recoverLoad = async () => {
+    if (recoverySending.current || recoverySent || !ok || !idle || selected?.recovery_load !== true) return
+    const chosen = slot
+    recoverySending.current = true
+    setRecoveryBusy(true)
+    try {
+      if (await control(`canvas:recover-load:${chosen}`, tpl('canvas.recovery_load_confirm', { slot: chosen + 1 }))) {
+        setRecoverySent(true)
+        void refreshCanvas()
+      }
+    } finally {
+      recoverySending.current = false
+      setRecoveryBusy(false)
+    }
+  }
   const stateLabels = {
     empty: 'canvas.state_empty',
     present: 'canvas.state_present',
@@ -172,6 +190,12 @@ export const Canvas = () => {
     transition: 'canvas.state_transition',
     unknown: 'canvas.state_unknown',
   } as const
+  const phaseLabels: Record<ObservedPrinterPhase, Key> = {
+    idle: 'state.idle',
+    printing: 'state.printing',
+    paused: 'substate.paused',
+    unknown: 'state.unknown',
+  }
   const reasons: Record<string, Key> = {
     unavailable: 'canvas.reason_unavailable',
     empty: 'canvas.reason_empty',
@@ -383,6 +407,19 @@ export const Canvas = () => {
               <div role="status" data-canvas-recovery class="mb-3 rounded-md border border-edge bg-field p-3 text-sm">
                 <p class="font-semibold">{t('canvas.recovery_title')}</p>
                 <p class="mt-2 text-muted">{t('canvas.recovery_hint')}</p>
+                <Button
+                  wide
+                  class="mt-3"
+                  data-canvas-recovery-load
+                  disabled={selected?.recovery_load !== true || recoveryBusy || recoverySent}
+                  onClick={recoverLoad}
+                >
+                  <ArrowBigUp {...I} />
+                  {tpl('canvas.recovery_load_slot', { slot: slot + 1 })}
+                </Button>
+                <p class="mt-2 text-xs text-muted" data-canvas-recovery-feedback>
+                  {t(recoverySent ? 'canvas.recovery_load_sent' : 'canvas.recovery_load_select')}
+                </p>
               </div>
             )}
             <div class="grid gap-2">
@@ -459,7 +496,7 @@ export const Canvas = () => {
           </Card>
         </div>
       </div>
-      <Card data-canvas-timeline>
+      <Card data-canvas-timeline class="mt-3.5">
         <CardHead
           icon="history"
           title="canvas.timeline_title"
@@ -481,6 +518,9 @@ export const Canvas = () => {
                   from: t(stateLabels[event.from]),
                   to: t(stateLabels[event.to]),
                 })}
+                <small data-canvas-printer-phase class="mt-1 block text-xs text-muted">
+                  {tpl('canvas.timeline_printer_context', { state: t(phaseLabels[event.phase]) })}
+                </small>
               </li>
             ))}
           </ol>

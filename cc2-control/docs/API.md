@@ -84,6 +84,14 @@ Example response:
 
 No additional polling, process, thread, or MQTT subscription is created by these endpoints.
 
+## Panda compatibility bridge (port 7125)
+
+- `GET /server/info`, `/printer/info`, `/printer/objects/list` and `/printer/objects/query`, plus the `/websocket` methods `printer.objects.query` and `printer.objects.subscribe`, report `webhooks`, `virtual_sdcard`, `print_stats` (state and file name), `toolhead`, `extruder` and `heater_bed`.
+- `GET /server/files/metadata?filename=NAME` and the WebSocket method `server.files.metadata` return `filename`, `size`, `modified` and, when the slicer wrote them, `filament_type` and `filament_used_mm` for a file in the internal G-code folder. Each request reads the last 256 KiB of the file. Other names return 404.
+- Everything else is refused: the bridge is read-only.
+
+Metadata lookup rejects symlinks and special files. Invalid, non-finite or oversized filament-usage lists are omitted rather than returned as malformed JSON. An abbreviated filename is resolved only against a connected, recent active or paused print; exact internal file names remain readable outside a print. The tail read is bounded to 256 KiB per request, not a process-wide memory guarantee. The external heater remains responsible for its own temperature targets and safety controls.
+
 ## Printer replies to MQTT requests
 
 Print starts without calibration (method 1020), Canvas auto refill (2004), the print history (1036) and

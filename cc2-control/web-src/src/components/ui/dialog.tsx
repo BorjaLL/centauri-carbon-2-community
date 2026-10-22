@@ -4,17 +4,26 @@ import { useEffect, useRef } from 'preact/hooks'
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
+// Every dialog title: same size and weight; callers set the margin that fits what follows (subtitle, eyebrow, content).
+export const DialogTitle = ({ children, class: c = '' }: { children: ComponentChildren; class?: string }) => (
+  <h2 class={`text-xl font-semibold ${c}`}>{children}</h2>
+)
+
 // Modal shell: Escape / backdrop click close it unless `locked`; focus moves in, stays in (Tab is trapped) and returns on close.
 export const Dialog = ({
   onClose,
   locked,
   children,
   width = 520,
+  class: className = '',
+  label,
 }: {
   onClose?: () => void
   locked?: boolean
   children: ComponentChildren
   width?: number
+  class?: string
+  label?: string
 }) => {
   const box = useRef<HTMLDivElement>(null),
     props = useRef({ onClose, locked })
@@ -55,10 +64,11 @@ export const Dialog = ({
     >
       <div
         ref={box}
-        class="max-h-[92vh] overflow-auto rounded-xl border border-edge bg-panel p-6 shadow-2xl"
+        class={`max-h-[92vh] overflow-auto rounded-xl border border-edge bg-panel p-6 shadow-2xl ${className}`}
         style={{ width: `min(${width}px,96vw)` }}
         role="dialog"
         aria-modal="true"
+        aria-label={label}
       >
         {children}
       </div>

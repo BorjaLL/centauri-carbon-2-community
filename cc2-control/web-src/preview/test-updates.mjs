@@ -3,7 +3,7 @@ import { createServer } from 'vite'
 import { chromium } from 'playwright'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const server = await createServer({ root, configFile: path.join(root, 'vite.config.ts'), mode: 'demo', server: { port: 0, host: '127.0.0.1' } })
 let browser
@@ -67,6 +67,63 @@ try {
     const dict = JSON.parse(await readFile(path.join(root, `public/locales/${lang}.json`)))
     assert.match(dict['updates.requirements'], /V4\.4\/V4\.4\.1/, lang + ' update requirements are out of date')
   }
+// DamiBFryta: the native chooser's visible field and both cursor areas must agree.
+  await page.locator('details summary').click()
+  const localFile = page.getByLabel('Upload a signed package from your computer', { exact: true })
+  await localFile.waitFor()
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate(value => { document.documentElement.dataset.theme = value }, theme)
+    const appearance = await localFile.evaluate(input => {
+      const field = getComputedStyle(input)
+      const button = getComputedStyle(input, '::file-selector-button')
+      return { fieldCursor: field.cursor, buttonCursor: button.cursor,
+        fieldBorder: parseFloat(field.borderTopWidth), buttonBorder: parseFloat(button.borderTopWidth),
+        background: button.backgroundColor, color: button.color }
+    })
+    assert.equal(appearance.fieldCursor, 'pointer')
+    assert.equal(appearance.buttonCursor, 'pointer')
+    assert(appearance.fieldBorder > 0 && appearance.buttonBorder > 0, 'field and button must have visible borders')
+    assert.notEqual(appearance.background, appearance.color)
+    if (process.env.CC2_SCREENSHOTS) {
+      await mkdir(process.env.CC2_SCREENSHOTS, { recursive: true })
+      await localFile.screenshot({ path: path.join(process.env.CC2_SCREENSHOTS, `update-file-${theme}.png`) })
+    }
+    for (const position of [{ x: 35, y: 18 }, { x: 350, y: 18 }]) {
+      const chooserPromise = page.waitForEvent('filechooser')
+      await localFile.click({ position })
+      const chooser = await chooserPromise
+      assert.equal(await chooser.element().getAttribute('accept'), '.cc2update')
+      await chooser.setFiles([])
+    }
+  }
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'dark' })
+  // Dismissing a native chooser can leave the browser window inactive in headless CI.
+  // Restore the page before testing real keyboard activation on the input itself.
+  await page.bringToFront()
+  const keyboardChooser = page.waitForEvent('filechooser')
+  await localFile.press('Space')
+  await (await keyboardChooser).setFiles({ name: 'trial.cc2update', mimeType: 'application/octet-stream', buffer: Buffer.alloc(1200) })
+  assert.equal(await localFile.evaluate(input => input.files[0].name), 'trial.cc2update')
+  assert.equal(downloads, 0, 'choosing a file must not download or install')
+  assert.equal(installs, 0)
+  const verifyFile = page.getByRole('button', { name: 'Verify local package', exact: true })
+  assert.equal(await verifyFile.isEnabled(), false, 'LAN confirmation still required')
+  status.busy = true
+  await page.waitForFunction(() => document.querySelector('.cc2-update-file')?.disabled)
+  assert.equal(await localFile.evaluate(input => getComputedStyle(input).cursor), 'not-allowed')
+  assert.equal(await localFile.evaluate(input => getComputedStyle(input, '::file-selector-button').cursor), 'not-allowed')
+  status.busy = false
+  await page.waitForFunction(() => !document.querySelector('.cc2-update-file')?.disabled)
+  for (const width of [1440, 768, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'local file input overflow ' + width)
+    if (width === 390 && process.env.CC2_SCREENSHOTS) {
+      await localFile.evaluate(input => input.scrollIntoView({ block: 'center' }))
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      await localFile.screenshot({ path: path.join(process.env.CC2_SCREENSHOTS, 'update-file-mobile.png') })
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
   assert.equal(checks, 1)
   assert.equal(await page.getByText('WRONG FIRMWARE — must be hidden').count(), 0)
   const download = page.getByRole('button', { name: 'Download and verify', exact: true })
@@ -133,5 +190,5 @@ try {
   assert.equal(await page.getByText(localized.en, { exact: true }).count(), 0, 'older release notes must remain hidden')
   assert.equal(await page.getByText(previous['updates.notes_in_english'], { exact: true }).count(), 0)
   assert.deepEqual(errors, [])
-  console.log('PASS: update controls, auth/confirmations, mobile layout, installed/older note hiding, 8-language selection and labelled legacy/malformed fallback')
+  console.log('PASS: native file chooser mouse/keyboard, light/dark styling, disabled cursors, mobile layout; update auth/confirmations, installed/older note hiding, 8-language selection and labelled fallback')
 } finally { await browser?.close(); await server.close() }

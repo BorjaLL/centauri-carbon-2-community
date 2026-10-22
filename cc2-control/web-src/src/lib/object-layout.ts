@@ -1,4 +1,14 @@
-export type PrintObject = { id: string; label: string; center: [number, number] | null }
+export type PrintObject = {
+  id: string
+  label: string
+  center: [number, number] | null
+  polygon: [number, number][] | null
+}
+
+export const BED_SIZE = 256
+
+export const onBed = (p: [number, number] | null): p is [number, number] =>
+  p?.every(n => Number.isFinite(n) && n >= 0 && n <= BED_SIZE) === true
 
 const point = (p: unknown): p is [number, number] =>
   Array.isArray(p) && p.length === 2 && p.every(n => typeof n === 'number' && Number.isFinite(n))
@@ -33,6 +43,17 @@ function center(o: any): [number, number] | null {
   return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null
 }
 
+function outline(o: any): [number, number][] | null {
+  const polygon = decodeCoordinates(o?.polygon)
+  // Limit drawing work, and never project invalid coordinates onto an invented position.
+  return Array.isArray(polygon) &&
+    polygon.length >= 3 &&
+    polygon.length <= 512 &&
+    polygon.every(p => point(p) && onBed(p))
+    ? polygon
+    : null
+}
+
 function baseName(id: string): string {
   // Strip only known slicer instance suffixes. Never use this label as a command ID.
   return (
@@ -50,7 +71,7 @@ function baseName(id: string): string {
 export function layoutObjects(raw: unknown[]): PrintObject[] {
   const rows = raw.flatMap((o: any) => {
     const id = typeof o === 'string' ? o : typeof o?.name === 'string' ? o.name : ''
-    return id ? [{ id, label: baseName(id), center: center(o) }] : []
+    return id ? [{ id, label: baseName(id), center: center(o), polygon: outline(o) }] : []
   })
   const counts = new Map<string, number>()
   for (const o of rows) counts.set(o.id, (counts.get(o.id) || 0) + 1)

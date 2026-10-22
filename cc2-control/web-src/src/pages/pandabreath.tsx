@@ -30,10 +30,10 @@ export const PandaBreath = () => {
       sub="pandabreath.description"
       tags={
         <a
-          class="flex items-center gap-1.5 text-sm text-cyan hover:underline"
+          class="inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border border-edge bg-field px-3 py-2 text-sm text-cyan [overflow-wrap:anywhere] hover:border-cyan hover:bg-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan"
           href={url}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
           <ExternalLink {...I} />
           {t('pandabreath.open_in_new_tab')}

@@ -1,22 +1,50 @@
-# Aggiornamento CC2 Control — esclusivamente Community Firmware V4.4
+# CC2 Control 1.2.19 — aggiornamento completo
 
-Il maintainer ha confermato installazione, aggiornamento firmato manuale e online
-dal pannello, riavvio, connessione, Canvas e impostazioni conservate. Confermato
-anche il fix della notifica di analisi vuota sopra la scelta Canvas.
+**RIAVVIO COMPLETO NECESSARIO: questo aggiornamento comprende il fix webcam.
+Al termine dell'installazione, riavviare manualmente la stampante quando è inattiva.
+Il solo aggiornamento della pagina o riavvio di CC2 Control non attiva la patch.**
 
-Estrarre tutto lo ZIP sul computer. A stampante connessa e inattiva, ugello/piatto
-<=50 C e target zero, avviare Install-Windows.cmd oppure
-sh ./install-cc2-control.sh IP-STAMPANTE. Usare root e la propria password SSH.
-Conservare il percorso/comando di ripristino fornito dall'installer; niente reset.
-Ricaricare con Ctrl+F5 e verificare la versione della release e /api/health.
+Include i fix camera della PR #183 e la gestione delle date G-code non attendibili
+della PR #185. Le librerie webcam sono le stesse provate per sette ore di stampa
+con IA attiva e streaming funzionante. Il nuovo installer integrato richiede una
+prova completa sulla stampante prima della pubblicazione nel canale stabile.
 
-Per aggiornamenti successivi: Impostazioni > Aggiornamenti, Controlla, codice LAN,
-Scarica e verifica, poi Installa con conferma separata. Sono supportati anche
-file locali firmati .cc2update; lo ZIP dell'installer non va caricato nel pannello.
-Chi ha gia la versione della release non deve reinstallare.
+Aggiornare soltanto con stampante connessa, inattiva, ugello e piatto a non più di
+50 °C e target a zero. Chiudere le dirette prima dell'installazione. Il codice LAN
+autorizza l'installazione dal pannello; non viene incluso nel pacchetto.
 
-Guida: https://github.com/Neme77/centauri-carbon-2-community/blob/develop/docs/UPDATE_CC2.it.md
-English: https://github.com/Neme77/centauri-carbon-2-community/blob/develop/docs/UPDATE_CC2.md
+Dal pannello: Impostazioni → Aggiornamenti → carica il file .cc2update firmato.
+In alternativa estrarre lo ZIP multiplatform e avviare l'installer per il proprio
+sistema operativo. Conservare il percorso del backup indicato alla fine.
 
-Firmware/callback invariati e Canvas su MQTT. Rollback forzato coperto da test
-host, ma non provocato deliberatamente sulla stampante.
+Il componente camera controlla hash del firmware, file di avvio e dipendenze;
+interrompe l'installazione su configurazioni non riconosciute. Non sostituisce
+ai_camera e non aumenta il limite di stream. Una precedente installazione R2
+personale riconosciuta viene conservata, inclusa la sua scelta di attivazione.
+Non vengono riavviati automaticamente la camera o la stampante.
+
+Dopo il riavvio, verificare versione 1.2.19, connessione, video locale e Matrix.
+Per una nuova installazione della camera:
+
+```sh
+sh /opt/usr/cc2-control/camera/manage.sh status
+```
+
+Chi ha già la precedente installazione personale usa invece:
+
+```sh
+sh /opt/usr/cc2-camera-recovery-r2/manage.sh status
+```
+
+Il ripristino dell'applicazione dal backup ripristina anche il precedente avvio
+della camera se questo aggiornamento l'ha modificato, rifiutando modifiche
+successive non riconosciute. Eseguire il ripristino a stampante inattiva e fredda;
+riavviare poi completamente per cambiare la patch già caricata in memoria.
+
+Le date palesemente errate dei file sono mostrate come non disponibili, senza
+modificare G-code o timestamp originali. L'orologio deve comunque potersi
+sincronizzare, anche sulle reti che bloccano l'accesso al cloud.
+
+Grazie a tharje per diagnosi, riproduzione e analisi del problema webcam, e ai
+beta tester della community per le prove. I singoli eventi IA e le sessioni RTC
+scadute non sono qualificati da una semplice prova con IA abilitata.

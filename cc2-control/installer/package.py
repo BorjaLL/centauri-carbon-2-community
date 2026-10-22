@@ -9,6 +9,10 @@ from pathlib import Path
 import struct
 import tarfile
 import zipfile
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from camera_component import functions as camera_functions, RESTORE as CAMERA_RESTORE
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -18,7 +22,7 @@ COMPATIBILITY = json.loads((HERE / 'compatibility.json').read_text())
 if hashlib.sha256((HERE.parent / 'FIRMWARE_VERSION').read_bytes()).hexdigest() != COMPATIBILITY['firmware_version_file_sha256']:
     raise ValueError('Updater firmware compatibility record does not match FIRMWARE_VERSION')
 
-def package(prepared, scripts, source, output):
+def package(prepared, scripts, source, output, camera_runtime=None):
     binary = (prepared / 'cc2-control').read_bytes()
     if len(binary) < 20 or binary[:6] != b'\x7fELF\x01\x01' or struct.unpack_from('<H', binary, 18)[0] != 40:
         raise ValueError('Payload requires a 32-bit little-endian ARM ELF')
@@ -47,11 +51,16 @@ def package(prepared, scripts, source, output):
         raise ValueError('Prepared UI is incomplete')
     for name in ('install-on-printer.sh', 'restore-on-printer.sh'):
         text = (HERE / name).read_text().replace('@BINARY_SHA256@', binary_hash).replace('@VERSION@', VERSION).replace('@FIRMWARE_VERSION@', FIRMWARE_VERSION).replace('@PRINTER_SHA256@', COMPATIBILITY['printer_sha256']).replace('@DAEMON_SHA256@', COMPATIBILITY['daemon_sha256'])
+        text = text.replace('@CAMERA_RESTORE_FUNCTION@', CAMERA_RESTORE)
+        text = text.replace('@CAMERA_COMPONENT_FUNCTIONS@', camera_functions(HERE / 'camera', camera_runtime) if camera_runtime else '')
+        text = text.replace('@CAMERA_COMPONENT_PREFLIGHT@', 'camera_unpack\nsh "$CAMERA_SOURCE/manage.sh" check' if camera_runtime else '')
         files[name] = text.encode()
     files['build-info.json'] = (json.dumps({
         'version': VERSION, 'binary_sha256': binary_hash,
         'source_archive_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
         'change': 'CC2 Control application updater',
+        'camera_component': 'reap-r2+recovery-r2' if camera_runtime else None,
+        'requires_full_printer_reboot': bool(camera_runtime),
         'required_community_firmware': FIRMWARE_VERSION,
         'compatibility': COMPATIBILITY,
     }, indent=2) + '\n').encode()
@@ -92,5 +101,6 @@ if __name__ == '__main__':
     parser.add_argument('--scripts', type=Path, default=HERE.parent / 'scripts')
     parser.add_argument('--source', type=Path, default=ROOT / 'builder/current/components/cc2-control/source/source.zip')
     parser.add_argument('--output', type=Path, default=ROOT / f'output/CC2-Control-{VERSION}-Multiplatform-Update.zip')
+    parser.add_argument('--camera-runtime', type=Path, help='Include the three fingerprinted R2 camera runtime files')
     args = parser.parse_args()
-    package(args.prepared, args.scripts, args.source, args.output)
+    package(args.prepared, args.scripts, args.source, args.output, args.camera_runtime)

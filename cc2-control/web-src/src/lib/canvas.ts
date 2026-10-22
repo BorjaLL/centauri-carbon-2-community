@@ -1,6 +1,7 @@
 import { store } from './store'
 import { request } from './api'
-import { observeCanvasSlots } from './canvas-events'
+import { observeCanvasSlots, observedPrinterPhase } from './canvas-events'
+import { printer } from './state'
 
 export function canvasModel(data: any) {
   const telemetry = data?.telemetry || data
@@ -52,6 +53,7 @@ export type CanvasSlotControl = {
   state: CanvasSlotState
   load: boolean
   unload: boolean
+  recovery_load?: boolean
   reason_load: string
   reason_unload: string
 }
@@ -70,7 +72,7 @@ export async function refreshCanvas() {
     const data = await request('/api/canvas')
     const model = canvasModel(data)
     const controls = Array.isArray(data?.slots) ? data.slots : []
-    observeCanvasSlots(Boolean(model?.connected), controls)
+    observeCanvasSlots(Boolean(model?.connected), controls, Date.now(), observedPrinterPhase(printer.get()))
     canvas.set({
       model,
       controls,

@@ -10,6 +10,7 @@ import { Row } from '@/components/shared'
 import { errText, notify, request } from '@/lib/api'
 import { t, tpl } from '@/lib/i18n'
 import { duration, fileSize } from '@/lib/format'
+import { compareFileDates, fileModified } from '@/lib/file-date'
 import { startFile } from '@/pages/print-dialog'
 
 type Entry = { storage: 'internal' | 'usb'; file: any }
@@ -90,7 +91,7 @@ export const Files = () => {
         ? a.file.path.localeCompare(b.file.path)
         : sort === 'size'
           ? Number(b.file.size || 0) - Number(a.file.size || 0)
-          : Number(b.file.modified || 0) - Number(a.file.modified || 0)
+          : compareFileDates(a.file, b.file)
     )
   const currentPage = pageIndex(page, filtered.length)
   useEffect(() => setPage(currentPage), [currentPage])
@@ -202,12 +203,17 @@ export const Files = () => {
                 onInput={e => setQ(e.currentTarget.value)}
               />
             </div>
-            <Select class="col-span-2 cc2-md:col-span-1" value={loc} onChange={e => setLoc(e.currentTarget.value)}>
+            <Select
+              aria-label={t('files.storage')}
+              class="col-span-2 cc2-md:col-span-1"
+              value={loc}
+              onChange={e => setLoc(e.currentTarget.value)}
+            >
               <option value="all">{t('files.all_files')}</option>
               <option value="internal">{t('files.internal_memory')}</option>
               <option value="usb">{t('files.usb_drive')}</option>
             </Select>
-            <Select value={sort} onChange={e => setSort(e.currentTarget.value)}>
+            <Select aria-label={t('files.sort')} value={sort} onChange={e => setSort(e.currentTarget.value)}>
               <option value="newest">{t('files.newest_first')}</option>
               <option value="name">{t('common.name')}</option>
               <option value="size">{t('files.size')}</option>
@@ -216,6 +222,9 @@ export const Files = () => {
               <RefreshCw {...I} />
             </Button>
           </div>
+          {entries.some(e => fileModified(e.file.modified) === null) && (
+            <p class="cc2-file-date-note mt-3 text-sm text-muted">{t('files.date_unavailable_hint')}</p>
+          )}
           {checked.size > 0 && (
             <div class="my-3 flex items-center gap-2">
               <strong>{tpl('files.n_selected', { n: checked.size })}</strong>
@@ -231,6 +240,7 @@ export const Files = () => {
                 <input
                   type="checkbox"
                   title={t('files.select_all_shown_files')}
+                  aria-label={t('files.select_all_shown_files')}
                   checked={visible.length > 0 && visible.every(e => checked.has(key(e)))}
                   onChange={e => {
                     for (const x of visible) toggle(key(x), e.currentTarget.checked)
@@ -258,6 +268,7 @@ export const Files = () => {
                   <input
                     type="checkbox"
                     title={t('files.select_file')}
+                    aria-label={t('files.select_file')}
                     checked={checked.has(key(e))}
                     onClick={ev => ev.stopPropagation()}
                     onChange={ev => toggle(key(e), ev.currentTarget.checked)}
@@ -274,7 +285,9 @@ export const Files = () => {
                 </div>
                 <span class="hidden cc2-md:inline">{fileSize(e.file.size)}</span>
                 <span class="hidden cc2-md:inline">
-                  {Number(e.file.modified) > 0 ? new Date(Number(e.file.modified) * 1000).toLocaleString() : '—'}
+                  {fileModified(e.file.modified) !== null
+                    ? new Date(Number(e.file.modified) * 1000).toLocaleString()
+                    : t('files.date_unavailable')}
                 </span>
                 <span class="hidden cc2-md:inline">{e.storage === 'usb' ? 'USB' : t('files.internal')}</span>
                 <div class="flex gap-1.5">

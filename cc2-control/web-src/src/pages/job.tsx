@@ -1,4 +1,6 @@
-import { Diamond, Pause, Play, Square, TriangleAlert, X } from 'lucide-preact'
+import { Diamond, Map as MapIcon, Pause, Play, Square, TriangleAlert, X } from 'lucide-preact'
+import { useEffect, useState } from 'preact/hooks'
+import { ObjectBedMap } from '@/components/object-bed-map'
 import { cn } from '@/lib/utils'
 import { Card, CardHead, Page } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -38,10 +40,12 @@ export const Job = () => {
   const d = printer.use().data
   const o = objects.use()
   const v = view(d)
+  const [mapOpen, setMapOpen] = useState(false)
   usePoll(refreshPrinter, 1500)
   usePoll(refreshObjects, 2000)
 
   const live = v.active && o.has && o.list.length > 0
+  useEffect(() => setMapOpen(false), [v.rawFilename, live])
   const endLabel = o.error
     ? t('job.objects_unavailable')
     : v.active && o.has
@@ -98,7 +102,12 @@ export const Job = () => {
         </div>
         <Card class="min-w-0">
           <CardHead icon="cube" title="job.object_exclusion" end={endLabel} />
-          <p class="mb-3 text-xs text-muted">{t('job.object_position_order')}</p>
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <p class="text-xs text-muted">{t('job.object_position_order')}</p>
+            <Button disabled={!live} onClick={() => setMapOpen(true)}>
+              <MapIcon {...I} /> {t('job.bed_map')}
+            </Button>
+          </div>
           <div class="grid gap-3.5 cc2-lg:grid-cols-2">
             <div class="grid min-h-40 grid-cols-2 content-start gap-3 rounded-md border border-edge p-4 cc2-sm:grid-cols-3 cc2-lg:grid-cols-2 cc2-xl:grid-cols-4">
               {o.list.length === 0 ? (
@@ -115,7 +124,8 @@ export const Job = () => {
                       <i
                         class={cn(
                           'grid h-12 w-16 place-items-center rounded-lg border-4 not-italic',
-                          x ? 'border-red' : n === o.selected ? 'border-cyan' : 'border-muted'
+                          x ? 'border-red' : n === o.selected ? 'border-cyan' : 'border-muted',
+                          n === o.current && !x && 'ring-2 ring-amber ring-offset-2 ring-offset-panel'
                         )}
                       >
                         {x ? <X size={24} strokeWidth={1} /> : <Diamond size={24} strokeWidth={1} />}
@@ -150,6 +160,7 @@ export const Job = () => {
                       <Button
                         key={n}
                         data-object-id={n}
+                        data-current={n === o.current ? 'true' : undefined}
                         title={n}
                         variant={n === o.selected ? 'active' : 'default'}
                         class={cn(
@@ -162,6 +173,11 @@ export const Job = () => {
                         {x ? <Diamond {...I} /> : <Diamond {...I} fill="currentColor" />} {label}
                         {center ? ` · X ${center[0].toFixed(1)} / Y ${center[1].toFixed(1)} mm` : ''}
                         {x ? ` · ${t('job.excluded')}` : ''}
+                        {n === o.current && !x && (
+                          <span role="img" class="ml-auto shrink-0 text-amber" aria-label={t('job.current_object')}>
+                            ●
+                          </span>
+                        )}
                       </Button>
                     )
                   })
@@ -182,6 +198,9 @@ export const Job = () => {
           </div>
         </Card>
       </div>
+      {mapOpen && live && (
+        <ObjectBedMap live={live} onClose={() => setMapOpen(false)} onExclude={() => void exclude()} />
+      )}
     </Page>
   )
 }

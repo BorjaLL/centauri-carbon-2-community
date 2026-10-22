@@ -2552,8 +2552,9 @@ static void canvas_response(int fd, const mqtt_client *mqtt) {
       mqtt->machine_status,mqtt->have_auto_refill?(mqtt->auto_refill?"true":"false"):"null");
     for(int i=0;i<4;i++){
       canvas_slot_view v=canvas_slot_policy(mqtt,i);
-      json_builder_printf(&b,"%s{\"slot\":%d,\"state\":\"%s\",\"load\":%s,\"unload\":%s,\"reason_load\":\"%s\",\"reason_unload\":\"%s\"}",
+      json_builder_printf(&b,"%s{\"slot\":%d,\"state\":\"%s\",\"load\":%s,\"unload\":%s,\"recovery_load\":%s,\"reason_load\":\"%s\",\"reason_unload\":\"%s\"}",
         i?",":"",i,canvas_kind_name(v.state),v.load?"true":"false",v.unload?"true":"false",
+        canvas_recovery_load_allowed(mqtt,i)?"true":"false",
         canvas_reason_name(v.reason_load),canvas_reason_name(v.reason_unload));
     }
     json_builder_printf(&b,"]");
@@ -3961,7 +3962,7 @@ int main(int argc, char **argv) {
     }
     if (listen(server, 8) < 0) { perror("listen"); close(server); return 1; }
     panda_server panda;
-    if (panda_start(&panda, panda_port, port) != 0) {
+    if (panda_start(&panda, panda_port, port, gcode_internal_root) != 0) {
         perror("panda bridge");
         close(server); mqtt_close(&mqtt); console_destroy(&console);
         return 1;
