@@ -88,6 +88,9 @@ jobs:
         working-directory: cc2-control/web-src
         run: npm run test:control-calibrations
 
+      - name: X/Y motor mode confirmations, unavailable states and print warning
+        run: npm run test:motor-mode
+
       - name: Canvas states and explicit recovery loading
         run: npm run test:canvas-states
 
