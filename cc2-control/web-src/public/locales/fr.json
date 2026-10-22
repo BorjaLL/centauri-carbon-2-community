@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Sélectionnez un emplacement présent. Charger/Décharger restent bloqués jusqu’à confirmation d’un état cohérent.",
   "files.sort": "Trier par",
   "app.print_progress": "Progression de l'impression",
-  "app.sidebar": "Menu latéral"
+  "app.sidebar": "Menu latéral",
+  "job.bed_map_expand": "Agrandir la carte du plateau"
 }

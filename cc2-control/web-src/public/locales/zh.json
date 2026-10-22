@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "请选择有耗材的槽位。在打印机确认状态一致前，普通进料/退料仍被禁用。",
   "files.sort": "排序方式",
   "app.print_progress": "打印进度",
-  "app.sidebar": "侧边菜单"
+  "app.sidebar": "侧边菜单",
+  "job.bed_map_expand": "放大热床地图"
 }

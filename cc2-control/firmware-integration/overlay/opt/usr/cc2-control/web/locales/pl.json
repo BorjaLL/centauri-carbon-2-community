@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Wybierz slot z filamentem. Zwykłe ładowanie i rozładowanie pozostają zablokowane do potwierdzenia spójnego stanu.",
   "files.sort": "Sortuj według",
   "app.print_progress": "Postęp wydruku",
-  "app.sidebar": "Menu boczne"
+  "app.sidebar": "Menu boczne",
+  "job.bed_map_expand": "Powiększ mapę stołu"
 }

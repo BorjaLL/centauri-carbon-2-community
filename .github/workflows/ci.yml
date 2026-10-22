@@ -91,6 +91,9 @@ jobs:
       - name: Canvas states and explicit recovery loading
         run: npm run test:canvas-states
 
+      - name: Single object map, original IDs and responsive expansion
+        run: npm run test:object-layout && npm run test:bed-map
+
       - name: Sidebar geometry and accessible navigation regression
         run: node preview/test-ui-polish.mjs
 

@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Seleccione una ranura presente. Cargar/Descargar siguen bloqueados hasta confirmar un estado coherente.",
   "files.sort": "Ordenar por",
   "app.print_progress": "Progreso de la impresión",
-  "app.sidebar": "Menú lateral"
+  "app.sidebar": "Menú lateral",
+  "job.bed_map_expand": "Ampliar mapa de la cama"
 }

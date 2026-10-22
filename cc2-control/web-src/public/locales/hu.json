@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Válasszon szálat tartalmazó rekeszt. A normál betöltés/kihúzás az egységes állapot visszaigazolásáig tiltva marad.",
   "files.sort": "Rendezés",
   "app.print_progress": "Nyomtatás előrehaladása",
-  "app.sidebar": "Oldalmenü"
+  "app.sidebar": "Oldalmenü",
+  "job.bed_map_expand": "Tárgyasztaltérkép nagyítása"
 }

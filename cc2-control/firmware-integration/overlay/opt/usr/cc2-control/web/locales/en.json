@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Select a present slot. Normal Load/Unload stay blocked until the printer confirms a coherent state.",
   "files.sort": "Sort by",
   "app.print_progress": "Print progress",
-  "app.sidebar": "Side menu"
+  "app.sidebar": "Side menu",
+  "job.bed_map_expand": "Expand bed map"
 }

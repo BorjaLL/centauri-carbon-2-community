@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Seleziona uno slot presente. Carica e Scarica normali restano bloccati finché la stampante non conferma uno stato coerente.",
   "files.sort": "Ordina per",
   "app.print_progress": "Avanzamento della stampa",
-  "app.sidebar": "Menu laterale"
+  "app.sidebar": "Menu laterale",
+  "job.bed_map_expand": "Espandi mappa del piatto"
 }

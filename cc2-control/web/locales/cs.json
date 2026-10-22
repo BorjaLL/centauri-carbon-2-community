@@ -1043,5 +1043,6 @@
   "canvas.recovery_load_select": "Vyberte obsazený slot. Běžné zavedení/vysunutí zůstává blokováno do potvrzení konzistentního stavu.",
   "files.sort": "Seřadit podle",
   "app.print_progress": "Průběh tisku",
-  "app.sidebar": "Boční menu"
+  "app.sidebar": "Boční menu",
+  "job.bed_map_expand": "Zvětšit mapu podložky"
 }
