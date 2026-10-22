@@ -678,7 +678,8 @@ const Profiles = () => {
 
 export const Control = () => {
   usePoll(refreshPrinter, 1500)
-  const d = printer.use().data
+  const link = printer.use()
+  const d = link.data
   const v = view(d)
   const focus = calibrationFocus.use()
   useEffect(() => {
@@ -782,7 +783,7 @@ export const Control = () => {
                     class="min-h-12"
                     variant={v.motorMode === mode ? 'active' : 'default'}
                     aria-pressed={v.motorMode === mode}
-                    disabled={!v.idle}
+                    disabled={!v.idle || !link.ok || !d?.connected}
                     onClick={async () => {
                       const ok = await control(
                         `motors:${mode}`,
